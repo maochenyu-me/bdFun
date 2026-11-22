@@ -12,6 +12,8 @@ fun BindVideoDetailEffects(
     request: VideoScreenRequest, content: VideoScreenContent,
     holders: VideoScreenStateHolders, actions: VideoDetailViewActions, pager: PagerState,
     load: VideoDetailLoadPorts, ports: VideoDetailEffectPorts, autoRotate: Boolean,
+    /** Activity 侧看到的独占全屏状态；竖屏评论面板收起后会要求它变 true。 */
+    requestedFullscreen: Boolean = false, pictureInPicture: Boolean = false,
 ) {
     val detail = content.read.detail
     val currentCid = content.selection.cid
@@ -40,7 +42,7 @@ fun BindVideoDetailEffects(
     LoadInitialVideo(request.video, request.defaultQuality, request.epId, request.seasonId, controllers, ui, load)
     BindVideoPageMetadata(detail, currentCid, content.loggedIn, holders.metadata, controllers.interaction, ui)
     RegisterVideoDanmakuSender(detail, currentCid, holders.metadata, controllers.detail, ports)
-    BindVideoFullscreenState(ui, ports.publishFullscreen, autoRotate)
+    BindVideoFullscreenState(ui, ports.publishFullscreen, autoRotate, requestedFullscreen, pictureInPicture)
     BindBackgroundVideoMetadata(request.video, detail, currentCid, content.quality, ports)
     ReconcileVideoPager(pager)
 }

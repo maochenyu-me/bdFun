@@ -38,7 +38,7 @@ private fun CommentPageList(
             ui.flashSeq),
         layout = CommentListViewLayout(layout.bare, runtime.request.title, layout.topInset,
             layout.bottomPadding, layout.showLoading, header, layout.flatList, layout.compactHeaderSpacing,
-            layout.immersiveStatusBar),
+            layout.immersiveStatusBar, layout.skipStatusInset),
         actions = CommentListViewActions(
             onSort = { runtime.scope.launch { runtime.list.reset(state.query.copy(sortHot = !state.query.sortHot)) } },
             onLike = runtime::toggleLike,

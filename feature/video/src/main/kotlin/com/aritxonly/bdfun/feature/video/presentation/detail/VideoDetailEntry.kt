@@ -34,11 +34,12 @@ fun VideoDetailEntry(
     }
     val inlineLayout = rememberVideoInlineLayout(selection.bvid, playing, pager.currentPage,
         presentation.paneLayout, presentation.immersiveStatusBar, presentation.statusBarTop, ports.collapse,
-        videoAspectRatio)
+        videoAspectRatio, presentation.commentSheetOpen)
     val scope = rememberCoroutineScope()
     val actions = rememberVideoDetailActions(isLoggedIn, request, holders, scope, events.onBack, ports.actionHost)
     val content = VideoScreenContent(request.video, detail, selection, interaction, metadata, quality, isLoggedIn())
-    BindVideoDetailEffects(request, content, holders, actions, pager, ports.load, ports.effects, presentation.autoRotate)
+    BindVideoDetailEffects(request, content, holders, actions, pager, ports.load, ports.effects, presentation.autoRotate,
+        presentation.fullscreen, presentation.pictureInPicture)
     ports.slots.layout(VideoDetailLayoutContent(request, presentation, events, pager, inlineLayout,
         holders, content, actions, scope))
     ports.slots.sheets(holders.ui, interaction, actions)

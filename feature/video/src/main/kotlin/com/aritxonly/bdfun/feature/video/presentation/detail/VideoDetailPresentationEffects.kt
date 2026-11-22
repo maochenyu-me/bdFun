@@ -8,12 +8,21 @@ import androidx.compose.runtime.setValue
 import kotlin.math.roundToInt
 
 @Composable
-fun BindVideoFullscreenState(ui: VideoDetailUiStateHolder, publish: (Boolean) -> Unit, autoRotate: Boolean) {
+fun BindVideoFullscreenState(
+    ui: VideoDetailUiStateHolder, publish: (Boolean) -> Unit, autoRotate: Boolean,
+    requestedFullscreen: Boolean = false, pictureInPicture: Boolean = false,
+) {
     var fullscreen by ui.fullscreen
     var coinSheet by ui.coinSheet
     var favSheet by ui.favSheet
     // 独占全屏状态共享给 Activity；横屏分栏保留 tab / 回复栏。
     LaunchedEffect(fullscreen) { publish(fullscreen) }
+    // Activity 侧主动要求进独占全屏（竖屏评论面板收起后回到播放器）时落回页面自己的状态。
+    // 这条只是跟随外部请求：两侧平时由上面的 publish 保持一致，画中画不参与，
+    // 否则 PiP 会被当成展开的独占全屏。
+    LaunchedEffect(requestedFullscreen, pictureInPicture) {
+        if (!pictureInPicture && fullscreen != requestedFullscreen) fullscreen = requestedFullscreen
+    }
     // 独占全屏时收回投币 / 收藏弹层。
     LaunchedEffect(fullscreen) {
         if (fullscreen) {

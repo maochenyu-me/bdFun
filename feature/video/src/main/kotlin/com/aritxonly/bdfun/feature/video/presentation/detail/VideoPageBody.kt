@@ -20,6 +20,8 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 fun VideoPageBody(
     layout: VideoActivityLayout, ui: VideoActivityPageStateHolder, commentsVisible: Boolean, playerBottomPx: () -> Float,
     detail: @Composable () -> Unit, comments: @Composable (VideoDetail, () -> Unit) -> Unit,
+    /** 竖屏评论面板收起后要回到播放器，由调用方决定（例如重新进全屏）。 */
+    onCommentsDismissed: () -> Unit = {},
     /** Tab 玻璃专用：只录播放器以下的渐变与内容，不含视频层。 */
     contentBackdrop: LayerBackdrop? = null,
 ) {
@@ -32,15 +34,38 @@ fun VideoPageBody(
         } else {
             Modifier.fillMaxSize()
         }
+        var current by ui.comments
+        val c = if (layout.pictureInPicture) null else current
+        // 竖屏非全屏：评论改成底部面板 —— 视频留在上半屏继续播，
+        // 评论从播放器底边往上铺；横屏和分栏仍铺满整页。
+        val portraitSheet = !layout.splitPanes &&
+            layout.paneLayout.heightDp > layout.paneLayout.widthDp
+        val sheetOpen = portraitSheet && c != null && !layout.fullscreen
         Box(modifier = contentLayer) {
             if (layout.splitPanes) VideoCommentTopFade(layout)
-            VideoPageTopFade(layout, playerBottomPx)
+            // 播放器底边那层渐变原本是给 tab 条垫底的；面板展开时 tab 条已经让位，
+            // 只剩这层 54dp 渐变横在视频下面，看起来像一条黑条，所以一起收掉。
+            if (!layout.fullscreen && !sheetOpen) VideoPageTopFade(layout, playerBottomPx)
             if (commentsVisible) VideoCommentBottomFade(layout)
-            var current by ui.comments
-            val c = if (layout.pictureInPicture) null else current
-            if (c != null) {
-                Box(modifier = Modifier.fillMaxSize().background(LocalTeakContentColors.current.background)) {
-                    comments(c) { current = null }
+            if (c != null && !layout.fullscreen) {
+                if (portraitSheet) {
+                    // 面板从播放器当前底边开始铺，上方留给仍在播放的画面。
+                    val topInset = with(androidx.compose.ui.platform.LocalDensity.current) {
+                        playerBottomPx().coerceAtLeast(0f).toDp()
+                    }
+                    PortraitCommentSheet(
+                        // 收起时不立刻把面板拆掉：进全屏要等页面状态跟上来，
+                        // 中间那几帧如果露出详情页，就会闪一下页面底色。
+                        // 面板留到 layout.fullscreen 变 true 的那一帧一起消失。
+                        onCollapse = onCommentsDismissed,
+                        modifier = Modifier.fillMaxSize().padding(top = topInset),
+                    ) {
+                        comments(c) { onCommentsDismissed() }
+                    }
+                } else {
+                    Box(modifier = Modifier.fillMaxSize().background(LocalTeakContentColors.current.background)) {
+                        comments(c) { current = null }
+                    }
                 }
             }
         }

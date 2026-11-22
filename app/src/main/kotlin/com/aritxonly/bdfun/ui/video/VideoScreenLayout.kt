@@ -22,5 +22,6 @@ internal fun VideoScreenLayout(
             loading = { modifier, color -> TeakLoading(modifier = modifier, color = color) },
             togglePlayback = background::togglePlayPause, accentColor = BrandPink, playIcon = TeakIcon.PlayerPlay,
             onBack = { actions.leaveVideo() }, onHome = { actions.openHome() },
+            onPlayerAreaTap = { events.onDismissComments() },
         ))
 }

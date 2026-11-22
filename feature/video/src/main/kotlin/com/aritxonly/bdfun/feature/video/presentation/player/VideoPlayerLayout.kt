@@ -1,6 +1,7 @@
 package com.aritxonly.bdfun.ui
 
 import androidx.activity.compose.BackHandler
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.aritxonly.bdfun.core.domain.usesPortraitChrome
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
 
 @Composable
@@ -24,6 +27,8 @@ fun VideoPlayerLayout(
 ) {
     val fullscreen = presentation.fullscreen
     val fullscreenInfo = presentation.fullscreenInfo
+    val windowPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
+    val portraitChrome = usesPortraitChrome(presentation.portraitVideo, windowPortrait)
     val danmaku = media.danmaku
     val onToggleFullscreen = actions.navigation.onToggleFullscreen
     val playing by observed.playing
@@ -68,8 +73,9 @@ fun VideoPlayerLayout(
             media, presentation, ui, fsActions, playing, positionMs, durationMs, bufferedMs, ports,
         )
 
-        PlayerLockOverlay(ui, fullscreen, ports.page)
-
+        // 竖屏 chrome 的右侧已经是一整列互动按钮，锁按钮会和它叠在一起，所以竖屏不给锁；
+        // 横屏仍是原来的全屏锁。
+        if (!portraitChrome) PlayerLockOverlay(ui, fullscreen, ports.page)
         PlayerScrubOverlay(ui, fullscreen, positionMs, durationMs, bufferedMs)
 
         PlayerSubtitleLayer(fullscreenInfo, fullscreen, ui, positionMs)

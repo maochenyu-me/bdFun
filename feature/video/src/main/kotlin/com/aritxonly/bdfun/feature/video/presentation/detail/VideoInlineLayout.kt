@@ -37,11 +37,13 @@ fun resolveInlineVideoHeightDp(
     widthDp: Float,
     windowHeightDp: Float,
     videoAspectRatio: Float?,
+    /** 竖屏视频的高度上限占窗口高度的比例；评论面板展开时调小，把画面让给评论。 */
+    heightCapRatio: Float = 0.60f,
 ): Float {
     val portrait = videoAspectRatio != null && videoAspectRatio in 0.05f..0.999f
     if (!portrait) return widthDp * 9f / 16f
     val tallBlock = widthDp * 4f / 3f
-    val heightCap = windowHeightDp * 0.60f
+    val heightCap = windowHeightDp * heightCapRatio
     return if (heightCap > 0f) minOf(tallBlock, heightCap) else tallBlock
 }
 
@@ -51,6 +53,8 @@ fun rememberVideoInlineLayout(
     immersiveStatusBar: Boolean, statusBarTop: androidx.compose.ui.unit.Dp, host: VideoCollapseHost,
     /** 当前清晰度画面的宽高比（宽/高）；竖屏视频 < 1，用于把半屏播放器按更满的比例铺开。 */
     videoAspectRatio: Float? = null,
+    /** 竖屏评论面板展开：播放器再压一截，把下半屏让给评论列表。 */
+    commentSheetOpen: Boolean = false,
 ): VideoInlineLayout {
     // ---- 播放器随浏览收起：完全照搬 BiliPai 的共享位移模型 ----
     // offsetPx 是唯一的状态，播放器高度、缩放、页面内边距都由它推导。
@@ -60,6 +64,7 @@ fun rememberVideoInlineLayout(
         widthDp = paneLayout.widthDp,
         windowHeightDp = paneLayout.heightDp,
         videoAspectRatio = videoAspectRatio,
+        heightCapRatio = if (commentSheetOpen) 0.38f else 0.60f,
     ).dp
     val collapseState = rememberInlinePlayerCollapseState(activeBvid)
     // 「上滑收起播放器」设置已删除，固定按原来的「关闭」模式运行。

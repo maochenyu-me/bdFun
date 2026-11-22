@@ -42,9 +42,18 @@ internal fun VideoActivityBody(
     val loadedVideo = scene.video
     val commentRequest = scene.commentRequest
     var comments by ui.comments
+    // 竖屏评论走底部面板：播放器压到 38% 高度，评论从播放器底边往上铺。
+    val windowPortrait = androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+        android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val portraitComments = windowPortrait && !splitPanes
 
     VideoPageBody(layout, ui, commentsVisible = pager.currentPage == 1, playerBottomPx = { VideoPageBus.playerBottomPx },
-        contentBackdrop = contentBackdrop, detail = {
+        contentBackdrop = contentBackdrop,
+        // 竖屏评论面板收起（箭头或侧滑）后回到播放器全屏，而不是停在简介/评论页。
+        onCommentsDismissed = {
+            if (portraitComments) PlayerUiState.fullscreen = true
+        },
+        detail = {
         VideoScreen(
             isLoggedIn = isLoggedIn,
             request = com.aritxonly.bdfun.ui.VideoScreenRequest(
@@ -66,6 +75,7 @@ internal fun VideoActivityBody(
                 fullscreen = pageFullscreen,
                 // 从 Activity 根部读到的状态栏高度，避免页面内部读成 0。
                 statusBarTop = statusBarDp,
+                commentSheetOpen = portraitComments && comments != null,
             ),
             events = com.aritxonly.bdfun.ui.VideoScreenEvents(
                 onOpenComments = {
@@ -73,6 +83,11 @@ internal fun VideoActivityBody(
                     else comments = it
                 },
                 onBack = { host.onBack() },
+                // 面板展开时点画面：先收面板，再回全屏播放（对齐参考实现里点小窗进播放）。
+                onDismissComments = {
+                    comments = null
+                    if (portraitComments) PlayerUiState.fullscreen = true
+                },
             ),
             pager = pager,
         )
@@ -84,7 +99,13 @@ internal fun VideoActivityBody(
                     title = c.title, bvid = c.bvid,
                     commentOid = target.oid, commentType = target.type),
                 onBack = onBack,
-                layout = CommentScreenLayout(flatList = true, scrollTop = true),
+                // 竖屏面板顶部不再让状态栏留白，留白由面板自己的把手顶上。
+                layout = CommentScreenLayout(
+                    flatList = true,
+                    scrollTop = true,
+                    immersiveStatusBar = portraitComments,
+                    skipStatusInset = portraitComments,
+                ),
             )
         }
     })

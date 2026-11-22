@@ -12,6 +12,8 @@ class VideoDetailLayoutSlots(
     val loading: @Composable (Modifier, Color) -> Unit,
     val togglePlayback: () -> Unit, val accentColor: Color, val playIcon: Int,
     val onBack: () -> Unit, val onHome: () -> Unit,
+    /** 评论面板展开时，点在播放器区域上（收起面板、回到全屏播放）。 */
+    val onPlayerAreaTap: () -> Unit = {},
 )
 class VideoCollapseHost(
     val commentThreadVisible: () -> Boolean,

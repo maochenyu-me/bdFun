@@ -24,9 +24,13 @@ data class VideoScreenPresentation(
     val autoRotate: Boolean = true,
     /** 当前是否全屏：半屏播放把清晰度压到 720P，全屏后恢复。 */
     val fullscreen: Boolean = false,
+    /** 竖屏评论以底部面板展开：播放器要再压一截，把画面让给评论列表。 */
+    val commentSheetOpen: Boolean = false,
 )
 
 class VideoScreenEvents(
     val onOpenComments: (VideoDetail) -> Unit = {},
     val onBack: () -> Unit,
+    /** 竖屏评论面板展开时点了画面：收起面板并回到全屏播放。 */
+    val onDismissComments: () -> Unit = {},
 )

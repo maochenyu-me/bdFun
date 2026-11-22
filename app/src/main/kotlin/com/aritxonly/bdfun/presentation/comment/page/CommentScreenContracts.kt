@@ -21,6 +21,8 @@ internal data class CommentScreenLayout(
     val scrollTop: Boolean = false,
     /** 动态详情这类沉浸页：列表滚到状态栏后面，而不是被状态栏高度截断。 */
     val immersiveStatusBar: Boolean = false,
+    /** 容器已经在状态栏下面（竖屏评论面板）：immersive 时也不再给首个条目补状态栏高度。 */
+    val skipStatusInset: Boolean = false,
 )
 internal typealias CommentScreenHeader = LazyListScope.() -> Unit
 

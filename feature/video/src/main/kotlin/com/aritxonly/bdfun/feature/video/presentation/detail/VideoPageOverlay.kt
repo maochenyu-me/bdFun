@@ -30,11 +30,20 @@ fun androidx.compose.foundation.layout.BoxScope.VideoPageOverlay(
         if (layout.fullscreen) {
             page.dismissReply++
             ui.danmakuInputOpen.value = false
+            // 全屏只放视频：竖屏评论面板此时必须让位，否则「全屏 + 面板未清」会渲染成整页评论，
+            // 表现就是点播放器上的展开按钮却展开了评论区。
+            ui.comments.value = null
         }
     }
+    // 评论以面板形式覆盖页面时（竖屏底部评论面板），"简介/评论/发弹幕"这一条会被面板压住，
+    // 留着只会从评论列表中间透出来，所以只把这一条让位；回复栏和弹幕输入必须保留，
+    // 否则面板里的评论「回复」点了没有任何反应。
+    val commentSheetOpen = ui.comments.value != null
     if (layout.overlayAlpha > 0.01f) {
-        slots.tabs(this)
-        VideoActivityReplyLayer(layout, pager, host, slots)
+        // 进独占全屏的那一瞬间 overlayAlpha 还要淡出 200ms，中间播放器已经铺满，
+        // 这一条却还在原位闪一下；全屏时直接不画。
+        if (!commentSheetOpen && !layout.fullscreen) slots.tabs(this)
+        VideoActivityReplyLayer(layout, pager, host, slots, commentSheetOpen)
         VideoActivityInputLayer(layout, ui, host, slots)
     }
     VideoActivityDanmakuPanel(layout, host, slots)
@@ -44,6 +53,8 @@ fun androidx.compose.foundation.layout.BoxScope.VideoPageOverlay(
 private fun androidx.compose.foundation.layout.BoxScope.VideoActivityReplyLayer(
     layout: VideoActivityLayout, pager: androidx.compose.foundation.pager.PagerState,
     host: VideoPageOverlayHost, slots: VideoPageOverlaySlots,
+    /** 竖屏评论面板展开：评论不在 pager 第 1 页，但回复栏同样要挂在页面底部。 */
+    commentSheetOpen: Boolean = false,
 ) {
     val VideoPageBus = host
     val PlayerUiState = host
@@ -56,7 +67,7 @@ private fun androidx.compose.foundation.layout.BoxScope.VideoActivityReplyLayer(
     val playerTopInset = layout.playerTopInset
     val fs = pageFullscreen
     // 评论回复栏属于详情栏；只有独占全屏才隐藏。
-    if (!fs && pager.currentPage == 1) {
+    if (!fs && (pager.currentPage == 1 || commentSheetOpen)) {
         // 编辑中：铺一层全屏点击层，点空白处直接退出（同时杜绝点击穿透到播放器）
         if (VideoPageBus.replyEditing) {
             Box(

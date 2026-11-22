@@ -54,6 +54,8 @@ internal data class CommentListViewLayout(
     val compactHeaderSpacing: Boolean = false,
     /** 沉浸页：状态栏高度并入列表 contentPadding，内容可以滚到状态栏下面。 */
     val immersiveStatusBar: Boolean = false,
+    /** 容器本身已经在状态栏下面（例如竖屏评论面板）：不再额外把状态栏高度算进首个条目。 */
+    val skipStatusInset: Boolean = false,
 )
 internal class CommentListViewActions(
     val onSort: () -> Unit, val onLike: (CommentItem) -> Unit, val onDislike: (CommentItem) -> Unit,
@@ -78,7 +80,7 @@ internal fun CommentListView(
     val showLoading = layout.showLoading
     val header = layout.header
     val immersive = layout.immersiveStatusBar
-    val statusInset = if (immersive) {
+    val statusInset = if (immersive && !layout.skipStatusInset) {
         androidx.compose.foundation.layout.WindowInsets.statusBars
             .asPaddingValues().calculateTopPadding()
     } else 0.dp

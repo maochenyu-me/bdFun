@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.aritxonly.bdfun.ui.LocalVideoPageState
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -283,6 +284,23 @@ class VideoActivity : OneTakeExitActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppGraph.ensure(applicationContext)
+        // 窗口底色由 TeakTheme 在首帧里写成设置里的颜色，在那之前露出的是
+        // 主题文件里写死的浅灰 windowBackground —— 深色下就是点进详情页的一下白闪。
+        // 这里先按同一套色板把窗口底色填好，首帧前后颜色一致。
+        runCatching {
+            val dark = when (AppGraph.settings.darkMode) {
+                1 -> false
+                2 -> true
+                else -> (resources.configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+            window?.setBackgroundDrawable(
+                android.graphics.drawable.ColorDrawable(
+                    appMaterialColors(dark).background.toArgb(),
+                ),
+            )
+        }
         // 任何方式新开视频页，都先停掉后台播放器，避免两路声音。
         com.aritxonly.bdfun.ui.BackgroundPlayback.stopDetached()
         // 同理：旧视频页若还在画中画小窗里，新视频页打开时把它关掉。
