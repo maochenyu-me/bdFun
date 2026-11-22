@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.*
 internal data class FeedListUiState(
     val type: String = "all", val filterMid: Long? = null, val items: List<FeedItem> = emptyList(),
     val loading: Boolean = false, val refreshing: Boolean = false, val error: String? = null, val hasMore: Boolean = true,
+    /** 每次「原本有内容时刷新成功」自增，用于定位上次刷新的胶囊判断是不是新一轮。 */
+    val refreshKey: Int = 0,
 )
 internal data class FeedPortalUiState(
     val authors: List<FeedAuthor> = emptyList(), val liveUsers: List<FeedLiveUser> = emptyList(),
@@ -68,6 +70,7 @@ internal class FeedStateHolder(
     var hasMore: Boolean
         get() = mutable.value.feed.hasMore
         private set(value) { mutable.update { it.copy(feed = it.feed.copy(hasMore = value)) } }
+    val refreshKey: Int get() = mutable.value.feed.refreshKey
     var authors: List<FeedAuthor>
         get() = mutable.value.portal.authors
         private set(value) { mutable.update { it.copy(portal = it.portal.copy(authors = value)) } }
@@ -184,6 +187,7 @@ internal class FeedStateHolder(
         if (reset) { refreshing = true; loading = false } else loading = true
         error = null
         retryReset = reset
+        val hadItems = items.isNotEmpty()
         try {
             var cursor = if (reset) "" else offset
             val collected = if (reset) mutableListOf() else items.toMutableList()
@@ -207,6 +211,10 @@ internal class FeedStateHolder(
                 if (fresh.isNotEmpty() || !more) break
             }
             items = collected.toList()
+            // 只有「本来就有内容」的刷新才算新一轮，首次载入不弹定位胶囊。
+            if (reset && hadItems) {
+                mutable.update { it.copy(feed = it.feed.copy(refreshKey = it.feed.refreshKey + 1)) }
+            }
             offset = cursor
             hasMore = more
             started = true // Empty successful feeds must not refetch on every visit.

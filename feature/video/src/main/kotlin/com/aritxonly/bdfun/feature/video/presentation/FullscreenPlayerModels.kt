@@ -35,6 +35,8 @@ data class FullscreenPlayerInfo(
     val liked get() = interaction.liked
     val likeCount get() = interaction.likeCount
     val replyCount get() = interaction.replyCount
+    val coined get() = interaction.coined
+    val coinCount get() = interaction.coinCount
     val favorited get() = interaction.favorited
     val favoriteCount get() = interaction.favoriteCount
     val shareCount get() = interaction.shareCount
@@ -65,6 +67,8 @@ data class FullscreenInteractionInfo(
     val liked: Boolean,
     val likeCount: Long,
     val replyCount: Long,
+    val coined: Boolean = false,
+    val coinCount: Long = 0L,
     val favorited: Boolean,
     val favoriteCount: Long,
     val shareCount: Long,
@@ -142,10 +146,12 @@ class FullscreenActions(
     val preferences: FullscreenPreferenceActions,
 ) {
     val onBack get() = navigation.onBack
+    val onHome get() = navigation.onHome
     val onPlayPause get() = playback.onPlayPause
     val onNext get() = navigation.onNext
     val onEpisodes get() = navigation.onEpisodes
     val onLike get() = social.onLike
+    val onCoin get() = social.onCoin
     val onComment get() = navigation.onComment
     val onShare get() = social.onShare
     val onOpenSpace get() = navigation.onOpenSpace
@@ -176,6 +182,7 @@ class FullscreenActions(
 
 data class FullscreenNavigationActions(
     val onBack: () -> Unit,
+    val onHome: () -> Unit = {},
     val onNext: () -> Unit,
     val onEpisodes: () -> Unit,
     val onComment: () -> Unit,
@@ -188,6 +195,7 @@ data class FullscreenNavigationActions(
 
 data class FullscreenSocialActions(
     val onLike: () -> Unit,
+    val onCoin: () -> Unit = {},
     val onShare: () -> Unit,
     val onToggleFolder: (Long) -> Unit,
     val onRequestFavorites: () -> Unit,

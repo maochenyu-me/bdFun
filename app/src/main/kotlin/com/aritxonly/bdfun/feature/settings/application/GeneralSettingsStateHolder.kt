@@ -20,6 +20,30 @@ internal class GeneralSettingsStateHolder(
         prefs.getBoolean("home_hero_carousel_autoplay", false),
     )
 
+    private val keepRecommendOldContentState = stateCell("keepRecommendOldContentState",
+        prefs.getBoolean("keep_recommend_old_content", true),
+    )
+
+    private val homeRefreshLocatorState = stateCell("homeRefreshLocatorState",
+        prefs.getBoolean("home_refresh_locator", true),
+    )
+
+    private val refreshLocatorDurationState = stateCell("refreshLocatorDurationState",
+        prefs.getInt("refresh_locator_duration", 5),
+    )
+
+    private val homeRefreshUndoState = stateCell("homeRefreshUndoState",
+        prefs.getBoolean("home_refresh_undo", true),
+    )
+
+    private val refreshLocatorXState = stateCell("refreshLocatorXState",
+        prefs.getFloat("refresh_locator_x", 0.94f),
+    )
+
+    private val refreshLocatorYState = stateCell("refreshLocatorYState",
+        prefs.getFloat("refresh_locator_y", 0.38f),
+    )
+
     private val showViewerCountState = stateCell("showViewerCountState", prefs.getBoolean("show_viewer_count", true))
 
     private val showHotSearchState = stateCell("showHotSearchState", prefs.getBoolean("show_hot_search", true))
@@ -83,6 +107,50 @@ internal class GeneralSettingsStateHolder(
             homeHeroCarouselAutoplayState.value = value
             prefs.edit().putBoolean("home_hero_carousel_autoplay", value).apply()
         }
+
+    override var keepRecommendOldContent: Boolean
+        get() = keepRecommendOldContentState.value
+        set(value) {
+            keepRecommendOldContentState.value = value
+            prefs.edit().putBoolean("keep_recommend_old_content", value).apply()
+        }
+
+    override var homeRefreshLocator: Boolean
+        get() = homeRefreshLocatorState.value
+        set(value) {
+            homeRefreshLocatorState.value = value
+            prefs.edit().putBoolean("home_refresh_locator", value).apply()
+        }
+
+    override var refreshLocatorDurationSeconds: Int
+        get() = refreshLocatorDurationState.value
+        set(value) {
+            refreshLocatorDurationState.value = value
+            prefs.edit().putInt("refresh_locator_duration", value).apply()
+        }
+
+    override var homeRefreshUndo: Boolean
+        get() = homeRefreshUndoState.value
+        set(value) {
+            homeRefreshUndoState.value = value
+            prefs.edit().putBoolean("home_refresh_undo", value).apply()
+        }
+
+    override var refreshLocatorX: Float
+        get() = refreshLocatorXState.value
+        set(value) { setRefreshLocatorPosition(value, refreshLocatorY) }
+
+    override var refreshLocatorY: Float
+        get() = refreshLocatorYState.value
+        set(value) { setRefreshLocatorPosition(refreshLocatorX, value) }
+
+    /** 拖动松手时调用：立即更新投影，落盘沿用 250ms 合并写入，避免每帧写盘。 */
+    override fun setRefreshLocatorPosition(x: Float, y: Float) {
+        refreshLocatorXState.value = x.coerceIn(0f, 1f)
+        refreshLocatorYState.value = y.coerceIn(0f, 1f)
+        persistFloatEventually("refresh_locator_x", refreshLocatorXState.value)
+        persistFloatEventually("refresh_locator_y", refreshLocatorYState.value)
+    }
 
     override var showViewerCount: Boolean
         get() = showViewerCountState.value

@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.ui
 
+import com.aritxonly.bdfun.core.domain.isPortraitVideo
 import com.aritxonly.bdfun.core.domain.videoPlaybackPages
 import com.aritxonly.bdfun.ui.FullscreenVideoInfo
 import com.aritxonly.bdfun.ui.FullscreenMediaInfo
@@ -25,6 +26,7 @@ fun assembleVideoPlayer(content: VideoPlayerContent, flags: VideoPlayerFlags): V
         fullscreenInfo = fullscreenPlayerInfo(content), fullscreen = flags.fullscreen,
         resumePositionMs = content.selection.resumePositionMs, immersiveStatusBar = flags.immersiveStatusBar,
         pictureInPicture = flags.pictureInPicture,
+        portraitVideo = isPortraitVideo(content.quality?.width ?: 0, content.quality?.height ?: 0),
     ))
 }
 
@@ -47,6 +49,8 @@ private fun fullscreenPlayerInfo(content: VideoPlayerContent): FullscreenPlayerI
             liked = state.liked,
             likeCount = state.likeCount,
             replyCount = detail?.reply ?: 0L,
+            coined = state.coined,
+            coinCount = state.coinCount,
             favorited = state.favorited,
             favoriteCount = state.favoriteCount,
             shareCount = state.shareCount,

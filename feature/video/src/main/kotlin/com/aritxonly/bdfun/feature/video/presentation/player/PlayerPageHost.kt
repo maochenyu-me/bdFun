@@ -10,6 +10,9 @@ interface PlayerPageHost {
     var danmakuPanelOpen: Boolean
     val danmakuInteract: Int
     var orientationLocked: Boolean
+
+    /** 竖屏视频标记：Activity 侧据此放弃传感器转屏，画中画也用竖屏比例。 */
+    var portraitVideo: Boolean
     fun registerPause(owner: Any?, hook: (Boolean) -> Unit)
     fun unregisterPause(hook: (Boolean) -> Unit)
 }

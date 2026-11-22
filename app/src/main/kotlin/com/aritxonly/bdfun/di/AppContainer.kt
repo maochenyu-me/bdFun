@@ -157,7 +157,10 @@ internal class AppContainer(
             BiliRecommendationActionsRepository(api::addWatchLater, api::dislikeRecommendation), scope,
             optimizer = recommendationOptimizer,
             cache = context?.let { createHomeRecommendationCache(it, sessionController.state.value.user?.mid ?: 0L,
-                settings.recommendWeb, recommendationOptimizer) })
+                settings.recommendWeb, recommendationOptimizer) },
+            // 开关在刷新时才读，设置页改动下一轮刷新即生效。
+            keepOldContent = { settings.keepRecommendOldContent },
+            undoEnabled = { settings.homeRefreshUndo })
         HomeSlot(job, view)
     }, { it.view.close(); it.job.cancel() })
     val homeFeedState: HomeFeedState get() = homeSlot.get().view

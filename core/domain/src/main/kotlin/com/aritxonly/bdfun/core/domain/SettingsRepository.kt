@@ -113,6 +113,18 @@ interface GeneralSettings {
     var homeHeroCarousel: Boolean
     /** 轮播默认静音循环播放；关闭时只展示封面，点开后进入视频详情。 */
     var homeHeroCarouselAutoplay: Boolean
+    /** 刷新推荐后保留刷新前的旧内容，新内容排在最前面；关闭则刷新后只剩新内容。 */
+    var keepRecommendOldContent: Boolean
+    /** 保留旧推荐时显示「定位上次刷新」胶囊；只控制提示本身，不决定内容是否保留。 */
+    var homeRefreshLocator: Boolean
+    /** 「定位上次刷新」胶囊的停留秒数；0 表示不自动收起。 */
+    var refreshLocatorDurationSeconds: Int
+    /** 刷新推荐流后显示「撤销刷新」胶囊。 */
+    var homeRefreshUndo: Boolean
+    /** 定位胶囊相对可放置区域的归一化位置，松手后记忆。 */
+    var refreshLocatorX: Float
+    var refreshLocatorY: Float
+    fun setRefreshLocatorPosition(x: Float, y: Float)
     var showViewerCount: Boolean
     var showHotSearch: Boolean
     /** 搜索首页把热搜排在搜索记录上方；关闭则搜索记录在上、热搜在下。 */

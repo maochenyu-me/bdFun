@@ -32,6 +32,12 @@ class HomeFeedState internal constructor(private val controller: HomeFeedStateHo
         ?: if (observed.videos.isEmpty() && !observed.loading) "推荐流为空" else null
     val loadMoreError get() = observed.loadMoreError?.messageOr("加载失败")
         ?: if (observed.filteredPage) "本页内容已过滤，点击继续加载" else null
+    /** 本轮刷新的身份：定位胶囊的计时与分隔条都以它为准。 */
+    val refreshKey get() = observed.refreshKey
+    val newItemCount get() = observed.newItemCount
+    val newItemsTipVisible get() = observed.newItemsTipVisible
+    val oldContentStartIndex get() = observed.oldContentStartIndex
+    val undoAvailable get() = observed.undoAvailable
     init {
         optimizer?.let { optimization -> scope.launch {
             var previous = optimization.state.value.generation
@@ -57,6 +63,9 @@ class HomeFeedState internal constructor(private val controller: HomeFeedStateHo
     suspend fun ensureLoaded() = controller.ensureLoaded()
     suspend fun refresh() = controller.refresh()
     suspend fun loadMore() = controller.loadMore()
+    fun undoRefresh() = controller.undoRefresh()
+    fun dismissUndo() = controller.dismissUndo()
+    fun dismissNewItemsTip() = controller.dismissNewItemsTip()
 }
 
 /** app提供仓储与原页面作用域；模块内部组装状态，避免壳访问internal实现。 */
@@ -67,8 +76,10 @@ fun createHomeFeedState(
     scope: CoroutineScope,
     optimizer: com.aritxonly.bdfun.core.application.RecommendationOptimizer? = null,
     cache: com.aritxonly.bdfun.core.domain.HomeFeedCache? = null,
+    keepOldContent: () -> Boolean = { true },
+    undoEnabled: () -> Boolean = { true },
 ): HomeFeedState {
-    val controller = HomeFeedStateHolder(feed, videos, optimizer, cache)
+    val controller = HomeFeedStateHolder(feed, videos, optimizer, cache, keepOldContent = keepOldContent, undoEnabled = undoEnabled)
     val feedback = HomeActionsStateHolder(videos, actions, controller)
     return HomeFeedState(controller, feedback, scope, optimizer)
 }

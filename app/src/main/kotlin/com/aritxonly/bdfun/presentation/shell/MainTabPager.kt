@@ -197,6 +197,15 @@ private fun HomeSectionContent(
                 enabled = settings.homeHeroCarousel,
                 autoplay = settings.homeHeroCarouselAutoplay,
             ),
+            refresh = com.aritxonly.bdfun.feature.home.presentation.HomeRefreshOptions(
+                keepOldContent = settings.keepRecommendOldContent,
+                locatorEnabled = settings.homeRefreshLocator,
+                locatorDurationSeconds = settings.refreshLocatorDurationSeconds,
+                locatorX = settings.refreshLocatorX,
+                locatorY = settings.refreshLocatorY,
+                undoEnabled = settings.homeRefreshUndo,
+            ),
+            onRefreshLocatorPosition = { x, y -> settings.setRefreshLocatorPosition(x, y) },
         )
     }
 }

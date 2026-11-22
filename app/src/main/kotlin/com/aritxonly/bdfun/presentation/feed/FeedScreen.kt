@@ -8,6 +8,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -20,9 +21,11 @@ import com.aritxonly.bdfun.AppGraph
 import com.aritxonly.bdfun.core.domain.DynamicTabPolicy
 import com.aritxonly.bdfun.core.model.feed.FeedItem
 import com.aritxonly.bdfun.core.model.video.VideoItem
+import com.aritxonly.bdfun.feature.home.presentation.HomeRefreshLocatorPill
 import com.aritxonly.bdfun.feature.home.presentation.PullRefreshSession
 import com.aritxonly.bdfun.feature.home.presentation.PullRefreshSettleEffect
 import com.aritxonly.bdfun.feature.settings.presentation.LocalSettingsBindings
+import kotlinx.coroutines.launch
 
 /**
  * 动态页：和首页完全同一套结构——顶栏胶囊 + HorizontalPager。
@@ -136,6 +139,12 @@ private fun FeedTabPage(
     val connection = remember(state) { session.connection() }
     FeedPaginationEffects(state, loggedIn)
     val actions = FeedActions(state, scope, context, loggedIn, onOpenVideo, onOpenFeed)
+    val settings = LocalSettingsBindings.current
+    // 动态刷新会整体换掉列表，所以这里的定位胶囊只负责「回到顶部」；位置/计时与首页同一套策略。
+    var locatorDismissedKey by remember { mutableIntStateOf(0) }
+    val locatorVisible = settings.homeRefreshLocator &&
+        state.refreshKey > locatorDismissedKey &&
+        state.items.isNotEmpty()
     Box(modifier = Modifier.fillMaxSize()) {
         if (!loggedIn) {
             EmptyHint(
@@ -147,6 +156,16 @@ private fun FeedTabPage(
         } else {
             FeedContent(state, statusTop, pull, connection, actions)
             FeedIndicators(state, statusTop)
+            HomeRefreshLocatorPill(
+                refreshKey = state.refreshKey,
+                visible = locatorVisible,
+                x = settings.refreshLocatorX,
+                y = settings.refreshLocatorY,
+                durationSeconds = settings.refreshLocatorDurationSeconds,
+                onClick = { scope.launch { state.listState.animateScrollToItem(0) } },
+                onDismiss = { locatorDismissedKey = state.refreshKey },
+                onPositionChanged = { x, y -> settings.setRefreshLocatorPosition(x, y) },
+            )
         }
     }
 }

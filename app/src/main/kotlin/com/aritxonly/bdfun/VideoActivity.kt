@@ -79,6 +79,9 @@ class VideoActivity : OneTakeExitActivity() {
                 if (orientation == ORIENTATION_UNKNOWN) return
                 // 每次方向变化都重新读：用户可能中途打开 / 关闭了方向锁定
                 if (!PlayerUiState.fullscreen || !autoRotateAllowed() || VideoOrientationLock.locked) return
+                // 竖屏视频的朝向由播放器按视频宽高比自己定（SENSOR_PORTRAIT），
+                // 传感器转屏在这里让路，否则一横屏就把整屏竖着的画面顶出屏幕
+                if (PlayerUiState.portraitVideo) return
                 // 判定：横屏要转到离水平 12° 以内（比上一版 18° 更严格）
                 val landscape = orientation in 78..102 || orientation in 258..282
                 val portrait =
@@ -168,8 +171,14 @@ class VideoActivity : OneTakeExitActivity() {
         }
         if (s.showDiscAfterVideo && s.exitVideoControl == 0) {
             val ok = runCatching {
+                // 竖屏视频给 9:16，系统才会把窗口做成竖着的窄条
+                val ratio = if (PlayerUiState.portraitVideo) {
+                    android.util.Rational(9, 16)
+                } else {
+                    android.util.Rational(16, 9)
+                }
                 val params = android.app.PictureInPictureParams.Builder()
-                    .setAspectRatio(android.util.Rational(16, 9))
+                    .setAspectRatio(ratio)
                     .build()
                 enterPictureInPictureMode(params)
             }.getOrDefault(false)

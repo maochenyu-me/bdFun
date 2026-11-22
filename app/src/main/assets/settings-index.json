@@ -624,6 +624,60 @@
         "title": "首页推荐",
         "settings": [
           {
+            "pref_name": "home_keep_old_recommend",
+            "type": "switch",
+            "title": "刷新保留旧推荐",
+            "subtitle": "刷新推荐后把新内容放在前面，保留之前的内容；与位置提示分别控制",
+            "default": true
+          },
+          {
+            "pref_name": "home_refresh_locator",
+            "type": "switch",
+            "title": "上次刷新提示",
+            "subtitle": "保留旧推荐时显示上次刷新位置，内容是否保留由单独开关控制",
+            "default": true
+          },
+          {
+            "pref_name": "refresh_locator_duration",
+            "type": "dropdown",
+            "title": "定位按钮停留时间",
+            "subtitle": "首页与动态的定位按钮可拖动，松手后记住位置并重新计时",
+            "default": 5,
+            "options": [
+              {
+                "title": "不自动收起",
+                "value": 0
+              },
+              {
+                "title": "3 秒",
+                "value": 3
+              },
+              {
+                "title": "5 秒",
+                "value": 5
+              },
+              {
+                "title": "10 秒",
+                "value": 10
+              },
+              {
+                "title": "30 秒",
+                "value": 30
+              },
+              {
+                "title": "60 秒",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "pref_name": "home_refresh_undo",
+            "type": "switch",
+            "title": "撤销刷新按钮",
+            "subtitle": "刷新推荐流后显示撤销按钮，可恢复刷新前的内容",
+            "default": true
+          },
+          {
             "pref_name": "home_card_style",
             "type": "dropdown",
             "title": "首页卡片样式",

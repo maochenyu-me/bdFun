@@ -74,6 +74,7 @@ internal fun PlayerFullscreenOverlay(
             ),
             appearance = chrome.appearance,
             slots = chrome.slots,
+            portraitVideo = presentation.portraitVideo,
             onPanelHidden = {
                 controlsVisible = false
                 PlayerUiState.controlsVisible = false

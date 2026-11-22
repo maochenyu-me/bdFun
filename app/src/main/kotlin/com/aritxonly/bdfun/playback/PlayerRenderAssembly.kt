@@ -18,7 +18,9 @@ internal fun rememberPlayerRenderPorts(
     val page = LocalVideoPageState.current
     val settings = page.settings
     val viewer = com.aritxonly.bdfun.AppGraph.session.value
-    val fsActions = VideoFullscreenActionBindings(context, playback, presentation.fullscreenInfo, actions, ui, page).create()
+    val fsActions = VideoFullscreenActionBindings(
+        context, playback, presentation.fullscreenInfo, actions, ui, presentation.portraitVideo, page,
+    ).create()
     // 全屏/半屏共用 onCast 写请求状态，这里统一挂一个投屏面板，避免复制第二份入口。
     val castUrl = CastRequestState.url
     CastDialog(visible = castUrl != null, url = castUrl, onDismiss = CastRequestState::clear)

@@ -41,6 +41,7 @@ class FeedState internal constructor(
     val refreshing get() = observed.feed.refreshing
     val error get() = observed.feed.error
     val hasMore get() = observed.feed.hasMore
+    val refreshKey get() = observed.feed.refreshKey
     val authors get() = portalObserved.authors
     val liveUsers get() = portalObserved.liveUsers
     val liveCount get() = portalObserved.liveCount

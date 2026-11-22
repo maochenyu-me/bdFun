@@ -25,12 +25,35 @@ internal data class HomeFeedUiState(
     val scrollRevision: Long = 0,
     val filteredPage: Boolean = false,
     val empty: Boolean = false,
+    /** 每次刷新成功自增；定位胶囊与分隔条都以它作为本轮刷新的身份。 */
+    val refreshKey: Int = 0,
+    /** 本轮刷新新增了多少条内容，0 表示没有新增。 */
+    val newItemCount: Int = 0,
+    /** 「新增 N 条内容」提示是否还没被忽略。 */
+    val newItemsTipVisible: Boolean = false,
+    /** 旧内容在列表中的起始下标；-1 表示本轮刷新没有旧内容。 */
+    val oldContentStartIndex: Int = -1,
+    /** 撤销刷新胶囊是否可用（刷新成功且拿到了刷新前的快照）。 */
+    val undoAvailable: Boolean = false,
 ) : UiState
+
+/** 刷新前的列表快照；撤销只恢复刚看到的那一段，不回头重放分页。 */
+private data class HomeRefreshUndo(
+    val videos: List<VideoItem>,
+    val endReached: Boolean,
+    val refreshKey: Int,
+    val newItemCount: Int,
+    val oldContentStartIndex: Int,
+)
 
 /** 这是首页状态模板：不可变 UiState + StateFlow，界面事件只调用这里的动作。 */
 internal class HomeFeedStateHolder(private val feed: FeedRepository, private val videos: VideoRepository,
     private val optimizer: com.aritxonly.bdfun.core.application.RecommendationOptimizer? = null,
     private val cache: HomeFeedCache? = null, private val requestTimeoutMs: Long = 12_000,
+    /** 刷新时是否保留旧推荐；由设置在每次刷新时读取，避免改开关后需要重建控制器。 */
+    private val keepOldContent: () -> Boolean = { true },
+    /** 是否允许出现「撤销刷新」；关闭后连快照都不留。 */
+    private val undoEnabled: () -> Boolean = { true },
 ) : StateHolder<HomeFeedUiState> {
     private val mutable = MutableStateFlow(HomeFeedUiState())
     override val state: StateFlow<HomeFeedUiState> = mutable.asStateFlow()
@@ -41,6 +64,7 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
     private var generation = 0L
     private var closed = false
     private var resetOnRefresh = false
+    private var undoSnapshot: HomeRefreshUndo? = null
     fun modeChanged() {
         if (closed) return
         generation++
@@ -102,6 +126,17 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
 
     suspend fun refresh() {
         if (closed || mutable.value.refreshing) return
+        val before = mutable.value
+        // 快照必须在发请求前取：请求期间列表可能被滑出、删除或继续分页。
+        undoSnapshot = if (undoEnabled() && before.videos.isNotEmpty()) {
+            HomeRefreshUndo(
+                videos = before.videos.take(HOME_REFRESH_UNDO_MAX_ITEMS),
+                endReached = before.endReached,
+                refreshKey = before.refreshKey,
+                newItemCount = before.newItemCount,
+                oldContentStartIndex = before.oldContentStartIndex,
+            )
+        } else null
         val mode = optimizer?.ticket()
         val ticket = ++generation
         mutable.update { it.copy(refreshing = true, loadingMore = false, error = null, loadMoreError = null, filteredPage = false, empty = false) }
@@ -114,12 +149,25 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
                         started = true
                         mutable.update { old ->
                             if (resetOnRefresh) page = 1
-                            val retained = if (resetOnRefresh) emptyList() else old.videos
+                            val keepOld = !resetOnRefresh && keepOldContent()
+                            val retained = if (keepOld) {
+                                old.videos.take(resolveHomeRefreshKeptItemCount(old.videos.size))
+                            } else {
+                                emptyList()
+                            }
                             val known = retained.mapTo(HashSet()) { it.bvid }
                             val fresh = items.filter { known.add(it.bvid) }
                             resetOnRefresh = false
-                            old.copy(videos = fresh + retained, endReached = if (fresh.isNotEmpty()) false else old.endReached,
-                                scrollRevision = old.scrollRevision + 1)
+                            old.copy(
+                                videos = fresh + retained,
+                                endReached = if (fresh.isNotEmpty()) false else old.endReached,
+                                scrollRevision = old.scrollRevision + 1,
+                                refreshKey = old.refreshKey + 1,
+                                newItemCount = fresh.size,
+                                newItemsTipVisible = shouldShowHomeNewItemsTip(fresh.size),
+                                oldContentStartIndex = if (retained.isEmpty()) -1 else fresh.size,
+                                undoAvailable = undoSnapshot != null,
+                            )
                         }
                         cache?.write(items)
                     } else mutable.update { it.copy(empty = it.videos.isEmpty()) }
@@ -128,6 +176,36 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
         } finally {
             if (current(ticket, mode)) mutable.update { it.copy(refreshing = false) }
         }
+    }
+
+    /** 恢复刷新前的列表；快照只保留一次，撤销后再点无效。 */
+    fun undoRefresh() {
+        if (closed) return
+        val snapshot = undoSnapshot ?: return
+        undoSnapshot = null
+        mutable.update { old ->
+            old.copy(
+                videos = snapshot.videos,
+                endReached = snapshot.endReached,
+                refreshKey = snapshot.refreshKey,
+                newItemCount = snapshot.newItemCount,
+                newItemsTipVisible = false,
+                oldContentStartIndex = snapshot.oldContentStartIndex,
+                undoAvailable = false,
+                scrollRevision = old.scrollRevision + 1,
+            )
+        }
+    }
+
+    fun dismissUndo() {
+        if (closed || !mutable.value.undoAvailable) return
+        undoSnapshot = null
+        mutable.update { it.copy(undoAvailable = false) }
+    }
+
+    fun dismissNewItemsTip() {
+        if (closed || !mutable.value.newItemsTipVisible) return
+        mutable.update { it.copy(newItemsTipVisible = false) }
     }
 
     suspend fun loadMore() {

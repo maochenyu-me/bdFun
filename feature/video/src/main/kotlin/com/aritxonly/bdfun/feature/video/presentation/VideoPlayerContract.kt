@@ -9,6 +9,8 @@ data class VideoMediaInput(
 data class VideoPlayerPresentation(
     val fullscreenInfo: FullscreenPlayerInfo, val fullscreen: Boolean,
     val resumePositionMs: Long, val immersiveStatusBar: Boolean, val pictureInPicture: Boolean,
+    /** 竖屏视频：全屏留在竖屏、换竖屏骨架，画中画用 9:16。 */
+    val portraitVideo: Boolean = false,
 )
 class VideoTransportActions(
     val onPlayStateChanged: (Boolean) -> Unit, val onPageSelected: (VideoPage) -> Unit,

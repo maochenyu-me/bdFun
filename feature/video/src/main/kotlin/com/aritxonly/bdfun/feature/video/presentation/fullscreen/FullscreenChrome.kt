@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -28,11 +29,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.shapes.Capsule
+import com.aritxonly.bdfun.core.domain.usesPortraitChrome
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -50,6 +53,7 @@ fun FullscreenPlayerChrome(
     onPanelHidden: () -> Unit = {},
     appearance: FullscreenAppearance,
     slots: FullscreenChromeSlots,
+    portraitVideo: Boolean = false,
 ) {
 
     if (playback.audioOnly) {
@@ -64,6 +68,9 @@ fun FullscreenPlayerChrome(
         val ui = rememberFullscreenPanelState(panel, onPanelHidden)
         val lastPanel by ui.lastPanel
         val panelVisible by ui.panelVisible
+        // 竖屏视频在竖屏窗口下换用竖排 chrome：横向那一套在窄屏会把标题、互动挤成一排
+        val windowPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
+        val portraitChrome = usesPortraitChrome(portraitVideo, windowPortrait)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -71,12 +78,16 @@ fun FullscreenPlayerChrome(
                     alpha = if (!panelVisible && !scrubOnly) 1f else 0f
                 },
         ) {
+        if (portraitChrome) {
+            PortraitFullscreenChrome(info, playback, actions, onPanelChanged, appearance, slots, scrub)
+        } else {
         FullscreenChromeMasks(appearance)
         FullscreenHeader(info, actions, onPanelChanged, appearance)
         FullscreenAuthor(info, actions, appearance, slots)
         FullscreenTimeline(playback, actions, scrub)
 
         FullscreenBottomControls(info, playback, actions, onPanelChanged, appearance)
+        }
         }
 
         // 二级面板：统一右侧渐变遮罩

@@ -27,6 +27,7 @@ internal class VideoFullscreenActionBindings(
     private val fullscreenInfo: FullscreenPlayerInfo,
     private val actions: VideoPlayerActions,
     private val ui: VideoPlayerUiStateHolder,
+    private val portraitVideo: Boolean,
     private val VideoPageBus: VideoPagePresentationState,
 ) {
     private val settings get() = VideoPageBus.settings
@@ -160,9 +161,11 @@ internal class VideoFullscreenActionBindings(
     private val onPictureInPicture: () -> Unit = {
         runCatching {
             if (android.os.Build.VERSION.SDK_INT >= 26) {
+                // 竖屏视频画中画按 9:16 报比例，否则系统会塞进一个横向窗口
+                val ratio = if (portraitVideo) Rational(9, 16) else Rational(16, 9)
                 activity?.enterPictureInPictureMode(
                     PictureInPictureParams.Builder()
-                        .setAspectRatio(Rational(16, 9))
+                        .setAspectRatio(ratio)
                         .build(),
                 )
             }
@@ -214,6 +217,10 @@ internal class VideoFullscreenActionBindings(
     fun create(): FullscreenActions = FullscreenActions(
         navigation = FullscreenNavigationActions(
             onBack = onBack,
+            onHome = {
+                touch()
+                actions.navigation.onHomeClick()
+            },
             onNext = onNext,
             onEpisodes = onEpisodes,
             onComment = onComment,
@@ -235,6 +242,10 @@ internal class VideoFullscreenActionBindings(
         ),
         social = FullscreenSocialActions(
             onLike = onLike,
+            onCoin = {
+                touch()
+                actions.interaction.onCommandCoin()
+            },
             onShare = onShare,
             onToggleFolder = onToggleFolder,
             onRequestFavorites = onRequestFavorites,

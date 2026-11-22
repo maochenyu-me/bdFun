@@ -98,6 +98,13 @@ open class SettingsBindings internal constructor(
     override var recommendWeb: Boolean by projection.property("recommendWebState", { controller.recommendWeb }, { controller.recommendWeb = it })
     override var homeHeroCarousel: Boolean by projection.property("homeHeroCarouselState", { controller.homeHeroCarousel }, { controller.homeHeroCarousel = it })
     override var homeHeroCarouselAutoplay: Boolean by projection.property("homeHeroCarouselAutoplayState", { controller.homeHeroCarouselAutoplay }, { controller.homeHeroCarouselAutoplay = it })
+    override var keepRecommendOldContent: Boolean by projection.property("keepRecommendOldContentState", { controller.keepRecommendOldContent }, { controller.keepRecommendOldContent = it })
+    override var homeRefreshLocator: Boolean by projection.property("homeRefreshLocatorState", { controller.homeRefreshLocator }, { controller.homeRefreshLocator = it })
+    override var refreshLocatorDurationSeconds: Int by projection.property("refreshLocatorDurationState", { controller.refreshLocatorDurationSeconds }, { controller.refreshLocatorDurationSeconds = it })
+    override var homeRefreshUndo: Boolean by projection.property("homeRefreshUndoState", { controller.homeRefreshUndo }, { controller.homeRefreshUndo = it })
+    override var refreshLocatorX: Float by projection.property("refreshLocatorXState", { controller.refreshLocatorX }, { controller.refreshLocatorX = it })
+    override var refreshLocatorY: Float by projection.property("refreshLocatorYState", { controller.refreshLocatorY }, { controller.refreshLocatorY = it })
+    override fun setRefreshLocatorPosition(x: Float, y: Float) { controller.setRefreshLocatorPosition(x, y); projection.refresh() }
     override var showIpLocation: Boolean by projection.property("showIpLocationState", { controller.showIpLocation }, { controller.showIpLocation = it })
     override var showViewerCount: Boolean by projection.property("showViewerCountState", { controller.showViewerCount }, { controller.showViewerCount = it })
     override var showHotSearch: Boolean by projection.property("showHotSearchState", { controller.showHotSearch }, { controller.showHotSearch = it })

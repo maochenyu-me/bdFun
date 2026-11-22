@@ -3,6 +3,7 @@ package com.aritxonly.bdfun.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,7 +43,9 @@ fun BindPlayerPresentationSetup(
     val fullscreenInfo = presentation.fullscreenInfo
     val fullscreen = presentation.fullscreen
     // 全屏新 UI 的本地状态：二级面板、听视频、镜像、循环、画面尺寸、定时关闭等
-    BindPlayerOrientation(fullscreen, ui, ports.page)
+    BindPlayerOrientation(fullscreen, presentation.portraitVideo, ui, ports.page)
+    // 交给页面壳的朝向守卫：竖屏视频时 Activity 的传感器转屏要让路
+    SideEffect { ports.page.portraitVideo = presentation.portraitVideo }
     var fsAutoPlayNext by ui.fsAutoPlayNext
     LaunchedEffect(fsAutoPlayNext) {
         ports.settings.autoPlayNextChanged(fsAutoPlayNext)

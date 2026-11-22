@@ -166,6 +166,13 @@ internal class VideoPagePresentationState(
                 orientationLocked = value,
             ),
         ) }
+    override var portraitVideo: Boolean
+        get() = snapshot.portraitVideo
+        set(value) = update { it.copy(
+            player = it.player.copy(
+                portraitVideo = value,
+            ),
+        ) }
     var replyName: String?
         get() = snapshot.replyName
         set(value) = update { it.copy(
