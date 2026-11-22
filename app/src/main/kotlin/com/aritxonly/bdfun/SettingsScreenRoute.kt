@@ -9,8 +9,11 @@ import com.aritxonly.bdfun.navigateToChangelog
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import com.aritxonly.bdfun.ui.SettingsDependencies
 import com.aritxonly.bdfun.ui.SettingsDestination
 import com.aritxonly.bdfun.ui.SettingsNavigation
@@ -20,13 +23,25 @@ import com.aritxonly.bdfun.ui.showToast
 @Composable
 internal fun SettingsScreenRoute(activity: ComponentActivity) {
     val dependencies = remember { SettingsDependencies(AppGraph::settingsCdnStateHolder, AppGraph.mineLayout, AppGraph.recommendationOptimizer) }
-    SettingsScreen(AppGraph.settings,
-        SettingsNavigation({ activity.finish() }, { AppGraph.logout(); activity.finish() },
-            { destination -> openSettingsDestination(activity, destination) },
-            { url -> openSettingsWebLink(activity, url) }, { activity.showToast(it) }),
-        dependencies, AppGraph.api.isLoggedIn, AppGraph.settings.indexed,
-        extensions = recommendationSettingsExtensions(dependencies.recommendation) { activity.showToast(it) },
+    val notify = remember(activity) { { message: String -> activity.showToast(message) } }
+    val backupController = remember { AppGraph.settingsBackupController() }
+    val backup = com.aritxonly.bdfun.presentation.settings.backup.rememberSettingsBackupStateHolder(
+        backupController, activity.contentResolver, notify,
     )
+    val extensions = remember(dependencies.recommendation, backup) {
+        recommendationSettingsExtensions(dependencies.recommendation, notify) +
+            com.aritxonly.bdfun.presentation.settings.backup.backupSettingsExtensions(backup)
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        SettingsScreen(AppGraph.settings,
+            SettingsNavigation({ activity.finish() }, { AppGraph.logout(); activity.finish() },
+                { destination -> openSettingsDestination(activity, destination) },
+                { url -> openSettingsWebLink(activity, url) }, notify),
+            dependencies, AppGraph.api.isLoggedIn, AppGraph.settings.indexed,
+            extensions = extensions,
+        )
+        com.aritxonly.bdfun.presentation.settings.backup.SettingsBackupDialogHost(backup)
+    }
 }
 
 private fun openSettingsDestination(context: ComponentActivity, destination: SettingsDestination) {

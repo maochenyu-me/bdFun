@@ -58,6 +58,8 @@ open class BiliBackend(context: Context, debug: Boolean, log: (String, String) -
     suspend fun qrGenerate() = api.qrGenerate()
     suspend fun qrPoll(key: String) = api.qrPoll(key)
     fun logout() = api.logout()
+    /** 登录态备份端口；未登录时导出返回 null。 */
+    fun sessionBackup(): com.aritxonly.bdfun.core.domain.SessionBackupPort = BiliSessionBackupPort(api.cookieJar)
     suspend fun recommend(freshIndex: Int = 1, web: Boolean = true) = api.recommend(freshIndex, web)
     suspend fun dislikeRecommendation(video: VideoItem, reason: RecommendationReason) = api.dislikeRecommendation(video, reason)
     suspend fun popular(page: Int = 1): com.aritxonly.bdfun.core.model.video.PopularPage = api.popular(page)

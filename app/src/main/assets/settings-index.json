@@ -755,6 +755,55 @@
     ]
   },
   {
+    "name": "备份与恢复",
+    "route": "settings/backup",
+    "icon": "Settings",
+    "groups": [
+      {
+        "title": "导出",
+        "settings": [
+          {
+            "pref_name": "backup_include_session",
+            "type": "extension",
+            "title": "包含 B 站登录态",
+            "subtitle": "一并保存当前账号的登录凭据，文件需口令加密",
+            "storage": "none",
+            "default": "",
+            "visible_when": "logged_in"
+          },
+          {
+            "pref_name": "backup_export",
+            "type": "extension",
+            "title": "导出到文件",
+            "subtitle": "设置项、我的页布局与搜索历史",
+            "storage": "none",
+            "default": ""
+          }
+        ]
+      },
+      {
+        "title": "恢复",
+        "settings": [
+          {
+            "pref_name": "backup_import",
+            "type": "extension",
+            "title": "从文件导入",
+            "subtitle": "只覆盖文件里包含的项，其余保持现状",
+            "storage": "none",
+            "default": ""
+          },
+          {
+            "pref_name": "backup_status",
+            "type": "extension",
+            "title": "上次操作",
+            "storage": "none",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
     "name": "关于",
     "route": "settings/about",
     "groups": [

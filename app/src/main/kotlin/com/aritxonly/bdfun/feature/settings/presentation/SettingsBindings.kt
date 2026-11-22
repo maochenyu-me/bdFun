@@ -130,5 +130,8 @@ open class SettingsBindings internal constructor(
     override fun markBlurSessionHealthy() { controller.markBlurSessionHealthy(); projection.refresh() }
     override fun addSearchHistory(keyword: String) { controller.addSearchHistory(keyword); projection.refresh() }
     override fun clearSearchHistory() { controller.clearSearchHistory(); projection.refresh() }
+    /** 批量写入（备份导入）后立刻落盘浮点设置：250ms 合并窗口里的值否则可能丢。 */
+    internal fun flushSettings() { controller.flush() }
+
     override fun close() { controller.flush(); scope.cancel() }
 }

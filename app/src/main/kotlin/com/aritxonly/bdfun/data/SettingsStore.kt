@@ -12,6 +12,8 @@ class SettingsStore private constructor(context: Context, scope: CoroutineScope)
     scope, SettingsStateHolder.create(AndroidSettingsPreferences(context), JsonSearchHistoryCodec(), scope),
 ) {
     private val index = loadSettingsIndex(context)
+    /** 供备份功能按索引校验字段类型与 storage。 */
+    internal val settingsIndex get() = index
     internal val indexed = com.aritxonly.bdfun.feature.settings.application.IndexedSettingsStateHolder(
         index, this, state, scope, loadSettingsSeperation(context, index),
     )

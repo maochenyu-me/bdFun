@@ -12,23 +12,7 @@ class BiliCookieJar(context: Context) : CookieJar {
     private val cookies = ConcurrentHashMap<String, Cookie>()
 
     init {
-        prefs.getString(KEY_COOKIES, null)?.lineSequence()?.forEach { line ->
-            val parts = line.split('\t')
-            if (parts.size >= 5) {
-                runCatching {
-                    val builder = Cookie.Builder()
-                        .name(parts[0])
-                        .value(parts[1])
-                        .domain(parts[2].removePrefix("."))
-                        .path(parts[3])
-                    if (parts[4].toLongOrNull()?.let { it > 0 } == true) {
-                        builder.expiresAt(parts[4].toLong())
-                    }
-                    val cookie = builder.build()
-                    cookies[cookie.name] = cookie
-                }
-            }
-        }
+        cookies.putAll(parse(prefs.getString(KEY_COOKIES, null)))
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
@@ -78,17 +62,56 @@ class BiliCookieJar(context: Context) : CookieJar {
         prefs.edit().remove(KEY_COOKIES).apply()
     }
 
-    private fun persist() {
-        val data = cookies.values.joinToString("\n") {
-            listOf(
-                it.name,
-                it.value,
-                it.domain,
-                it.path,
-                if (it.expiresAt == Long.MAX_VALUE) "0" else it.expiresAt.toString(),
-            ).joinToString("\t")
+    /** 导出全部 cookie，格式与持久化一致（`name\tvalue\tdomain\tpath\texpiresAt`，会话 cookie 为 0）。 */
+    fun snapshot(): String = serialize()
+
+    /**
+     * 用备份内容整体替换当前 cookie（导入的是另一台设备的登录态，替换比合并安全）。
+     * 一条都解析不出来时返回 false，且不动现有状态。
+     */
+    fun restore(serialized: String): Boolean {
+        val restored = parse(serialized)
+        if (restored.isEmpty()) return false
+        cookies.clear()
+        cookies.putAll(restored)
+        persist()
+        return true
+    }
+
+    private fun parse(data: String?): Map<String, Cookie> {
+        val result = LinkedHashMap<String, Cookie>()
+        data?.lineSequence()?.forEach { line ->
+            val parts = line.split('\t')
+            if (parts.size >= 5) {
+                runCatching {
+                    val builder = Cookie.Builder()
+                        .name(parts[0])
+                        .value(parts[1])
+                        .domain(parts[2].removePrefix(".").ifBlank { "bilibili.com" })
+                        .path(parts[3].ifBlank { "/" })
+                    if (parts[4].toLongOrNull()?.let { it > 0 } == true) {
+                        builder.expiresAt(parts[4].toLong())
+                    }
+                    val cookie = builder.build()
+                    if (cookie.name.isNotBlank()) result[cookie.name] = cookie
+                }
+            }
         }
-        prefs.edit().putString(KEY_COOKIES, data).apply()
+        return result
+    }
+
+    private fun serialize(): String = cookies.values.joinToString("\n") {
+        listOf(
+            it.name,
+            it.value,
+            it.domain,
+            it.path,
+            if (it.expiresAt == Long.MAX_VALUE) "0" else it.expiresAt.toString(),
+        ).joinToString("\t")
+    }
+
+    private fun persist() {
+        prefs.edit().putString(KEY_COOKIES, serialize()).apply()
     }
 
     private companion object {

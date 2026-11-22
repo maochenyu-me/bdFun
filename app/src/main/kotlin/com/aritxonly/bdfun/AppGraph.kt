@@ -90,6 +90,22 @@ object AppGraph {
     internal suspend fun refreshSession() = checkNotNull(container) { "AppGraph 尚未初始化" }.sessionController.refresh()
     internal fun logout() = checkNotNull(container) { "AppGraph 尚未初始化" }.sessionController.logout()
 
+    /** 设置备份：字段注册表来自设置索引，登录态走 cookie jar，写回统一 flush 浮点设置。 */
+    internal fun settingsBackupController(): com.aritxonly.bdfun.feature.settings.application.SettingsBackupController {
+        val settings = checkNotNull(container) { "AppGraph 尚未初始化" }.settings
+        return com.aritxonly.bdfun.feature.settings.application.SettingsBackupController(
+            index = settings.settingsIndex,
+            repository = settings,
+            mineLayout = mineLayout,
+            codec = com.aritxonly.bdfun.infra.storage.JsonSettingsBackupCodec(),
+            session = api.sessionBackup(),
+            appVersion = BuildConfig.VERSION_NAME,
+            now = System::currentTimeMillis,
+            flush = settings::flushSettings,
+            refreshSession = { refreshSession() },
+        )
+    }
+
     @Synchronized
     fun init(api: BiliApi, settings: SettingsStore, context: Context? = null) {
         context?.let { com.aritxonly.bdfun.di.installAppImageLoader(it) }
