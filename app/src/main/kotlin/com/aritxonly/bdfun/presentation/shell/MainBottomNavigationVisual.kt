@@ -20,8 +20,6 @@ internal data class MainBottomNavigationVisual(
     val tabBarCovered: Boolean, val tabBarAlpha: Float, val barSelectedColor: Color,
     val discSlot: Float, val discShift: androidx.compose.ui.unit.Dp,
     val discEndPadding: androidx.compose.ui.unit.Dp, val discBottomOffset: androidx.compose.ui.unit.Dp,
-    /** 经典贴边底栏右侧要让给唱片的宽度；浮动胶囊不用它（靠 discShift 平移）。 */
-    val discEndReserve: androidx.compose.ui.unit.Dp = 0.dp,
 )
 
 @Composable
@@ -53,7 +51,7 @@ internal fun rememberMainBottomNavigationVisual(
     // 有唱片时，底栏 + 8dp 缝隙 + 唱片作为“一组”整体居中，
     // 底栏离屏幕左边的距离 = 唱片离屏幕右边的距离，所以整条栏左移半个唱片位。
     // 经典样式：底栏是整条贴边，平移会把最左的 Tab 推出屏幕、右侧露底，
-    // 因此改成只压缩 Tab 行右侧留白（discEndReserve），玻璃背景仍整条铺满。
+    // 因此整条栏一像素都不挪；唱片改由 DiscPlacement 抬到栏上方（bottomOffset 为负）。
     val windowWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val tabBarWidth = minOf(
         TeakFloatingTabBarDefaults.MaximumWidth,
@@ -75,12 +73,9 @@ internal fun rememberMainBottomNavigationVisual(
     }
     // 所有页面的唱片位置统一由 rememberDiscPlacement 计算，保证和首页一致。
     val discEndPadding = if (wideNavigation) 16.dp else discPlacement.endPadding
-    // 经典底栏里唱片占的整块宽度：右侧内边距 + 唱片 + 缝隙，随弹簧一起收放。
-    val discEndReserve = if (edgeNavigation) (discEndPadding + discWidth + discGap) * discSlot else 0.dp
     val discBottomOffset = discPlacement.bottomOffset
 
     return MainBottomNavigationVisual(
         tabBarCovered, tabBarAlpha, barSelectedColor, discSlot, discShift, discEndPadding, discBottomOffset,
-        discEndReserve,
     )
 }
