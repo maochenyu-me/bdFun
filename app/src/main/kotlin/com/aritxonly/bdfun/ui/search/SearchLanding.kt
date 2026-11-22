@@ -17,6 +17,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun SearchLanding(
     history: List<String>,
     hot: List<String>,
+    hotFirst: Boolean,
     query: String,
     suggestions: List<String>,
     onPickKeyword: (String) -> Unit,
@@ -41,8 +42,17 @@ internal fun SearchLanding(
             searchSuggestionItems(suggestions, colors, onPickKeyword)
             return@LazyColumn
         }
-        searchHistoryItems(history, colors, onPickKeyword, onClearHistory)
-        searchHotItems(hot, colors, onPickKeyword)
+        // 顺序由设置「热搜排在搜索记录上方」决定；两块都在时才需要中间间距。
+        val gap = history.isNotEmpty() && hot.isNotEmpty()
+        if (hotFirst) {
+            searchHotItems(hot, colors, onPickKeyword)
+            if (gap) searchLandingGap()
+            searchHistoryItems(history, colors, onPickKeyword, onClearHistory)
+        } else {
+            searchHistoryItems(history, colors, onPickKeyword, onClearHistory)
+            if (gap) searchLandingGap()
+            searchHotItems(hot, colors, onPickKeyword)
+        }
 
     }
     }

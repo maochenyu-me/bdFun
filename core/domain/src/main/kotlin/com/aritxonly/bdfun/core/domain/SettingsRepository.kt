@@ -111,6 +111,8 @@ interface GeneralSettings {
     var recommendWeb: Boolean
     var showViewerCount: Boolean
     var showHotSearch: Boolean
+    /** 搜索首页把热搜排在搜索记录上方；关闭则搜索记录在上、热搜在下。 */
+    var searchHotFirst: Boolean
     var autoCheckUpdate: Boolean
     var onboardingAcked: Boolean
     var termsAckedVersion: String

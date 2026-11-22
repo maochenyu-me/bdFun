@@ -21,6 +21,7 @@ internal fun SearchOverlayContent(
         SearchLanding(
             history = ui.history,
             hot = if (settings.showHotSearch) content.hotKeywords else emptyList(),
+            hotFirst = settings.searchHotFirst,
             query = query,
             suggestions = content.suggestions,
             onPickKeyword = { word ->

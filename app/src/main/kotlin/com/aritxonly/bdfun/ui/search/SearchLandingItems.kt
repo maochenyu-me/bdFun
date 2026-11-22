@@ -100,7 +100,6 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.searchHistoryItems(
                     }
                 }
             }
-            Spacer(Modifier.height(18.dp))
         }
     }
 
@@ -132,3 +131,8 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.searchHotItems(
             }
         }
     }}
+
+/** 热搜与搜索记录之间的块间距；顺序可调，间距跟着前者走，与排列方向无关。 */
+internal fun androidx.compose.foundation.lazy.LazyListScope.searchLandingGap() {
+    item(key = "landing-gap") { Spacer(Modifier.height(18.dp)) }
+}

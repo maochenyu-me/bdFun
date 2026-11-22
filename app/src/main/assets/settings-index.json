@@ -711,6 +711,13 @@
             "type": "switch",
             "title": "显示热搜",
             "default": true
+          },
+          {
+            "pref_name": "search_hot_first",
+            "type": "switch",
+            "title": "热搜排在搜索记录上方",
+            "subtitle": "关闭后搜索记录在上、热搜在下。",
+            "default": true
           }
         ]
       }

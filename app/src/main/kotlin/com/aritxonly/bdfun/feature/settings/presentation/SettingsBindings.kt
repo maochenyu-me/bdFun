@@ -99,6 +99,7 @@ open class SettingsBindings internal constructor(
     override var showIpLocation: Boolean by projection.property("showIpLocationState", { controller.showIpLocation }, { controller.showIpLocation = it })
     override var showViewerCount: Boolean by projection.property("showViewerCountState", { controller.showViewerCount }, { controller.showViewerCount = it })
     override var showHotSearch: Boolean by projection.property("showHotSearchState", { controller.showHotSearch }, { controller.showHotSearch = it })
+    override var searchHotFirst: Boolean by projection.property("searchHotFirstState", { controller.searchHotFirst }, { controller.searchHotFirst = it })
     override var autoCheckUpdate: Boolean by projection.property("autoCheckUpdateState", { controller.autoCheckUpdate }, { controller.autoCheckUpdate = it })
     override var onboardingAcked: Boolean by projection.property("onboardingAcked", { controller.onboardingAcked }, { controller.onboardingAcked = it })
     override var termsAckedVersion: String by projection.property("termsAckedVersionState", { controller.termsAckedVersion }, { controller.termsAckedVersion = it })

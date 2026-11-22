@@ -44,6 +44,17 @@ globalThis.SETTINGS_SEPERATION = [
     ]
   },
   {
+    "id": "data",
+    "title": "数据",
+    "entries": [
+      {
+        "route": "settings/backup",
+        "icon": "Settings",
+        "color": "#5E5CE6"
+      }
+    ]
+  },
+  {
     "id": "about",
     "title": "应用信息",
     "entries": [

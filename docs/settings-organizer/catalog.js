@@ -605,6 +605,13 @@ window.SETTINGS_CATALOG = [
             "type": "switch",
             "title": "显示评论 IP 属地",
             "default": true
+          },
+          {
+            "pref_name": "video_interaction",
+            "type": "switch",
+            "title": "视频互动",
+            "subtitle": "播放器内的弹幕投票 / 评分 / 关注等互动卡片；关闭后不再显示",
+            "default": true
           }
         ]
       }
@@ -617,14 +624,6 @@ window.SETTINGS_CATALOG = [
       {
         "title": "首页推荐",
         "settings": [
-          {
-            "pref_name": "home_channels",
-            "type": "action",
-            "title": "首页频道",
-            "subtitle": "选择首页显示的频道，推荐始终开启",
-            "storage": "none",
-            "default": ""
-          },
           {
             "pref_name": "home_card_style",
             "type": "dropdown",
@@ -713,6 +712,13 @@ window.SETTINGS_CATALOG = [
             "type": "switch",
             "title": "显示热搜",
             "default": true
+          },
+          {
+            "pref_name": "search_hot_first",
+            "type": "switch",
+            "title": "热搜排在搜索记录上方",
+            "subtitle": "关闭后搜索记录在上、热搜在下。",
+            "default": true
           }
         ]
       }
@@ -751,6 +757,55 @@ window.SETTINGS_CATALOG = [
             "type": "switch",
             "title": "显示「我的评论与弹幕」入口",
             "default": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "备份与恢复",
+    "route": "settings/backup",
+    "icon": "Settings",
+    "groups": [
+      {
+        "title": "导出",
+        "settings": [
+          {
+            "pref_name": "backup_include_session",
+            "type": "extension",
+            "title": "包含 B 站登录态",
+            "subtitle": "一并保存当前账号的登录凭据，文件需口令加密",
+            "storage": "none",
+            "default": "",
+            "visible_when": "logged_in"
+          },
+          {
+            "pref_name": "backup_export",
+            "type": "extension",
+            "title": "导出到文件",
+            "subtitle": "设置项、我的页布局与搜索历史",
+            "storage": "none",
+            "default": ""
+          }
+        ]
+      },
+      {
+        "title": "恢复",
+        "settings": [
+          {
+            "pref_name": "backup_import",
+            "type": "extension",
+            "title": "从文件导入",
+            "subtitle": "只覆盖文件里包含的项，其余保持现状",
+            "storage": "none",
+            "default": ""
+          },
+          {
+            "pref_name": "backup_status",
+            "type": "extension",
+            "title": "上次操作",
+            "storage": "none",
+            "default": ""
           }
         ]
       }
@@ -831,13 +886,6 @@ window.SETTINGS_CATALOG = [
             "pref_name": "help",
             "type": "action",
             "title": "帮助中心",
-            "storage": "none",
-            "default": ""
-          },
-          {
-            "pref_name": "donation",
-            "type": "action",
-            "title": "捐赠",
             "storage": "none",
             "default": ""
           },
