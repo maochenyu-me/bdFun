@@ -78,8 +78,10 @@ class JsonSettingsIndexCodecTest {
         val result = codec.decode(file.readText())
         assertTrue(result.toString(), result is SettingsIndexImport.Success)
         val index = SettingsIndex((result as SettingsIndexImport.Success).categories)
-        // 索引项总数：早期 67 项 + 自适应缓冲/独立后台播放入口/预测性返回等，再 + 备份与恢复页四行。
-        assertEquals(75, index.settings.size)
+        // 索引项总数：早期 67 项 + 自适应缓冲/独立后台播放入口/预测性返回等 + 备份与恢复页四行
+        // + 首页推荐四行（保留旧推荐/上次刷新提示/定位停留时间/撤销刷新）；
+        // 2026-11-22 上游另有新增设置项与贡献者 maochenyu-me，合并后总数为 85。
+        assertEquals(85, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)
     }
 }
