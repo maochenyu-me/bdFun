@@ -193,6 +193,10 @@ private fun HomeSectionContent(
             cardStyle = settings.homeCardStyle,
             interactive = interactive,
             topBarHeight = topBarHeight,
+            hero = com.aritxonly.bdfun.feature.home.presentation.HomeHeroOptions(
+                enabled = settings.homeHeroCarousel,
+                autoplay = settings.homeHeroCarouselAutoplay,
+            ),
         )
     }
 }

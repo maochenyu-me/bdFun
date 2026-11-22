@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,9 +29,13 @@ internal fun HomeVideoGrid(
     width: androidx.compose.ui.unit.Dp, statusBarTop: androidx.compose.ui.unit.Dp,
     ui: HomePresentationStateHolder, refreshConnection: NestedScrollConnection,
     scope: kotlinx.coroutines.CoroutineScope, onOpenVideo: (VideoItem) -> Unit, host: HomePresentationHost,
+    heroOptions: HomeHeroOptions,
 ) {
     // 哔哩哔哩布局的分段 Tab 和首行卡片之间再多留 5dp，和原版间距对齐。
     val sectionGap = if (TeakUiStyle.current == TeakStyle.Official) 5.dp else 0.dp
+    val hero = remember(state.videos, heroOptions.enabled) {
+        if (heroOptions.enabled) selectHomeHeroVideos(state.videos) else emptyList()
+    }
     LazyVerticalGrid(
         columns = if (width >= 600.dp) host.gridCells(180.dp, 260.dp) else GridCells.Fixed(if (largeCards) 1 else 2),
         state = state.gridState,
@@ -51,7 +56,20 @@ internal fun HomeVideoGrid(
         if (state.loading && state.videos.isEmpty()) {
             homeFeedSkeletonItems()
         }
-        homeVideoItems(state, largeCards, ui, onOpenVideo, host)
+        if (hero.isNotEmpty()) {
+            item(key = "hero", span = { GridItemSpan(maxLineSpan) }) {
+                HomeHeroCarousel(
+                    videos = hero,
+                    autoplay = heroOptions.autoplay,
+                    onOpen = { video ->
+                        state.open(video)
+                        onOpenVideo(video)
+                    },
+                    preview = host.heroPreview,
+                )
+            }
+        }
+        homeVideoItems(state, hero, largeCards, ui, onOpenVideo, host)
         if (state.videos.isNotEmpty()) {
             item(key = "footer", span = { GridItemSpan(maxLineSpan) }) { HomeFeedFooter(state, scope) }
         }

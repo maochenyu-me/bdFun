@@ -14,6 +14,12 @@ internal class GeneralSettingsStateHolder(
 
     private val recommendWebState = stateCell("recommendWebState", prefs.getBoolean("recommend_web", false))
 
+    private val homeHeroCarouselState = stateCell("homeHeroCarouselState", prefs.getBoolean("home_hero_carousel", true))
+
+    private val homeHeroCarouselAutoplayState = stateCell("homeHeroCarouselAutoplayState",
+        prefs.getBoolean("home_hero_carousel_autoplay", false),
+    )
+
     private val showViewerCountState = stateCell("showViewerCountState", prefs.getBoolean("show_viewer_count", true))
 
     private val showHotSearchState = stateCell("showHotSearchState", prefs.getBoolean("show_hot_search", true))
@@ -62,6 +68,20 @@ internal class GeneralSettingsStateHolder(
         set(value) {
             recommendWebState.value = value
             prefs.edit().putBoolean("recommend_web", value).apply()
+        }
+
+    override var homeHeroCarousel: Boolean
+        get() = homeHeroCarouselState.value
+        set(value) {
+            homeHeroCarouselState.value = value
+            prefs.edit().putBoolean("home_hero_carousel", value).apply()
+        }
+
+    override var homeHeroCarouselAutoplay: Boolean
+        get() = homeHeroCarouselAutoplayState.value
+        set(value) {
+            homeHeroCarouselAutoplayState.value = value
+            prefs.edit().putBoolean("home_hero_carousel_autoplay", value).apply()
         }
 
     override var showViewerCount: Boolean

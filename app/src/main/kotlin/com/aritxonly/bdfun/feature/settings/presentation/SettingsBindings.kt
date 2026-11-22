@@ -96,6 +96,8 @@ open class SettingsBindings internal constructor(
     override var dynamicAutoPlayQuality: Int by projection.property("dynamicAutoPlayQualityState", { controller.dynamicAutoPlayQuality }, { controller.dynamicAutoPlayQuality = it })
     override var bluetoothLatencyEnabled: Boolean by projection.property("btLatencyEnabledState", { controller.bluetoothLatencyEnabled }, { controller.bluetoothLatencyEnabled = it })
     override var recommendWeb: Boolean by projection.property("recommendWebState", { controller.recommendWeb }, { controller.recommendWeb = it })
+    override var homeHeroCarousel: Boolean by projection.property("homeHeroCarouselState", { controller.homeHeroCarousel }, { controller.homeHeroCarousel = it })
+    override var homeHeroCarouselAutoplay: Boolean by projection.property("homeHeroCarouselAutoplayState", { controller.homeHeroCarouselAutoplay }, { controller.homeHeroCarouselAutoplay = it })
     override var showIpLocation: Boolean by projection.property("showIpLocationState", { controller.showIpLocation }, { controller.showIpLocation = it })
     override var showViewerCount: Boolean by projection.property("showViewerCountState", { controller.showViewerCount }, { controller.showViewerCount = it })
     override var showHotSearch: Boolean by projection.property("showHotSearchState", { controller.showHotSearch }, { controller.showHotSearch = it })

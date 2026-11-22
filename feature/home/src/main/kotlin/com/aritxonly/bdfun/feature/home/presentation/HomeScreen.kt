@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.aritxonly.bdfun.core.model.video.VideoItem
 
 @Composable
-fun HomeScreen(state: HomeFeedState, onOpenVideo: (VideoItem) -> Unit, cardStyle: Int = 0, host: HomePresentationHost, interactive: Boolean = true) {
+fun HomeScreen(state: HomeFeedState, onOpenVideo: (VideoItem) -> Unit, cardStyle: Int = 0, host: HomePresentationHost, interactive: Boolean = true, hero: HomeHeroOptions = HomeHeroOptions()) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val ui = remember { HomePresentationStateHolder() }
@@ -45,7 +45,7 @@ fun HomeScreen(state: HomeFeedState, onOpenVideo: (VideoItem) -> Unit, cardStyle
     HomeExposureEffect(state, interactive && ui.actionVideo == null)
     val refreshConnection = remember(state) { pull.connection() }
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        HomeVideoGrid(state, cardStyle == 1, maxWidth, statusBarTop, ui, refreshConnection, scope, onOpenVideo, host)
+        HomeVideoGrid(state, cardStyle == 1, maxWidth, statusBarTop, ui, refreshConnection, scope, onOpenVideo, host, hero)
         HomeFeedStatus(state, scope, host)
     }
     HomeVideoActions(

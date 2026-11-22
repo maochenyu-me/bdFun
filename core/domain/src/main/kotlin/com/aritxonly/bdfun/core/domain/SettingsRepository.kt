@@ -109,6 +109,10 @@ interface GeneralSettings {
     var smartRefresh: Boolean
     var notifAsked: Boolean
     var recommendWeb: Boolean
+    /** 推荐页顶部显示官方比例的视频封面轮播；关闭则直接显示普通视频流。 */
+    var homeHeroCarousel: Boolean
+    /** 轮播默认静音循环播放；关闭时只展示封面，点开后进入视频详情。 */
+    var homeHeroCarouselAutoplay: Boolean
     var showViewerCount: Boolean
     var showHotSearch: Boolean
     /** 搜索首页把热搜排在搜索记录上方；关闭则搜索记录在上、热搜在下。 */

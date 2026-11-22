@@ -10,8 +10,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-internal fun InlineVideoSurface(textureView: TextureView, videoAspect: Float, modifier: Modifier) {
-    Box(modifier = modifier.background(Color.Black), contentAlignment = Alignment.Center) {
+internal fun InlineVideoSurface(
+    textureView: TextureView, videoAspect: Float, modifier: Modifier,
+    /** 首页轮播叠在封面上，用透明底色避免遮挡封面。 */
+    background: Color = Color.Black,
+) {
+    Box(modifier = modifier.background(background), contentAlignment = Alignment.Center) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             val containerAspect = maxWidth / maxHeight
             val videoModifier = if (videoAspect >= containerAspect) {

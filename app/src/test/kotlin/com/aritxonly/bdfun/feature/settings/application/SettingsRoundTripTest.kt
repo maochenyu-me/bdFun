@@ -86,6 +86,8 @@ class SettingsRoundTripTest(private val case: SettingCase<*>) {
             SettingCase("dynamicAutoPlayQuality", 64, 80, { it.dynamicAutoPlayQuality }, { s, v -> s.dynamicAutoPlayQuality = v }),
             SettingCase("bluetoothLatencyEnabled", false, true, { it.bluetoothLatencyEnabled }, { s, v -> s.bluetoothLatencyEnabled = v }),
             SettingCase("recommendWeb", false, true, { it.recommendWeb }, { s, v -> s.recommendWeb = v }),
+            SettingCase("homeHeroCarousel", true, false, { it.homeHeroCarousel }, { s, v -> s.homeHeroCarousel = v }),
+            SettingCase("homeHeroCarouselAutoplay", false, true, { it.homeHeroCarouselAutoplay }, { s, v -> s.homeHeroCarouselAutoplay = v }),
             SettingCase("showIpLocation", true, false, { it.showIpLocation }, { s, v -> s.showIpLocation = v }),
             SettingCase("showViewerCount", true, false, { it.showViewerCount }, { s, v -> s.showViewerCount = v }),
             SettingCase("showHotSearch", true, false, { it.showHotSearch }, { s, v -> s.showHotSearch = v }),

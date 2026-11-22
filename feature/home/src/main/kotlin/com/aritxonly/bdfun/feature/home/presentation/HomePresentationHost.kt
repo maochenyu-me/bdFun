@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import com.aritxonly.bdfun.core.model.video.VideoItem
 
@@ -18,4 +19,6 @@ class HomePresentationHost(
     val onMessage: (String) -> Unit,
     val onEnter: () -> Unit,
     val onExit: () -> Unit,
+    /** 顶部轮播的静音预览，由壳注入内联播放器；纯封面模式不会调用。 */
+    val heroPreview: @Composable (VideoItem, Modifier) -> Unit = { _, _ -> },
 )

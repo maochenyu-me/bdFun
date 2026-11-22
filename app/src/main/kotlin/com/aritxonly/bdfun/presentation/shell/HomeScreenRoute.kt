@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.aritxonly.bdfun.core.model.video.VideoItem
 import com.aritxonly.bdfun.feature.home.presentation.HomeFeedState
+import com.aritxonly.bdfun.feature.home.presentation.HomeHeroOptions
 import com.aritxonly.bdfun.feature.home.presentation.HomePresentationHost
 import com.aritxonly.bdfun.feature.home.presentation.HomeScreen
 import com.aritxonly.bdfun.ui.*
@@ -17,6 +18,7 @@ internal fun HomeScreenRoute(
     cardStyle: Int = 0,
     interactive: Boolean = true,
     topBarHeight: androidx.compose.ui.unit.Dp = HomeTopBarHeight,
+    hero: HomeHeroOptions = HomeHeroOptions(),
 ) {
     val context = LocalContext.current
     val host = remember(context, topBarHeight) {
@@ -28,7 +30,8 @@ internal fun HomeScreenRoute(
             onMessage = { context.showToast(it) },
             onEnter = { if (BuildConfig.DEBUG) com.aritxonly.bdfun.data.LiveCounters.homeInstances++ },
             onExit = { if (BuildConfig.DEBUG) com.aritxonly.bdfun.data.LiveCounters.homeInstances-- },
+            heroPreview = { video, modifier -> HomeHeroPreview(video, modifier) },
         )
     }
-    HomeScreen(state, onOpenVideo, cardStyle, host, interactive)
+    HomeScreen(state, onOpenVideo, cardStyle, host, interactive, hero)
 }

@@ -640,6 +640,20 @@
             ]
           },
           {
+            "pref_name": "home_hero_carousel",
+            "type": "switch",
+            "title": "首页顶部轮播封面",
+            "subtitle": "推荐页顶部显示官方比例的视频封面轮播；关闭后直接显示普通视频流",
+            "default": true
+          },
+          {
+            "pref_name": "home_hero_carousel_autoplay",
+            "type": "switch",
+            "title": "轮播默认播放",
+            "subtitle": "轮播视频出现在屏幕上时静音循环播放；默认只展示封面，点开后进入视频详情",
+            "default": false
+          },
+          {
             "pref_name": "recommend_web",
             "type": "switch",
             "title": "首页使用 Web 端推荐",
