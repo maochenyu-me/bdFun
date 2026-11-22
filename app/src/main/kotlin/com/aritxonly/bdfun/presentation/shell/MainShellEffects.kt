@@ -16,9 +16,8 @@ internal fun MainShellEffects(settings: SettingsBindings, shell: MainShellState)
     val selected = tabPagerState.currentPage
     // 首页在开屏下面先组合好（网络同时开跑），开屏淡出即交叉淡化进入首页，不白屏。
     // 后台播放时，从首页按返回不结束 App：整个任务收到后台，声音继续。
-    // 必须最先注册：BackHandler 后注册者优先收到返回事件，注册在这里可以让
-    // 搜索、覆盖层等更靠内的返回逻辑先消费，都没消费时才把任务后台化。
-    // 否则有声音在放时，搜索页按返回会直接掉回桌面，而不是退回上一级页面。
+    // 必须最先注册：BackHandler 后注册者优先收到返回事件，注册在这里，搜索与覆盖层
+    // 这些更靠内的返回逻辑才能先消费；否则有声音在放时，搜索页按返回会直接掉回桌面。
     androidx.activity.compose.BackHandler(
         enabled = !ui.showSearch &&
             !shell.bottom.showBottomSearch &&
