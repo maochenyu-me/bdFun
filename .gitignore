@@ -35,6 +35,8 @@ _batch_stash/
 *.p12
 keystore.properties
 signing.properties
+# 本地签名目录（含密钥与说明，禁止进仓库）
+/keystore/
 
 # Generated configs
 .gradle-cache/
