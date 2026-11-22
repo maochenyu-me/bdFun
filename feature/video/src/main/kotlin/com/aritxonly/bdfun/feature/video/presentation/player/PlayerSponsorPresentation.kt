@@ -6,8 +6,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.aritxonly.bdfun.core.domain.SponsorPreferences
 import com.aritxonly.bdfun.core.domain.SponsorSkipAction
-import com.aritxonly.bdfun.core.domain.sponsorSkipAction
 import com.aritxonly.bdfun.core.model.video.SponsorSegment
 import com.aritxonly.bdfun.feature.video.application.PlaybackTrackingStateHolder
 
@@ -25,16 +25,19 @@ private class PlayerSponsorUiStateHolder {
 
 @Composable
 fun rememberPlayerSponsor(
-    bvid: String, tracking: PlaybackTrackingStateHolder, observed: PlayerObservedStateHolder, sponsorSkipMode: () -> Int,
+    bvid: String, tracking: PlaybackTrackingStateHolder, observed: PlayerObservedStateHolder,
+    sponsorPreferences: () -> SponsorPreferences,
 ): PlayerSponsorPresentation {
     val state by tracking.state.collectAsState()
     val ui = remember(bvid) { PlayerSponsorUiStateHolder() }
     val dismissed by ui.dismissed
-    val action = sponsorSkipAction(sponsorSkipMode())
+    // 组合期读一次：设置投影是 snapshot 读，改设置会自然触发重组。
+    val preferences = sponsorPreferences()
+    val action = preferences.action
     val enabled = action != SponsorSkipAction.Off
     LaunchedEffect(bvid, enabled) { tracking.loadSegments(bvid, enabled) }
     val positionMs by observed.positionMs
-    val active = tracking.activeSegment(state, bvid, positionMs, dismissed).takeIf { enabled }
+    val active = tracking.activeSegment(state, bvid, positionMs, dismissed, preferences).takeIf { enabled }
     return PlayerSponsorPresentation(
         prompt = active.takeIf { action == SponsorSkipAction.Prompt },
         autoSkip = active.takeIf { action == SponsorSkipAction.Auto },

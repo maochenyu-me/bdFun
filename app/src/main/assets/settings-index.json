@@ -482,27 +482,6 @@
         "title": "弹幕",
         "settings": [
           {
-            "pref_name": "sponsor_skip_mode",
-            "type": "dropdown",
-            "title": "空降助手",
-            "subtitle": "提示片段，或进入片段后自动跳到结尾",
-            "default": 1,
-            "options": [
-              {
-                "title": "关闭",
-                "value": 0
-              },
-              {
-                "title": "提示",
-                "value": 1
-              },
-              {
-                "title": "自动跳过",
-                "value": 2
-              }
-            ]
-          },
-          {
             "pref_name": "hot_danmaku",
             "type": "switch",
             "title": "弹幕计数",
@@ -581,6 +560,139 @@
             "title": "呼吸灯颜色跟随封面",
             "default": false,
             "visible_when": "show_disc_after_video&&exit_video_control=1&&disc_breath_enabled"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "空降助手",
+    "route": "settings/sponsor",
+    "groups": [
+      {
+        "title": "跳过行为",
+        "settings": [
+          {
+            "pref_name": "sponsor_skip_mode",
+            "type": "dropdown",
+            "title": "跳过方式",
+            "subtitle": "提示片段，或进入片段后自动跳到结尾",
+            "default": 1,
+            "options": [
+              {
+                "title": "关闭",
+                "value": 0
+              },
+              {
+                "title": "提示",
+                "value": 1
+              },
+              {
+                "title": "自动跳过",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "pref_name": "sponsor_min_duration",
+            "type": "dropdown",
+            "title": "最短片段时长",
+            "subtitle": "短于该时长的片段不处理",
+            "default": 0,
+            "options": [
+              {
+                "title": "不限",
+                "value": 0
+              },
+              {
+                "title": "1 秒",
+                "value": 1
+              },
+              {
+                "title": "2 秒",
+                "value": 2
+              },
+              {
+                "title": "3 秒",
+                "value": 3
+              },
+              {
+                "title": "5 秒",
+                "value": 5
+              },
+              {
+                "title": "10 秒",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "pref_name": "sponsor_skip_notice",
+            "type": "switch",
+            "title": "跳过时提示",
+            "subtitle": "自动跳过时弹出一条简短提示",
+            "default": true
+          }
+        ]
+      },
+      {
+        "title": "片段类别",
+        "settings": [
+          {
+            "pref_name": "sponsor_cat_sponsor",
+            "type": "switch",
+            "title": "赞助广告",
+            "subtitle": "视频中插入的广告片段",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_selfpromo",
+            "type": "switch",
+            "title": "自我推广",
+            "subtitle": "UP 主为自己其他内容做的推广",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_intro",
+            "type": "switch",
+            "title": "开场动画",
+            "subtitle": "片头曲、开场白等片段",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_outro",
+            "type": "switch",
+            "title": "片尾动画",
+            "subtitle": "片尾致谢、结束动画等片段",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_interaction",
+            "type": "switch",
+            "title": "互动提醒",
+            "subtitle": "请求点赞、投币、关注的片段",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_preview",
+            "type": "switch",
+            "title": "预告回顾",
+            "subtitle": "下集预告或前情回顾",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_filler",
+            "type": "switch",
+            "title": "无关填充",
+            "subtitle": "与视频主题无关的填充内容",
+            "default": true
+          },
+          {
+            "pref_name": "sponsor_cat_music",
+            "type": "switch",
+            "title": "非音乐部分",
+            "subtitle": "音乐视频中非演奏的部分",
+            "default": true
           }
         ]
       }

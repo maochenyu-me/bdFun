@@ -22,8 +22,13 @@ class PlaybackTrackingStateHolder(
     private val mutableState = MutableStateFlow(PlaybackTrackingState())
     val state = mutableState.asStateFlow()
     private var segmentRevision = 0L
-    fun activeSegment(snapshot: PlaybackTrackingState, bvid: String, positionMs: Long, dismissed: Set<String>): SponsorSegment? =
-        activeSponsorSegmentAt(if (snapshot.bvid == bvid) snapshot.segments else emptyList(), positionMs, dismissed)
+    fun activeSegment(
+        snapshot: PlaybackTrackingState, bvid: String, positionMs: Long, dismissed: Set<String>,
+        preferences: SponsorPreferences? = null,
+    ): SponsorSegment? =
+        activeSponsorSegmentAt(
+            if (snapshot.bvid == bvid) snapshot.segments else emptyList(), positionMs, dismissed, preferences,
+        )
 
     suspend fun loadSegments(bvid: String, enabled: Boolean) {
         val version = ++segmentRevision

@@ -20,6 +20,11 @@
         "color": "#3482FF"
       },
       {
+        "route": "settings/sponsor",
+        "icon": "Promotions",
+        "color": "#FF375F"
+      },
+      {
         "route": "settings/video",
         "icon": "Messages",
         "color": "#30B961"

@@ -18,6 +18,7 @@ internal fun SettingsCategoryIcon(entry: SettingsEntry) {
     val icon = when (entry.icon) {
         "Background" -> MiuixIcons.Background
         "Play" -> MiuixIcons.Play
+        "Promotions" -> MiuixIcons.Promotions
         "Messages" -> MiuixIcons.Messages
         "Home" -> MiuixIcons.Home
         "ContactsCircle" -> MiuixIcons.ContactsBook

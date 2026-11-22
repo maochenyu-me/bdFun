@@ -17,7 +17,9 @@ class SettingsSeperationIndex(val groups: List<SettingsSeperation>, index: Setti
             }
         }
     }
-    companion object { val Icons = setOf("Background", "Play", "Messages", "Home", "ContactsCircle", "Info", "Settings") }
+    companion object {
+        val Icons = setOf("Background", "Play", "Promotions", "Messages", "Home", "ContactsCircle", "Info", "Settings")
+    }
 }
 
 interface SettingsSeperationCodec {

@@ -8,12 +8,12 @@ import java.io.File
 class JsonSettingsSeperationCodecTest {
     private fun index(): SettingsIndex = SettingsIndex((JsonSettingsIndexCodec().decode(
         File("../../app/src/main/assets/settings-index.json").readText()) as SettingsIndexImport.Success).categories)
-    @Test fun bundledSeperationCoversAllSevenPagesInFiveGroups() {
+    @Test fun bundledSeperationCoversAllEightPagesInFiveGroups() {
         val decoded = JsonSettingsSeperationCodec().decode(File("../../app/src/main/assets/settings-seperation.json").readText(), index())
         assertTrue(decoded.toString(), decoded is SettingsSeperationImport.Success)
         val groups = (decoded as SettingsSeperationImport.Success).index.groups
         assertEquals(5, groups.size)
-        assertEquals(7, groups.sumOf { it.entries.size })
+        assertEquals(8, groups.sumOf { it.entries.size })
     }
     @Test fun malformedOrPartialImportsAreRejectedAtomically() {
         val codec = JsonSettingsSeperationCodec()

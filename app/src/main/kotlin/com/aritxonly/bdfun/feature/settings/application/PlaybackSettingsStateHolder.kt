@@ -111,6 +111,14 @@ internal class PlaybackSettingsStateHolder(
 
     private val sponsorSkipModeState = stateCell("sponsorSkipModeState", prefs.getInt("sponsor_skip_mode", 1))
 
+    private val sponsorMinimumDurationState =
+        stateCell("sponsorMinimumDurationState", prefs.getInt("sponsor_min_duration", 0))
+
+    private val sponsorSkipNoticeState = stateCell("sponsorSkipNoticeState", prefs.getBoolean("sponsor_skip_notice", true))
+
+    private val sponsorCategoriesState =
+        stateCell("sponsorCategoriesState", prefs.getStringSet("sponsor_categories", null) ?: SPONSOR_CATEGORIES.toSet())
+
     private val btLatencyMsState = stateCell("btLatencyMsState", prefs.getInt("bt_latency_ms", 100))
 
     /** 「我的」页底部「我的评论与弹幕」入口是否显示（默认显示）。 */
@@ -333,6 +341,30 @@ internal class PlaybackSettingsStateHolder(
         set(value) {
             sponsorSkipModeState.value = value.coerceIn(0, 2)
             prefs.edit().putInt("sponsor_skip_mode", sponsorSkipModeState.value).apply()
+        }
+
+    /** 0 表示不限时长；上限 60 秒只是防脏数据，设置页最大选项是 10 秒。 */
+    override var sponsorMinimumDuration: Int
+        get() = sponsorMinimumDurationState.value.coerceIn(0, 60)
+        set(value) {
+            sponsorMinimumDurationState.value = value.coerceIn(0, 60)
+            prefs.edit().putInt("sponsor_min_duration", sponsorMinimumDurationState.value).apply()
+        }
+
+    override var sponsorSkipNotice: Boolean
+        get() = sponsorSkipNoticeState.value
+        set(value) {
+            sponsorSkipNoticeState.value = value
+            prefs.edit().putBoolean("sponsor_skip_notice", value).apply()
+        }
+
+    /** 类别白名单只保留已知类别，避免旧版本残留或手写脏值让过滤永远命中。 */
+    override var sponsorCategories: Set<String>
+        get() = sponsorCategoriesState.value
+        set(value) {
+            val normalized = value.filterTo(linkedSetOf()) { it in SPONSOR_CATEGORIES }
+            sponsorCategoriesState.value = normalized
+            prefs.edit().putStringSet("sponsor_categories", normalized).apply()
         }
 
     override var bluetoothLatencyMs: Int

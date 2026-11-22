@@ -82,7 +82,8 @@ class JsonSettingsIndexCodecTest {
         // + 首页推荐四行（保留旧推荐/上次刷新提示/定位停留时间/撤销刷新）；
         // 2026-11-22 上游另有新增设置项与贡献者 maochenyu-me，合并后总数为 85。
         // 2026-11-22 贡献者 Moretti815 与 maochenyu-me 是同一人，删掉重复条目后为 84。
-        assertEquals(84, index.settings.size)
+        // 2026-11-22 空降助手独立成页：播放器页移走 1 项，新页带来 11 项，合计 94。
+        assertEquals(94, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)
     }
 }

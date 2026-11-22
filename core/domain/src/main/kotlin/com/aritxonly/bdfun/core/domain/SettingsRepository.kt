@@ -66,6 +66,12 @@ interface PlaybackSettings {
     var progressBarMode: Int
     /** 空降助手：0 关闭 / 1 提示 / 2 自动跳过。 */
     var sponsorSkipMode: Int
+    /** 空降助手：短于该秒数的片段不处理，0 表示不限。 */
+    var sponsorMinimumDuration: Int
+    /** 空降助手：自动跳过时是否弹一条简短提示。 */
+    var sponsorSkipNotice: Boolean
+    /** 空降助手：参与跳过的片段类别白名单。 */
+    var sponsorCategories: Set<String>
     var bluetoothLatencyMs: Int
     var decoderMode: Int
     var codecPreference: String

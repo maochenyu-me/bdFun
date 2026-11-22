@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.feature.settings.application
 
+import com.aritxonly.bdfun.core.domain.SPONSOR_CATEGORIES
 import com.aritxonly.bdfun.core.domain.SettingsRepository
 import com.aritxonly.bdfun.core.model.settings.SettingValue
 
@@ -95,11 +96,35 @@ private fun playbackBindings(repository: SettingsRepository) = mapOf(
         { repository.playback.videoImmersiveStatusBar = (it as SettingValue.Flag).value }),
     "sponsor_skip_mode" to IndexedSettingBinding({ SettingValue.Number(repository.playback.sponsorSkipMode) },
         { repository.playback.sponsorSkipMode = (it as SettingValue.Number).value }),
+    "sponsor_min_duration" to IndexedSettingBinding({ SettingValue.Number(repository.playback.sponsorMinimumDuration) },
+        { repository.playback.sponsorMinimumDuration = (it as SettingValue.Number).value }),
+    "sponsor_skip_notice" to IndexedSettingBinding({ SettingValue.Flag(repository.playback.sponsorSkipNotice) },
+        { repository.playback.sponsorSkipNotice = (it as SettingValue.Flag).value }),
     "dynamic_auto_play" to IndexedSettingBinding({ SettingValue.Flag(repository.playback.dynamicAutoPlay) },
         { repository.playback.dynamicAutoPlay = (it as SettingValue.Flag).value }),
     "dynamic_auto_play_quality" to IndexedSettingBinding({ SettingValue.Number(repository.playback.dynamicAutoPlayQuality) },
         { repository.playback.dynamicAutoPlayQuality = (it as SettingValue.Number).value }),
-)
+) + sponsorCategoryBindings(repository)
+
+/**
+ * 设置页把 8 个类别做成 8 个开关，落盘却只有一个集合：
+ * 每个伪 pref 都读写同一个 `sponsorCategories`，避免设置层再多 8 个字段。
+ */
+private fun sponsorCategoryBindings(repository: SettingsRepository): Map<String, IndexedSettingBinding> =
+    SPONSOR_CATEGORIES.associate { category ->
+        val prefName = when (category) {
+            "music_offtopic" -> "sponsor_cat_music"
+            else -> "sponsor_cat_$category"
+        }
+        prefName to IndexedSettingBinding(
+            { SettingValue.Flag(category in repository.playback.sponsorCategories) },
+            { value ->
+                val enabled = (value as SettingValue.Flag).value
+                val current = repository.playback.sponsorCategories
+                repository.playback.sponsorCategories = if (enabled) current + category else current - category
+            },
+        )
+    }
 
 private fun otherBindings(repository: SettingsRepository) = mapOf(
     "recommend_web" to IndexedSettingBinding({ SettingValue.Flag(repository.general.recommendWeb) },

@@ -1,6 +1,7 @@
 package com.aritxonly.bdfun.feature.settings.application
 
 import com.aritxonly.bdfun.core.model.settings.allScrollTopPages
+import com.aritxonly.bdfun.core.domain.SPONSOR_CATEGORIES
 import com.aritxonly.bdfun.core.domain.SettingsRepository
 import kotlinx.coroutines.*
 import org.junit.Assert.*
@@ -114,6 +115,9 @@ class SettingsRoundTripTest(private val case: SettingCase<*>) {
             SettingCase("showFullscreenActions", true, false, { it.showFullscreenActions }, { s, v -> s.showFullscreenActions = v }),
             SettingCase("progressBarMode", 0, 1, { it.progressBarMode }, { s, v -> s.progressBarMode = v }),
             SettingCase("sponsorSkipMode", 1, 2, { it.sponsorSkipMode }, { s, v -> s.sponsorSkipMode = v }),
+            SettingCase("sponsorMinimumDuration", 0, 3, { it.sponsorMinimumDuration }, { s, v -> s.sponsorMinimumDuration = v }),
+            SettingCase("sponsorSkipNotice", true, false, { it.sponsorSkipNotice }, { s, v -> s.sponsorSkipNotice = v }),
+            SettingCase("sponsorCategories", SPONSOR_CATEGORIES.toSet(), setOf("sponsor"), { it.sponsorCategories }, { s, v -> s.sponsorCategories = v }),
             SettingCase("hotDanmakuEnabled", true, false, { it.hotDanmakuEnabled }, { s, v -> s.hotDanmakuEnabled = v }),
             SettingCase("videoInteraction", true, false, { it.videoInteraction }, { s, v -> s.videoInteraction = v }),
             SettingCase("bluetoothLatencyMs", 100, 0, { it.bluetoothLatencyMs }, { s, v -> s.bluetoothLatencyMs = v }),

@@ -1,6 +1,7 @@
 package com.aritxonly.bdfun.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,7 +22,16 @@ fun VideoPlayerEntry(
     val observed = rememberPlayerObservedState(playback)
     BindPlayerInitialEffects(playback, media, ui, ports.engine)
     val tracking = remember { ports.tracking() }
-    val sponsor = rememberPlayerSponsor(media.bvid, tracking, observed, ports.sponsorSkipMode)
+    val sponsor = rememberPlayerSponsor(media.bvid, tracking, observed, ports.sponsorPreferences)
+    // 跳转本身由布局里的 autoSkip 执行，这里只按设置补一条提示。
+    val autoSkipped = sponsor.autoSkip
+    LaunchedEffect(autoSkipped) {
+        autoSkipped?.let { segment ->
+            if (ports.sponsorPreferences().noticeEnabled) {
+                ports.engine.diagnostics.toast("已跳过${sponsorCategoryLabel(segment.category)}片段")
+            }
+        }
+    }
     BindPlayerPresentationSetup(media, presentation, ui, ports.engine)
     val latencyMs = ports.bluetoothLatency()
     BindPlayerContinuation(playback, presentation.fullscreenInfo, actions.transport.onPageSelected, ui,
