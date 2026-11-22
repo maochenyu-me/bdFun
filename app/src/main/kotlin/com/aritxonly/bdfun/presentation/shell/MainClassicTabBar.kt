@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Icon
@@ -26,6 +27,9 @@ import com.aritxonly.teak.common.navigation.TeakFloatingTabItem
 /**
  * 经典界面风格的底栏：没有悬浮胶囊、没有玻璃，整条贴着屏幕底边，
  * 顶部一条分割线把它和内容分开。默认的官方风格完全不会走到这里。
+ *
+ * @param endReserve 右端要让给悬浮唱片的宽度。玻璃背景仍然整条铺满，
+ * 只有 Tab 行收缩到左侧，避免把整条栏平移出屏幕。
  */
 @Composable
 internal fun ClassicTabBar(
@@ -35,6 +39,7 @@ internal fun ClassicTabBar(
     selectedContentColor: Color,
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
+    endReserve: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     val colors = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
     Box(modifier = modifier.height(58.dp)) {
@@ -49,7 +54,8 @@ internal fun ClassicTabBar(
             Box(Modifier.matchParentSize().background(colors.surfaceContainer))
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(58.dp),
+            modifier = Modifier.fillMaxWidth().height(58.dp)
+                .padding(end = endReserve),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEach { item ->

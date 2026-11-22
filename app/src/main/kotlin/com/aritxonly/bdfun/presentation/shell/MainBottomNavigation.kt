@@ -33,6 +33,7 @@ internal fun androidx.compose.foundation.layout.BoxScope.MainBottomNavigation(
                     onItemSelected = onBarItem,
                     selectedContentColor = visual.barSelectedColor,
                     showDivider = true,
+                    endReserve = visual.discEndReserve,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -52,13 +53,11 @@ internal fun androidx.compose.foundation.layout.BoxScope.MainBottomNavigation(
                 onItemSelected = onBarItem,
                 selectedContentColor = visual.barSelectedColor,
                 showDivider = true,
+                endReserve = visual.discEndReserve,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = visual.tabBarAlpha
-                        translationX = -visual.discSlot * visual.discShift.toPx()
-                    }
+                    .graphicsLayer { alpha = visual.tabBarAlpha }
                     .blockTouches(visual.tabBarCovered)
                     .navigationBarsPadding(),
             )

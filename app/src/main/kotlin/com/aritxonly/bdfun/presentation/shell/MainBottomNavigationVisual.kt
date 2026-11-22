@@ -20,6 +20,8 @@ internal data class MainBottomNavigationVisual(
     val tabBarCovered: Boolean, val tabBarAlpha: Float, val barSelectedColor: Color,
     val discSlot: Float, val discShift: androidx.compose.ui.unit.Dp,
     val discEndPadding: androidx.compose.ui.unit.Dp, val discBottomOffset: androidx.compose.ui.unit.Dp,
+    /** 经典贴边底栏右侧要让给唱片的宽度；浮动胶囊不用它（靠 discShift 平移）。 */
+    val discEndReserve: androidx.compose.ui.unit.Dp = 0.dp,
 )
 
 @Composable
@@ -45,11 +47,13 @@ internal fun rememberMainBottomNavigationVisual(
         stiffness = 300f,
         damping = 26f,
     )
-    // 底部唱片出现时，底栏本身的高度和宽度完全不动，只是整体向左让位。
+    // 底部唱片出现时，底栏本身的高度和宽度完全不动，只是给唱片腾地方。
     //
-    // 底栏不是满屏宽：三个 Tab 每个最多 78dp，所以它只有 234dp。
+    // 浮动胶囊样式：底栏不是满屏宽（三个 Tab 每个最多 78dp，共 234dp）。
     // 有唱片时，底栏 + 8dp 缝隙 + 唱片作为“一组”整体居中，
-    // 底栏离屏幕左边的距离 = 唱片离屏幕右边的距离。
+    // 底栏离屏幕左边的距离 = 唱片离屏幕右边的距离，所以整条栏左移半个唱片位。
+    // 经典样式：底栏是整条贴边，平移会把最左的 Tab 推出屏幕、右侧露底，
+    // 因此改成只压缩 Tab 行右侧留白（discEndReserve），玻璃背景仍整条铺满。
     val windowWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val tabBarWidth = minOf(
         TeakFloatingTabBarDefaults.MaximumWidth,
@@ -62,20 +66,21 @@ internal fun rememberMainBottomNavigationVisual(
     // 整组居中后的左留白。
     val groupLeft = ((windowWidthDp - tabBarWidth - discGap - discWidth) / 2)
         .coerceAtLeast(0.dp)
-    val discShift = if (TeakStyle.fromStoredValue(settings.interfaceStyle).layout.hasBottomSearch) {
-        0.dp
-    } else if (TeakUiStyle.current.layout.edgeNavigation) {
-        // 经典样式底栏是整条贴边，只能整体左移，让出唱片 + 右边距 + 缝隙。
-        discWidth + 16.dp + discGap
-    } else {
+    val edgeNavigation = TeakUiStyle.current.layout.edgeNavigation
+    val discShift = when {
+        TeakStyle.fromStoredValue(settings.interfaceStyle).layout.hasBottomSearch -> 0.dp
+        edgeNavigation -> 0.dp
         // 底栏从“自己居中”变成“跟着唱片一起居中”，只往左让半个唱片位。
-        (windowWidthDp - tabBarWidth) / 2 - groupLeft
+        else -> (windowWidthDp - tabBarWidth) / 2 - groupLeft
     }
     // 所有页面的唱片位置统一由 rememberDiscPlacement 计算，保证和首页一致。
     val discEndPadding = if (wideNavigation) 16.dp else discPlacement.endPadding
+    // 经典底栏里唱片占的整块宽度：右侧内边距 + 唱片 + 缝隙，随弹簧一起收放。
+    val discEndReserve = if (edgeNavigation) (discEndPadding + discWidth + discGap) * discSlot else 0.dp
     val discBottomOffset = discPlacement.bottomOffset
 
     return MainBottomNavigationVisual(
         tabBarCovered, tabBarAlpha, barSelectedColor, discSlot, discShift, discEndPadding, discBottomOffset,
+        discEndReserve,
     )
 }
