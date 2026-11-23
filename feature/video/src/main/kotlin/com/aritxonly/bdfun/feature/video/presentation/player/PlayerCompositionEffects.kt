@@ -3,8 +3,8 @@ package com.aritxonly.bdfun.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -44,16 +44,20 @@ fun BindPlayerPresentationSetup(
     val fullscreen = presentation.fullscreen
     // 全屏新 UI 的本地状态：二级面板、听视频、镜像、循环、画面尺寸、定时关闭等
     BindPlayerOrientation(fullscreen, presentation.portraitVideo, ui, ports.page)
-    // 交给页面壳的朝向守卫：竖屏视频时 Activity 的传感器转屏要让路
-    SideEffect { ports.page.portraitVideo = presentation.portraitVideo }
     var fsAutoPlayNext by ui.fsAutoPlayNext
     LaunchedEffect(fsAutoPlayNext) {
         ports.settings.autoPlayNextChanged(fsAutoPlayNext)
     }
     // 循环播放要和自动连播一样记住：换视频、重进页面都沿用上次的选择。
+    // 只在值真的变了之后才写盘——每次进视频都把同一个值再写一遍，
+    // 等于每打开一个视频都往 SharedPreferences 多提交一次。
     var fsLoopMode by ui.fsLoopMode
+    var writtenLoopMode by remember { mutableIntStateOf(fsLoopMode) }
     LaunchedEffect(fsLoopMode) {
-        ports.settings.loopModeChanged(fsLoopMode)
+        if (fsLoopMode != writtenLoopMode) {
+            ports.settings.loopModeChanged(fsLoopMode)
+            writtenLoopMode = fsLoopMode
+        }
     }
     var videoScale by ui.videoScale
     var videoRotation by ui.videoRotation

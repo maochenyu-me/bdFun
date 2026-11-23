@@ -118,22 +118,34 @@ abstract class PlaybackForegroundService : Service() {
         return START_STICKY
     }
 
+    /** 只有真的变了才重建通知：标题/播放态/队列/封面。进度由系统按 PlaybackState 自己推算，不用每秒重画。 */
+    private fun notificationSignature(): String {
+        val snapshot = playback.playbackSnapshot
+        return listOf(
+            playback.title,
+            playback.author,
+            playback.cover,
+            playback.playing,
+            snapshot.phase,
+            snapshot.speed,
+            artUrl.orEmpty(),
+        ).joinToString("|")
+    }
+
     /**
      * 每秒刷新通知：页面会话在时由它自更新，只在归属变化时重新挂前台通知；
-     * 归属自己时按 [notificationSignature] 去重，只有真变了才重建。
-     * 返回最新的签名，交给调用方留到下一次比对。
+     * 归属回自己后再按签名去重刷新，避免上一轮的签名残留导致不刷新。
      */
     private fun tickNotification(lastSignature: String?): String? {
         val page = PlaybackNotificationArbiter.pageSession
         if (page != null) {
             if (notificationId != page.notificationId) syncForegroundNotification()
-            return lastSignature
+            return null
         }
         if (notificationId != NOTIFICATION_ID) {
             syncForegroundNotification()
-            return lastSignature
+            return null
         }
-        // 进度由系统按 PlaybackState 自己推算，不用每秒重画。
         val signature = notificationSignature()
         if (signature == lastSignature) return lastSignature
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -149,34 +161,22 @@ abstract class PlaybackForegroundService : Service() {
             if (notificationId == page.notificationId) return
             val previous = notificationId
             notificationId = page.notificationId
-            cancelNotification(previous)
+            // 先挂新的再撤旧的：反过来做的中间会有一小段通知栏里一条都没有。
             runCatching { startForeground(notificationId, page.currentNotification()) }
+            cancelNotification(previous)
         } else {
             if (notificationId == NOTIFICATION_ID) return
             val previous = notificationId
             notificationId = NOTIFICATION_ID
             // 页面会话释放时为了不让前台通知空掉而没有自己取消，这里由接管方清掉。
-            cancelNotification(previous)
             runCatching { startForeground(NOTIFICATION_ID, buildNotification()) }
+            cancelNotification(previous)
         }
     }
 
     private fun cancelNotification(id: Int) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         runCatching { manager.cancel(id) }
-    }
-
-    private fun notificationSignature(): String {
-        val snapshot = playback.playbackSnapshot
-        return listOf(
-            playback.title,
-            playback.author,
-            playback.cover,
-            playback.playing,
-            snapshot.phase,
-            snapshot.speed,
-            artUrl.orEmpty(),
-        ).joinToString("|")
     }
 
     override fun onDestroy() {
