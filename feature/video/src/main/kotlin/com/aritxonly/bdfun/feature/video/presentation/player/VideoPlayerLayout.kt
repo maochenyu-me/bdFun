@@ -74,8 +74,9 @@ fun VideoPlayerLayout(
         )
 
         // 竖屏 chrome 的右侧已经是一整列互动按钮，锁按钮会和它叠在一起，所以竖屏不给锁；
-        // 横屏仍是原来的全屏锁。
-        if (!portraitChrome) PlayerLockOverlay(ui, fullscreen, ports.page)
+        // 听视频关掉视频轨后整屏只有一块听视频界面，没有能看的画面，锁也没有意义。
+        val audioOnly by ui.fsAudioOnly
+        if (!portraitChrome && !audioOnly) PlayerLockOverlay(ui, fullscreen, ports.page)
         PlayerScrubOverlay(ui, fullscreen, positionMs, durationMs, bufferedMs)
 
         PlayerSubtitleLayer(fullscreenInfo, fullscreen, ui, positionMs)
