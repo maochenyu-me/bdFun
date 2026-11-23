@@ -51,6 +51,9 @@ abstract class PlaybackForegroundService : Service() {
     private var artUrl: String? = null
     private var artBitmap: Bitmap? = null
 
+    /** 当前挂在前台服务上的通知 id：页面会话活着时复用它那条，否则用服务自己的。 */
+    private var notificationId = NOTIFICATION_ID
+
     override fun onCreate() {
         super.onCreate()
         createChannel()
@@ -92,12 +95,21 @@ abstract class PlaybackForegroundService : Service() {
             }
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification())
+        PlaybackNotificationArbiter.registerOwnerChangedListener(::syncForegroundNotification)
+        val page = PlaybackNotificationArbiter.pageSession
+        if (page != null) {
+            // 视频页还活着：直接把它那条媒体通知当前台通知，不再另发一条控制栏。
+            page.islandExtras = ::currentIslandExtras
+            notificationId = page.notificationId
+            startForeground(notificationId, page.currentNotification())
+        } else {
+            notificationId = NOTIFICATION_ID
+            startForeground(NOTIFICATION_ID, buildNotification())
+        }
         if (ticker == null) {
             ticker = scope.launch {
                 while (isActive) {
-                    val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    runCatching { manager.notify(NOTIFICATION_ID, buildNotification()) }
+                    tickNotification()
                     delay(1000L)
                 }
             }
@@ -105,10 +117,52 @@ abstract class PlaybackForegroundService : Service() {
         return START_STICKY
     }
 
+    /** 每秒刷新通知：页面会话在时由它自更新，只在归属变化时重新挂前台通知。 */
+    private fun tickNotification() {
+        val page = PlaybackNotificationArbiter.pageSession
+        if (page != null) {
+            if (notificationId != page.notificationId) syncForegroundNotification()
+            return
+        }
+        if (notificationId != NOTIFICATION_ID) {
+            syncForegroundNotification()
+            return
+        }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        runCatching { manager.notify(NOTIFICATION_ID, buildNotification()) }
+    }
+
+    /** 通知归属变化（页面会话出现或消失）：把前台通知切到当前拥有者那条。 */
+    private fun syncForegroundNotification() {
+        val page = PlaybackNotificationArbiter.pageSession
+        if (page != null) {
+            page.islandExtras = ::currentIslandExtras
+            if (notificationId == page.notificationId) return
+            val previous = notificationId
+            notificationId = page.notificationId
+            cancelNotification(previous)
+            runCatching { startForeground(notificationId, page.currentNotification()) }
+        } else {
+            if (notificationId == NOTIFICATION_ID) return
+            val previous = notificationId
+            notificationId = NOTIFICATION_ID
+            // 页面会话释放时为了不让前台通知空掉而没有自己取消，这里由接管方清掉。
+            cancelNotification(previous)
+            runCatching { startForeground(NOTIFICATION_ID, buildNotification()) }
+        }
+    }
+
+    private fun cancelNotification(id: Int) {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        runCatching { manager.cancel(id) }
+    }
+
     override fun onDestroy() {
         ticker?.cancel()
         ticker = null
         scope.cancel()
+        PlaybackNotificationArbiter.unregisterOwnerChangedListener()
+        PlaybackNotificationArbiter.pageSession?.islandExtras = null
         runCatching {
             mediaSession?.isActive = false
             mediaSession?.release()
@@ -140,9 +194,12 @@ abstract class PlaybackForegroundService : Service() {
             withContext(Dispatchers.Main) {
                 if (artUrl == url) {
                     artBitmap = source
-                    val manager =
-                        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    runCatching { manager.notify(NOTIFICATION_ID, buildNotification()) }
+                    // 通知已被页面会话接管时不能再发服务自己那条，否则又多一条控制栏。
+                    if (PlaybackNotificationArbiter.pageSession == null) {
+                        val manager =
+                            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        runCatching { manager.notify(NOTIFICATION_ID, buildNotification()) }
+                    }
                 }
             }
         }
@@ -225,9 +282,16 @@ abstract class PlaybackForegroundService : Service() {
                     .setShowActionsInCompactView(0, 1, 2),
             )
         // HyperOS 超级岛：带上分享载荷后可以把媒体通知拖进聊天窗口直接分享。
-        xiaomiMediaIslandExtras(title, artist, playback.shareUrl)?.let(builder::addExtras)
+        currentIslandExtras()?.let(builder::addExtras)
         return builder.build()
     }
+
+    /** 超级岛分享载荷；页面会话接管通知时也复用这里，保证两种归属能力一致。 */
+    private fun currentIslandExtras(): android.os.Bundle? = xiaomiMediaIslandExtras(
+        playback.title.ifBlank { "正在播放" },
+        playback.author.ifBlank { "bdFun" },
+        playback.shareUrl,
+    )
     private fun updateNotificationSession(title: String, artist: String, snapshot: com.aritxonly.bdfun.core.application.PlaybackSnapshot, art: Bitmap?) {
         mediaSession?.let { session ->
             session.setMetadata(
