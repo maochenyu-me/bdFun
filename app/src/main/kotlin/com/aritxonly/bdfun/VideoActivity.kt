@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 
 /** 视频详情：独立 Activity；评论页留在本 Activity 内，避免播放器被销毁。 */
 class VideoActivity : OneTakeExitActivity() {
@@ -246,6 +247,28 @@ class VideoActivity : OneTakeExitActivity() {
         }
     }
 
+    /**
+     * 退出全屏时把被钉住的窗口朝向还给系统旋转。
+     *
+     * 全屏期间朝向由播放器写（SENSOR_LANDSCAPE / SENSOR_PORTRAIT / LOCKED），而 [onResume]
+     * 与 [onConfigurationChanged] 都只在「已经不在全屏」时才补 USER —— 同一次姿态下退全屏
+     * 不触发配置变更，没人补，于是横转竖之后再转不回横屏，只能退出视频重进。
+     *
+     * 用 [VideoPagePresentationState.pageFlow] 而不是 `PlayerUiState.fullscreen` 投影：
+     * 投影要等 Compose 重组，而配置变更那一刻已经过去了。
+     */
+    private fun bindOrientationRestore() {
+        lifecycleScope.launch {
+            var wasFullscreen = pageState.pageFlow.value.fullscreen
+            pageState.pageFlow.collect { state ->
+                if (wasFullscreen && !state.fullscreen) {
+                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                }
+                wasFullscreen = state.fullscreen
+            }
+        }
+    }
+
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
         if (!PlayerUiState.fullscreen) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
@@ -330,6 +353,12 @@ class VideoActivity : OneTakeExitActivity() {
             finishForMissingRoute("视频标识")
             return
         }
+        // 退出全屏时把被钉住的窗口朝向还给系统旋转：全屏期间朝向是播放器写的
+        // （SENSOR_LANDSCAPE / SENSOR_PORTRAIT / LOCKED），而 onResume 与
+        // onConfigurationChanged 都只在「已经不在全屏」时才补 USER，同一次姿态下
+        // 退全屏不会触发配置变更，也就没人补。播放器侧不再插手这件事，统一在这里收尾。
+        // 用 pageFlow 而不是 PlayerUiState 投影：投影要等 Compose 重组，而这一刻已经晚了。
+        bindOrientationRestore()
         setContent {
             com.aritxonly.bdfun.ui.PhotoViewerRoot(animationsEnabled = settings.animationsEnabled) {
             androidx.compose.runtime.CompositionLocalProvider(LocalVideoPageState provides pageState,

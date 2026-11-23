@@ -25,6 +25,13 @@ internal class VideoPagePresentationState(
     val danmakuFeed: com.aritxonly.bdfun.core.application.DanmakuSegmentFeed?
         get() = holder.danmakuFeed
     private var snapshot by mutableStateOf(holder.state.value)
+    /**
+     * 页面状态的原始流：比 [snapshot] 早一步拿到新值。
+     * Activity 侧的窗口动作（例如退出全屏时把朝向还给系统）必须用这个，
+     * 走 snapshot 会等到 Compose 重组才生效，而配置变更那一刻已经过去了。
+     */
+    internal val pageFlow: kotlinx.coroutines.flow.StateFlow<com.aritxonly.bdfun.core.application.VideoPageState>
+        get() = holder.state
     init { scope.launch(start = CoroutineStart.UNDISPATCHED) { holder.state.collect { snapshot = holder.state.value } } }
     private fun update(transform: (com.aritxonly.bdfun.core.application.VideoPageState) -> com.aritxonly.bdfun.core.application.VideoPageState) {
         holder.update(transform)

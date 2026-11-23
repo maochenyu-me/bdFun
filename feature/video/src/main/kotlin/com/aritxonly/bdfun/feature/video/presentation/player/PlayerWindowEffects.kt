@@ -1,44 +1,27 @@
 package com.aritxonly.bdfun.ui
 
 import android.app.Activity
-import android.content.pm.ActivityInfo
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.aritxonly.bdfun.core.model.video.Quality
 
-/** 由播放器全屏逻辑强行写进窗口的朝向：退出全屏时一律还给系统旋转，不能原样写回。 */
-private val forcedOrientations = setOf(
-    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-    ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
-    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
-    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
-    ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE,
-    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
-    ActivityInfo.SCREEN_ORIENTATION_LOCKED,
-)
-
 @Composable
 fun BindPlayerSystemBars(
     fullscreen: Boolean,
     immersiveStatusBar: Boolean,
     portraitVideo: Boolean,
-    ui: VideoPlayerUiStateHolder,
 ) {
     val activity = LocalContext.current as? Activity
-    var inlineOrientation by ui.inlineOrientation
     DisposableEffect(fullscreen, immersiveStatusBar, portraitVideo) {
         val window = activity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
         val previousCutoutMode = window?.attributes?.layoutInDisplayCutoutMode
         if (fullscreen) {
-            inlineOrientation = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             // 竖屏全屏要顶到挖孔区，否则状态栏那一带会留一条纯黑边。
             // 朝向本身由 BindPlayerOrientation 统一决定，这里不再抢着写。
             if (portraitVideo && window != null) {
@@ -79,18 +62,9 @@ fun BindPlayerSystemBars(
                     }
                 }
             }
-            // 全屏期间的朝向是我们自己写进窗口的（SENSOR_LANDSCAPE / SENSOR_PORTRAIT /
-            // LOCKED / 传感器监听写的 PORTRAIT）。退出全屏必须把它还给系统旋转，
-            // 否则详情页被钉死在当前方向：横屏转竖屏之后就再也转不回横屏，
-            // 只能退出视频重进才能恢复。
-            if (fullscreen) {
-                activity?.requestedOrientation =
-                    if (inlineOrientation in forcedOrientations) {
-                        ActivityInfo.SCREEN_ORIENTATION_USER
-                    } else {
-                        inlineOrientation
-                    }
-            }
+            // 退出全屏把朝向还给系统旋转这件事只在 VideoActivity 一处做（退出全屏的
+            // 所有路径都经过那里），这里不再插手：两处都写会互相覆盖，也容易出现
+            // 「谁的 key 先失效」的竞态。此处只负责系统栏与挖孔区。
         }
     }
 
