@@ -103,5 +103,5 @@ internal fun mapSearchPgc(data: JSONObject, cleanHtml: (String) -> String): List
 
 internal fun mapHotSearch(data: JSONObject): List<String> =
     data.optJSONObject("trending")?.optJSONArray("list").objects()
-        ?.mapNotNull { it.s("keyword").takeIf(String::isNotBlank) }
+        .mapNotNull { it.s("keyword").takeIf(String::isNotBlank) }
         .orEmpty()

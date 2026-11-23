@@ -41,9 +41,9 @@ fun BindPlayerSystemBars(
             inlineOrientation = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             // 竖屏全屏要顶到挖孔区，否则状态栏那一带会留一条纯黑边。
             // 朝向本身由 BindPlayerOrientation 统一决定，这里不再抢着写。
-            if (portraitVideo) {
+            if (portraitVideo && window != null) {
                 runCatching {
-                    window?.attributes = window.attributes.apply {
+                    window.attributes = window.attributes.apply {
                         layoutInDisplayCutoutMode =
                             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                     }
@@ -70,10 +70,12 @@ fun BindPlayerSystemBars(
         }
         onDispose {
             controller?.show(WindowInsetsCompat.Type.systemBars())
-            if (portraitVideo && previousCutoutMode != null) {
-                runCatching {
-                    window?.attributes = window.attributes.apply {
-                        layoutInDisplayCutoutMode = previousCutoutMode
+            if (portraitVideo && window != null) {
+                previousCutoutMode?.let { mode ->
+                    runCatching {
+                        window.attributes = window.attributes.apply {
+                            layoutInDisplayCutoutMode = mode
+                        }
                     }
                 }
             }

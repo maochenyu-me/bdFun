@@ -66,13 +66,12 @@ object LogCollector {
         installCrashHandler()
     }
 
-    inline fun record(tag: String, message: String) {
+    fun record(tag: String, message: String) {
         if (!BuildConfig.DEBUG) return
         recordInternal(tag, message)
     }
 
     @Synchronized
-    @PublishedApi
     internal fun recordInternal(tag: String, message: String) {
         val line = "${timeFormat.format(Date())} [${Thread.currentThread().name}] [$tag] $message"
         lines.addLast(line)

@@ -113,10 +113,9 @@ class MediaPlaybackSession(
                 playback.pause()
             }
         })
-        setFlags(
-            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
-        )
+        // 不再设置 FLAG_HANDLES_MEDIA_BUTTONS / FLAG_HANDLES_TRANSPORT_CONTROLS：
+        // 这两个 flag 在新版 media-compat 已废弃，API 21+ 的 MediaSession 默认就处理按键与传输控制，
+        // minSdk 33 下它们本来也不起作用，留着只会吃废弃警告。
         isActive = true
     }
 

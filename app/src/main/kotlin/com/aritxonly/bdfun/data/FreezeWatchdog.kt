@@ -61,12 +61,11 @@ object FreezeWatchdog {
     }
 
     /** 关键路径埋点：只是入队，主线程不做任何文件操作。 */
-    inline fun log(tag: String, message: String) {
+    fun log(tag: String, message: String) {
         if (!com.aritxonly.bdfun.BuildConfig.DEBUG) return
         logInternal(tag, message)
     }
 
-    @PublishedApi
     internal fun logInternal(tag: String, message: String) {
         enqueue("[$tag] $message")
     }
