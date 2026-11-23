@@ -28,8 +28,6 @@ data class VideoPageState(
     val fullscreen get() = player.fullscreen
     val portraitVideo get() = player.portraitVideo
     val controlsVisible get() = player.controlsVisible
-    val danmakuPanelOpen get() = player.danmakuPanelOpen
-    val danmakuInteract get() = requests.danmakuInteract
     val orientationLocked get() = player.orientationLocked
     val replyName get() = reply.replyName
     val replyMid get() = reply.replyMid
@@ -50,7 +48,6 @@ data class VideoPageRequests(
     val consumedReplyFocus: Int = 0,
     val dismissReply: Int = 0,
     val consumedDismissReply: Int = 0,
-    val danmakuInteract: Int = 0,
 )
 
 data class VideoPagePlayerState(
@@ -62,7 +59,6 @@ data class VideoPagePlayerState(
     /** 当前视频是否竖屏：Activity 的传感器转屏要据此让路。 */
     val portraitVideo: Boolean = false,
     val controlsVisible: Boolean = false,
-    val danmakuPanelOpen: Boolean = false,
     val orientationLocked: Boolean = false,
 )
 

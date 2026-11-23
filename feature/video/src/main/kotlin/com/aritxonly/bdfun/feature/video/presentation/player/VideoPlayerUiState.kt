@@ -16,7 +16,7 @@ class VideoPlayerUiStateHolder(
     initialSpeed: Float, initialAutoPlayNext: Boolean, initialLoopMode: Int, initialFullscreen: Boolean,
 ) {
     val danmakuHit = PlayerDanmakuHit()
-    val resumeOnReturn = mutableStateOf(false)
+
     val showBuffering = mutableStateOf(false)
     val usingFallback = mutableStateOf(false)
     val usingOriginal = mutableStateOf(false)
@@ -47,6 +47,9 @@ class VideoPlayerUiStateHolder(
     val videoRotation = mutableFloatStateOf(0f)
     val videoOffset = mutableStateOf(Offset.Zero)
     val frameMs = mutableLongStateOf(0L)
+    /** 常显进度条用的位置/总长：每秒采一次，只在绘制阶段读取，不触发播放器重组。 */
+    val progressPositionMs = mutableLongStateOf(0L)
+    val progressDurationMs = mutableLongStateOf(0L)
     val preparedMediaKey = mutableStateOf<String?>(null)
     /** 上一次起播用的画面地址：退出听视频后靠它判断要不要按当前档位重新 prepare。 */
     val preparedVideoUrl = mutableStateOf<String?>(null)

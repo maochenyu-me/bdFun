@@ -128,7 +128,7 @@ private fun FullscreenPanelContent(
         FullscreenPanel.Danmaku -> DanmakuPanel(info, onClose, danmakuSettings)
         FullscreenPanel.Episodes -> EpisodesPanel(info, actions, onClose, accentColor)
         FullscreenPanel.Speed -> SpeedPanel(playback, actions, onClose, accentColor)
-        FullscreenPanel.Quality -> QualityPanel(info, playback, actions, onClose, accentColor)
+        FullscreenPanel.Quality -> QualityPanel(playback, actions, onClose, accentColor)
         FullscreenPanel.Cache -> CachePanel(playback, actions, onClose, accentColor)
         FullscreenPanel.Subtitles -> SubtitlesPanel(info, actions, onClose, accentColor)
         FullscreenPanel.None -> Unit

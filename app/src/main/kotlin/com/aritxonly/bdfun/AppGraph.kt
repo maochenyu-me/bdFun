@@ -107,13 +107,6 @@ object AppGraph {
     }
 
     @Synchronized
-    fun init(api: BiliApi, settings: SettingsStore, context: Context? = null) {
-        context?.let { com.aritxonly.bdfun.di.installAppImageLoader(it) }
-        context?.let { OneTakeExit.install(it) }
-        container = com.aritxonly.bdfun.di.AppContainer(api, settings, context)
-    }
-
-    @Synchronized
     fun ensure(context: Context) {
         com.aritxonly.bdfun.di.installAppImageLoader(context)
         OneTakeExit.install(context)

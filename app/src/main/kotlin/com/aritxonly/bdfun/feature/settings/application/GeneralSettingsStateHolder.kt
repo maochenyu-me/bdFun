@@ -48,7 +48,11 @@ internal class GeneralSettingsStateHolder(
 
     private val showHotSearchState = stateCell("showHotSearchState", prefs.getBoolean("show_hot_search", true))
 
-    private val searchHotFirstState = stateCell("searchHotFirstState", prefs.getBoolean("search_hot_first", true))
+private val searchHotFirstState = stateCell("searchHotFirstState", prefs.getBoolean("search_hot_first", true))
+
+    private val showSearchHistoryState = stateCell("showSearchHistoryState", prefs.getBoolean("show_search_history", true))
+
+    private val showSearchDiscoveryState = stateCell("showSearchDiscoveryState", prefs.getBoolean("show_search_discovery", true))
 
     private val autoCheckUpdateState = stateCell("autoCheckUpdateState", prefs.getBoolean("auto_check_update", true))
 
@@ -171,6 +175,20 @@ internal class GeneralSettingsStateHolder(
         set(value) {
             searchHotFirstState.value = value
             prefs.edit().putBoolean("search_hot_first", value).apply()
+        }
+
+    override var showSearchHistory: Boolean
+        get() = showSearchHistoryState.value
+        set(value) {
+            showSearchHistoryState.value = value
+            prefs.edit().putBoolean("show_search_history", value).apply()
+        }
+
+    override var showSearchDiscovery: Boolean
+        get() = showSearchDiscoveryState.value
+        set(value) {
+            showSearchDiscoveryState.value = value
+            prefs.edit().putBoolean("show_search_discovery", value).apply()
         }
 
     override var autoCheckUpdate: Boolean

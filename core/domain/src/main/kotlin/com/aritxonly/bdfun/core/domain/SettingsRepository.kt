@@ -135,8 +135,12 @@ interface GeneralSettings {
     fun setRefreshLocatorPosition(x: Float, y: Float)
     var showViewerCount: Boolean
     var showHotSearch: Boolean
-    /** 搜索首页把热搜排在搜索记录上方；关闭则搜索记录在上、热搜在下。 */
+/** 搜索首页把热搜排在搜索记录上方；关闭则搜索记录在上、热搜在下。 */
     var searchHotFirst: Boolean
+    /** 搜索首页是否展示「搜索记录」板块。 */
+    var showSearchHistory: Boolean
+    /** 搜索首页是否展示「搜索发现」板块（与热搜是两个独立开关）。 */
+    var showSearchDiscovery: Boolean
     var autoCheckUpdate: Boolean
     var onboardingAcked: Boolean
     var termsAckedVersion: String
