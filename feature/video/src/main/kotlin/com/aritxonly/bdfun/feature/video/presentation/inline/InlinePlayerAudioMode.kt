@@ -53,8 +53,10 @@ fun HalfScreenAudioMode(
     playing: Boolean,
     positionMs: Long,
     durationMs: Long,
+    bufferedMs: Long,
     onExit: () -> Unit,
     onPlayPause: () -> Unit,
+    onSeek: (Long) -> Unit,
     episodes: HalfAudioEpisodes,
     appearance: InlinePlayerAppearance, coverImage: @Composable (String, Modifier) -> Unit,
 ) {
@@ -67,7 +69,9 @@ fun HalfScreenAudioMode(
         HalfAudioBackground(cover, coverImage)
         HalfAudioMetadata(title, author, cover, appearance.accentColor, coverImage)
         HalfAudioExit(onExit)
-        HalfAudioControls(playing, positionMs, durationMs, onPlayPause, episodes, appearance.playIcon)
+        HalfAudioControls(
+            playing, positionMs, durationMs, bufferedMs, onPlayPause, onSeek, episodes, appearance.playIcon,
+        )
     }
 }
 
@@ -147,7 +151,9 @@ private fun BoxScope.HalfAudioControls(
     playing: Boolean,
     positionMs: Long,
     durationMs: Long,
+    bufferedMs: Long,
     onPlayPause: () -> Unit,
+    onSeek: (Long) -> Unit,
     episodes: HalfAudioEpisodes,
     playIcon: Int,
 ) {
@@ -158,26 +164,16 @@ private fun BoxScope.HalfAudioControls(
             .padding(horizontal = 18.dp)
             .padding(bottom = 12.dp),
     ) {
-        val fraction = if (durationMs > 0L) {
-            (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.18f)),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction)
-                    .height(3.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.9f)),
-            )
-        }
+        // 不用普通 Box 画进度：这里要能点、能拖，直接复用全屏那套手势实现，
+        // 免得半屏与全屏两处进度条行为不一致。
+        FullscreenSeekBar(
+            positionMs = positionMs,
+            durationMs = durationMs,
+            bufferedMs = bufferedMs,
+            onInteract = {},
+            onSeek = onSeek,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(

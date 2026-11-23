@@ -74,6 +74,7 @@ internal fun PlayerInlineAudio(
     val playing by observed.playing
     val positionMs by observed.positionMs
     val durationMs by observed.durationMs
+    val bufferedMs by observed.bufferedMs
     val fullscreen = presentation.fullscreen
     val fullscreenInfo = presentation.fullscreenInfo
     var fsAudioOnly by ui.fsAudioOnly
@@ -91,8 +92,13 @@ internal fun PlayerInlineAudio(
             playing = playing,
             positionMs = positionMs,
             durationMs = durationMs,
+            bufferedMs = bufferedMs,
             onExit = { fsAudioOnly = false },
             onPlayPause = { touch(); togglePlay(playback, playing) },
+            onSeek = { target ->
+                touch()
+                playback.seekTo(target)
+            },
             episodes = HalfAudioEpisodes(
                 onPrevious = {
                     touch()
