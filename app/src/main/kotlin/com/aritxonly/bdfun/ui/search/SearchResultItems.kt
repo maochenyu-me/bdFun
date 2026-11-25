@@ -71,6 +71,15 @@ internal fun androidx.compose.foundation.lazy.grid.LazyGridScope.videoResultRows
     showSelection: Boolean = false,
     selectedIds: Set<String> = emptySet(),
     enableOneTake: Boolean = true,
+    /**
+     * 点击后、跳转前执行的准备动作（例如把当前列表塞进播放队列）。
+     *
+     * 不能写进 [onOpenVideo]：一镜到底由系统动画自己启动 VideoActivity，
+     * [onOpenVideo] 只是动画失败时的兜底，正常路径永远不会执行。
+     */
+    onBeforeOpen: ((com.aritxonly.bdfun.data.VideoItem) -> Unit)? = null,
+    /** 页内标签切换动画：由页面传入 contentSwitchItem()，卡片读同一份进度一起滑入。 */
+    itemModifier: Modifier = Modifier,
 ) {
     // 搜索/热门接口会返回重复 bvid（同一稿件多个入口），只用 bvid 当 key 会直接崩 LazyGrid。
     itemsIndexed(items = videos, key = { index, video -> keyPrefix + index + "-" + video.bvid }) { _, video ->
@@ -78,6 +87,7 @@ internal fun androidx.compose.foundation.lazy.grid.LazyGridScope.videoResultRows
         val itemContext = LocalContext.current
         val cardRadiusPx = with(LocalDensity.current) { 10.dp.toPx() }
         val open = {
+            onBeforeOpen?.invoke(video)
             if (enableOneTake) {
                 oneTake.open(itemContext, video, cardRadiusPx) { onOpenVideo(video) }
             } else {
@@ -87,7 +97,7 @@ internal fun androidx.compose.foundation.lazy.grid.LazyGridScope.videoResultRows
         SearchResultRow(
             video = video,
             onClick = open,
-            modifier = if (enableOneTake) oneTake.modifier else Modifier,
+            modifier = (if (enableOneTake) oneTake.modifier else Modifier).then(itemModifier),
             onLongClick = onLongPressVideo?.let { longPress -> { longPress(video) } },
             onLongPressRect = onVideoMenu?.let { menu -> { rect -> menu(video, rect) } },
             onMoreClick = onVideoMenu?.let { menu -> { rect -> menu(video, rect) } },

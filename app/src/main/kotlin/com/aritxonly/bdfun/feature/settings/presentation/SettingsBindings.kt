@@ -149,6 +149,9 @@ override var searchHotFirst: Boolean by projection.property("searchHotFirstState
     override fun markBlurSessionHealthy() { controller.markBlurSessionHealthy(); projection.refresh() }
     override fun addSearchHistory(keyword: String) { controller.addSearchHistory(keyword); projection.refresh() }
     override fun clearSearchHistory() { controller.clearSearchHistory(); projection.refresh() }
+    override fun searchHistory(scope: String): List<String> = controller.searchHistory(scope)
+    override fun addSearchHistory(scope: String, keyword: String) { controller.addSearchHistory(scope, keyword); projection.refresh() }
+    override fun clearSearchHistory(scope: String) { controller.clearSearchHistory(scope); projection.refresh() }
     /** 批量写入（备份导入）后立刻落盘浮点设置：250ms 合并窗口里的值否则可能丢。 */
     internal fun flushSettings() { controller.flush() }
 
