@@ -31,7 +31,28 @@ private fun loadSettingsIndex(context: Context): com.aritxonly.bdfun.core.domain
 }.getOrElse {
     // 设置清单坏了也不能让 App 起不来：退化成空设置页，至少还能用。
     LogCollector.record("SETTINGS", "settings-index 解析失败：${it.message}")
-    com.aritxonly.bdfun.core.domain.SettingsIndex(emptyList())
+    com.aritxonly.bdfun.core.domain.SettingsIndex(listOf(
+        com.aritxonly.bdfun.core.model.settings.SettingsCategory(
+            name = "设置",
+            route = "settings/fallback",
+            icon = null,
+            groups = listOf(
+                com.aritxonly.bdfun.core.model.settings.SettingsGroup(
+                    title = "设置加载失败",
+                    settings = listOf(
+                        com.aritxonly.bdfun.core.model.settings.Setting(
+                            prefName = "settings_unavailable",
+                            type = "action",
+                            title = "设置不可用",
+                            subtitle = "请重启应用后再试",
+                            default = com.aritxonly.bdfun.core.model.settings.SettingValue.Text(""),
+                            storage = "none",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ))
 }
 
 private fun loadSettingsSeperation(context: Context, index: com.aritxonly.bdfun.core.domain.SettingsIndex):

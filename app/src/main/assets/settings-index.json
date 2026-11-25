@@ -764,27 +764,6 @@
         "title": "弹幕",
         "settings": [
           {
-            "pref_name": "sponsor_skip_mode",
-            "type": "dropdown",
-            "title": "空降助手",
-            "subtitle": "跳过片头、广告等低价值片段",
-            "default": 1,
-            "options": [
-              {
-                "title": "关闭",
-                "value": 0
-              },
-              {
-                "title": "提示",
-                "value": 1
-              },
-              {
-                "title": "自动跳过",
-                "value": 2
-              }
-            ]
-          },
-          {
             "pref_name": "hot_danmaku",
             "type": "switch",
             "title": "弹幕计数",
