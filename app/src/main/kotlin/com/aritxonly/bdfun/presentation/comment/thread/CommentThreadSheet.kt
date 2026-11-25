@@ -33,7 +33,6 @@ internal fun CommentThreadSheet(
         durationMs = 264f, easing = EaseOutSoft,
     )
     if (!input.visible && progress <= 0.005f) return
-    val connection = rememberCommentThreadCollapseConnection(page)
     val allReplies = mergeThreadReplies(input.replies, state.extra, state.deleted)
     CommentThreadEffects(runtime, input, viewport, allReplies, navigation)
     // 展开页里的根评论、回复行共用同一个高亮目标；定位失败时也能退化到根评论。
@@ -51,7 +50,7 @@ internal fun CommentThreadSheet(
         content = ThreadSheetContent(input.comment, allReplies, state.extra.size, input.loading, input.end,
             input.sortHot, actions.sending, actions.sendError?.messageOr("发送失败，请重试")),
         layout = ThreadSheetLayout(progress, viewport.minTopPx, viewport.playerBottomDp, viewport.paneWidth, imeVisible, navBottom, flatList),
-        transient = runtime.transient, listState = runtime.listState, playerCollapseConnection = connection,
+        transient = runtime.transient, listState = runtime.listState,
         focusRequester = runtime.focusRequester,
         callbacks = ThreadSheetCallbacks(navigation.onDismiss, navigation.onToggleSort, runtime::exitReply,
             { runtime.send(input, actions.sending) }, runtime::toggleLike),

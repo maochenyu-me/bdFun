@@ -37,7 +37,7 @@ fun VideoPlayerEntry(
     BindPlayerPresentationSetup(media, presentation, ui, ports.engine, observed.portraitVideo.value)
     val latencyMs = ports.bluetoothLatency()
     BindPlayerContinuation(playback, presentation.fullscreenInfo, actions.transport.onPageSelected, ui,
-        ports.engine.page, ports.hasNext, ports.engine.diagnostics.toast)
+        ports.engine.page, ports.hasNext, ports.engine.diagnostics.toast, ports.engine.diagnostics.log)
     BindPlayerEngineEffects(playback, observed, media, presentation, actions, ui, tracking, ports.engine)
     val audioOnly by ui.fsAudioOnly
     val danmakuVisible = !audioOnly && ports.danmakuOn() && media.danmaku.isNotEmpty()

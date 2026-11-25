@@ -8,6 +8,6 @@ internal fun rememberVideoCollapseHost(): VideoCollapseHost {
     val page = LocalVideoPageState.current
     return remember(page) {
         VideoCollapseHost({ page.commentThreadVisible }, { page.pauseAll() },
-            page.dependencies.background::togglePlayPause, { page.playerCollapseScroll = it })
+            page.dependencies.background::togglePlayPause)
     }
 }

@@ -2,7 +2,6 @@ package com.aritxonly.bdfun.ui
 
 import com.aritxonly.bdfun.core.domain.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -206,38 +205,5 @@ private fun rememberVideoCollapseConnection(
             }
         }
     }
-    RegisterThreadCollapseScroll(collapseConnection, collapseEnabled, collapseRangePx, collapseState, host)
     return collapseConnection
-}
-
-@Composable
-private fun RegisterThreadCollapseScroll(
-    collapseConnection: NestedScrollConnection, collapseEnabled: Boolean,
-    collapseRangePx: Float, collapseState: InlinePlayerCollapseState, host: VideoCollapseHost,
-) {
-    // 「展开回复」是独立 Dialog，拿不到这里的 nestedScroll，所以注册一个入口：
-    // 它的列表往上划时，把同样的位移交给当前播放器，效果和主评论区一致。
-    DisposableEffect(collapseConnection, collapseEnabled, collapseRangePx) {
-        host.registerThreadScroll { deltaPx ->
-            val update = if (deltaPx < 0f) {
-                reduceVideoDetailPreScroll(
-                    currentOffsetPx = collapseState.offsetPx,
-                    deltaPx = deltaPx,
-                    minOffsetPx = minOf(-collapseRangePx, collapseState.offsetPx),
-                    inlinePortraitScrollEnabled = collapseEnabled,
-                    isPortraitFullscreen = false,
-                )
-            } else {
-                reduceVideoDetailPostScroll(
-                    currentOffsetPx = collapseState.offsetPx,
-                    deltaPx = deltaPx,
-                    minOffsetPx = minOf(-collapseRangePx, collapseState.offsetPx),
-                    inlinePortraitScrollEnabled = collapseEnabled,
-                    isPortraitFullscreen = false,
-                )
-            }
-            if (update == null) 0f else collapseState.consumeScroll(update)
-        }
-        onDispose { host.registerThreadScroll(null) }
-    }
 }

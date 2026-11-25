@@ -29,9 +29,11 @@ fun rememberVideoActivityEntry(
 fun BindVideoActivityQueue(
     video: com.aritxonly.bdfun.core.model.video.VideoItem, ui: VideoActivityPageStateHolder, host: VideoActivityHostActions,
     queue: com.aritxonly.bdfun.core.application.PlaybackQueueStateHolder, autoNextRequest: () -> Int,
+    log: (String, String) -> Unit = { _, _ -> },
 ) {
     LaunchedEffect(video.bvid) {
         if (!queue.contains(video.bvid)) {
+            log("QUEUE", "clear bvid=${video.bvid} 不在队列里，清空")
             queue.clear()
         }
     }
@@ -40,7 +42,11 @@ fun BindVideoActivityQueue(
         val tick = autoNextRequest()
         if (tick == consumedAutoNext) return@LaunchedEffect
         consumedAutoNext = tick
-        val next = queue.next() ?: return@LaunchedEffect
+        val next = queue.next() ?: run {
+            log("QUEUE", "auto-next tick=$tick 但没有下一项，停在 ${video.bvid}")
+            return@LaunchedEffect
+        }
+        log("QUEUE", "auto-next tick=$tick 打开下一个 ${next.bvid}")
         host.openVideo(next)
         host.finish()
     }

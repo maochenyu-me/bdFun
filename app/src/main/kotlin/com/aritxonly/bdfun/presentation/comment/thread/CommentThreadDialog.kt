@@ -12,11 +12,10 @@ import androidx.compose.ui.window.DialogProperties
 internal fun CommentThreadDialog(
     content: ThreadSheetContent, layout: ThreadSheetLayout, transient: CommentThreadPresentationStateHolder,
     listState: androidx.compose.foundation.lazy.LazyListState,
-    playerCollapseConnection: androidx.compose.ui.input.nestedscroll.NestedScrollConnection,
     focusRequester: FocusRequester, callbacks: ThreadSheetCallbacks,
     animationsEnabled: Boolean = true,
 ) {
-    val render = CommentThreadRender(content, layout, transient, listState, playerCollapseConnection, focusRequester, callbacks)
+    val render = CommentThreadRender(content, layout, transient, listState, focusRequester, callbacks)
     Dialog(
         onDismissRequest = callbacks.onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),

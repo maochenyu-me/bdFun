@@ -19,6 +19,7 @@ fun BindPlayerContinuation(
     fullscreenInfo: FullscreenPlayerInfo,
     onPageSelected: (com.aritxonly.bdfun.core.model.video.VideoPage) -> Unit,
     ui: VideoPlayerUiStateHolder, page: PlayerPageHost, hasNext: () -> Boolean, toast: (String) -> Unit,
+    log: (String, String) -> Unit = { _, _ -> },
 ) {
     val state = playback.state.collectAsState()
     val ended by remember(playback) { derivedStateOf { state.value.ended } }
@@ -48,6 +49,7 @@ fun BindPlayerContinuation(
     LaunchedEffect(ended, fsLoopMode, fsAutoPlayNext, fsHasNext, fsHasNextPart, fsHasCollection) {
         if (!ended) return@LaunchedEffect
         val queued = hasNext()
+        log("QUEUE", "ended loop=$fsLoopMode autoNext=$fsAutoPlayNext fsHasNext=$fsHasNext fsHasNextPart=$fsHasNextPart hasNext=$queued")
         when (
             playbackContinuation(
                 loopMode = fsLoopMode,

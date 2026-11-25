@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -23,13 +22,10 @@ internal fun CommentThreadList(render: CommentThreadRender) {
     val transient = render.transient
     val callbacks = render.callbacks
     val listState = render.listState
-    val playerCollapseConnection = render.connection
     val headerHeight = 46.dp
     LazyColumn(
         state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(playerCollapseConnection),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             // 左右留白必须和主评论区一致：平铺列表（视频详情）是 4dp，其它入口 12dp。
             start = if (render.layout.flatList) 4.dp else 12.dp,

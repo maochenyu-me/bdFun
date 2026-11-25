@@ -19,5 +19,4 @@ class VideoCollapseHost(
     val commentThreadVisible: () -> Boolean,
     val pauseAll: () -> Unit,
     val togglePlayback: () -> Unit,
-    val registerThreadScroll: (((Float) -> Float)?) -> Unit,
 )

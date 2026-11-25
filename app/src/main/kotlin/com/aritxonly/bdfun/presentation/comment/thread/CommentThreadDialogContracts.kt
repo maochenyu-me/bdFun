@@ -23,6 +23,5 @@ internal data class CommentThreadRender(
     val content: ThreadSheetContent, val layout: ThreadSheetLayout,
     val transient: CommentThreadPresentationStateHolder,
     val listState: androidx.compose.foundation.lazy.LazyListState,
-    val connection: androidx.compose.ui.input.nestedscroll.NestedScrollConnection,
     val focusRequester: FocusRequester, val callbacks: ThreadSheetCallbacks,
 )

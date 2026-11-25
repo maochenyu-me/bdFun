@@ -208,7 +208,6 @@ internal class VideoPagePresentationState(
     override var danmakuVotes: kotlinx.coroutines.flow.StateFlow<Map<Pair<Long, Long>, com.aritxonly.bdfun.core.domain.DanmakuVote>>? by mutableStateOf(null)
     override var danmakuLiker: (suspend (Long) -> com.aritxonly.bdfun.core.common.Outcome<Boolean>)? = null
     override var danmakuSender: (suspend (String, Int, Int, Int) -> Boolean)? = null
-    var playerCollapseScroll: ((Float) -> Float)? = null
     val playerUi get() = this
     val orientation get() = Orientation(this)
     val replyTarget get() = Reply(this)
