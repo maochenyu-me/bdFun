@@ -1,6 +1,5 @@
 package com.aritxonly.bdfun.ui
 
-import android.content.pm.ActivityInfo
 import com.aritxonly.bdfun.core.application.ForegroundMediaSession
 import com.aritxonly.bdfun.feature.video.presentation.VideoOutput
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,6 +65,4 @@ class VideoPlayerUiStateHolder(
     val mediaSession = mutableStateOf<ForegroundMediaSession?>(null)
     val lastFullscreenForControls = mutableStateOf(initialFullscreen)
     val hotDanmaku = mutableStateOf(com.aritxonly.bdfun.core.domain.HotDanmakuWindow())
-    /** 进全屏前窗口的朝向；退出全屏时如果朝向仍是我们钉的，回退到它。 */
-    val inlineOrientation = mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
 }
