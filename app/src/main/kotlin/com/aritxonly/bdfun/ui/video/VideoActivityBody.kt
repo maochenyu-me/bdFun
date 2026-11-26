@@ -88,6 +88,8 @@ internal fun VideoActivityBody(
                     comments = null
                     if (portraitComments) PlayerUiState.fullscreen = true
                 },
+                // Tab 条在覆盖层，通过这个单向通道拿到详情里的 stat.reply。
+                onCommentCount = { ui.commentCount.value = it },
             ),
             pager = pager,
         )

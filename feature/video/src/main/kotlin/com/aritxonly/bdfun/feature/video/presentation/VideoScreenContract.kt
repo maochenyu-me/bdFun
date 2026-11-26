@@ -33,4 +33,6 @@ class VideoScreenEvents(
     val onBack: () -> Unit,
     /** 竖屏评论面板展开时点了画面：收起面板并回到全屏播放。 */
     val onDismissComments: () -> Unit = {},
+    /** 详情接口的 stat.reply 变化时上报，供覆盖层的 Tab 显示评论数。 */
+    val onCommentCount: (Long) -> Unit = {},
 )
