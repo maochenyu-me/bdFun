@@ -85,5 +85,11 @@ class JsonSettingsIndexCodecTest {
         // 2026-11-26 新增「评论标签显示评论数」（视频详情与弹幕/评论区）后为 101。
         assertEquals(101, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)
+        // 索引里的默认值必须和代码常量一致：两者不一致时，设置页显示的值会和实际
+        // 生效的值对不上（上游 5f1fc303 就把常量改成 120 却漏改了索引，曾长期错位）。
+        assertEquals(
+            com.aritxonly.bdfun.core.domain.DEFAULT_FEED_REFRESH_RATE,
+            (index.settings.getValue("feed_refresh_rate").default as com.aritxonly.bdfun.core.model.settings.SettingValue.Number).value,
+        )
     }
 }
