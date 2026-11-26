@@ -108,6 +108,8 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
+            // 与上游官方包共存：同包名不同签名无法覆盖安装，加 .fork 后缀独立成应用
+            if (pkgOverride == null) applicationIdSuffix = ".fork"
             // 正式包使用 release keystore；没配置时退回 debug 签名仅用于本地调试。
             signingConfig = if (!releaseStoreFile.isNullOrBlank() || keystorePropsFile.isFile) {
                 signingConfigs.getByName("release")
