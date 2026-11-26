@@ -100,26 +100,9 @@ fun HomeScreen(
             visible = state.newItemsTipVisible,
             topPadding = host.topBarHeight + statusBarTop + 6.dp,
         )
-        HomeRefreshLocatorPill(
-            refreshKey = state.refreshKey,
-            visible = locatorVisible,
-            x = refresh.locatorX,
-            y = refresh.locatorY,
-            durationSeconds = refresh.locatorDurationSeconds,
-            onClick = {
-                val target = ui.refreshDividerIndex
-                if (target >= 0) scope.launch { state.gridState.animateScrollToItem(target) }
-            },
-            onDismiss = { locatorDismissedKey = state.refreshKey },
-            onPositionChanged = onLocatorPositionChanged,
-        )
-        HomeRefreshUndoPill(
-            visible = refresh.undoEnabled && state.undoAvailable,
-            anchorX = refresh.locatorX,
-            anchorY = refresh.locatorY,
-            onUndo = { state.undoRefresh() },
-            onDismiss = { state.dismissUndo() },
-        )
+        HomeRefreshOverlays(state, ui, refresh, scope, locatorVisible, onLocatorPositionChanged) {
+            locatorDismissedKey = state.refreshKey
+        }
         HomeFeedStatus(state, scope, host)
     }
     androidx.compose.runtime.LaunchedEffect(ui.openPointMenu, state.menuVideo) {
@@ -130,6 +113,44 @@ fun HomeScreen(
             ui.openPointMenu = false
         }
     }
+}
+
+/**
+ * 刷新相关的浮层：定位胶囊 + 撤销胶囊。
+ *
+ * 这两颗胶囊共用同一套锚点（用户拖过的位置），也共用「本轮刷新」的身份，
+ * 所以一起组装；拆开会让 HomeScreen 的主体再涨过行数上限。
+ */
+@Composable
+private fun HomeRefreshOverlays(
+    state: HomeFeedState,
+    ui: HomePresentationStateHolder,
+    refresh: HomeRefreshOptions,
+    scope: kotlinx.coroutines.CoroutineScope,
+    locatorVisible: Boolean,
+    onLocatorPositionChanged: (Float, Float) -> Unit,
+    onLocatorDismissed: () -> Unit,
+) {
+    HomeRefreshLocatorPill(
+        refreshKey = state.refreshKey,
+        visible = locatorVisible,
+        x = refresh.locatorX,
+        y = refresh.locatorY,
+        durationSeconds = refresh.locatorDurationSeconds,
+        onClick = {
+            val target = ui.refreshDividerIndex
+            if (target >= 0) scope.launch { state.gridState.animateScrollToItem(target) }
+        },
+        onDismiss = onLocatorDismissed,
+        onPositionChanged = onLocatorPositionChanged,
+    )
+    HomeRefreshUndoPill(
+        visible = refresh.undoEnabled && state.undoAvailable,
+        anchorX = refresh.locatorX,
+        anchorY = refresh.locatorY,
+        onUndo = { state.undoRefresh() },
+        onDismiss = { state.dismissUndo() },
+    )
 }
 
 @Composable

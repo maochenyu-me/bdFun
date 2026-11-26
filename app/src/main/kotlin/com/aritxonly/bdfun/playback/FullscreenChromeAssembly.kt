@@ -54,7 +54,7 @@ internal fun rememberFullscreenChromeAssembly(): FullscreenChromeAssembly {
                                 bare = true, topInset = 6.dp, bottomPadding = 20.dp,
                                 flatList = true,
                                 // 面板右侧贴着刘海/挖孔：默认的状态栏 padding 正好把首条评论让出来。
-                                immersiveStatusBar = false,
+                                insets = CommentInsetPolicy(immersiveStatusBar = false),
                                 // 楼中楼是独立窗口，顶边默认读「播放器底边」；全屏时那是整屏高度，
                                 // 面板会被压成 1px 高，表现为点了没反应。这里钉死从屏幕顶开始、宽同面板。
                                 threadPlayerBottom = 0.dp,

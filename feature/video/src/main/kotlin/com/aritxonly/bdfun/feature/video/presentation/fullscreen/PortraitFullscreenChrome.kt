@@ -275,73 +275,91 @@ private fun BoxScope.PortraitChromeControls(
                 fontSize = 11.5.sp,
             )
             Spacer(Modifier.weight(1f))
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = actions.onToggleDanmaku),
-                contentAlignment = Alignment.Center,
-            ) {
-                DanmakuToggleGlyph(icons.danmakuOn, icons.danmakuOff, playback.danmakuEnabled)
-            }
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable { onPanelChanged(FullscreenPanel.Danmaku) },
-                contentAlignment = Alignment.Center,
-            ) {
-                SlidersGlyph(icons.danmakuSettings)
-            }
-            if (info.selectedSubtitle != null) {
-                Text(
-                    text = "CC",
-                    color = appearance.accentColor,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .clip(Capsule())
-                        .clickable { onPanelChanged(FullscreenPanel.Subtitles) }
-                        .padding(horizontal = 6.dp, vertical = 4.dp),
-                )
-            }
-            Text(
-                text = "${trimSpeed(playback.speed)}×",
-                color = Color.White,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .clip(Capsule())
-                    .clickable { onPanelChanged(FullscreenPanel.Speed) }
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-            )
-            Text(
-                text = info.qualityLabel,
-                color = Color.White,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .clip(Capsule())
-                    .clickable { onPanelChanged(FullscreenPanel.Quality) }
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-            )
-            // 竖屏没有横向那条弹幕输入胶囊，这里留一个入口，否则竖屏发不了弹幕
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = actions.onSendDanmaku),
-                contentAlignment = Alignment.Center,
-            ) {
-                AppGlyph(LucideIcons.SendHorizontalFilled, Color.White, Modifier.size(19.dp))
-            }
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = actions.onBack),
-                contentAlignment = Alignment.Center,
-            ) {
-                AppGlyph(LucideIcons.ChevronDown, Color.White, Modifier.size(22.dp))
-            }
+            PortraitChromeActions(info, playback, actions, onPanelChanged, appearance)
         }
+    }
+}
+
+/**
+ * 竖屏底栏右侧那一排：弹幕开关 / 弹幕设置 / 字幕 / 倍速 / 清晰度 / 发弹幕 / 收起。
+ *
+ * 单独抽出来是因为每个入口都是「图标或文字 + 固定内边距」的重复结构，
+ * 留在 [PortraitChromeControls] 里会把那个函数顶过行数上限，也不便于逐个调整。
+ */
+@Composable
+private fun PortraitChromeActions(
+    info: FullscreenPlayerInfo,
+    playback: FullscreenPlaybackState,
+    actions: FullscreenActions,
+    onPanelChanged: (FullscreenPanel) -> Unit,
+    appearance: FullscreenAppearance,
+) {
+    val icons = appearance.icons
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(onClick = actions.onToggleDanmaku),
+        contentAlignment = Alignment.Center,
+    ) {
+        DanmakuToggleGlyph(icons.danmakuOn, icons.danmakuOff, playback.danmakuEnabled)
+    }
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable { onPanelChanged(FullscreenPanel.Danmaku) },
+        contentAlignment = Alignment.Center,
+    ) {
+        SlidersGlyph(icons.danmakuSettings)
+    }
+    if (info.selectedSubtitle != null) {
+        Text(
+            text = "CC",
+            color = appearance.accentColor,
+            fontSize = 12.sp,
+            modifier = Modifier
+                .clip(Capsule())
+                .clickable { onPanelChanged(FullscreenPanel.Subtitles) }
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+        )
+    }
+    Text(
+        text = "${trimSpeed(playback.speed)}×",
+        color = Color.White,
+        fontSize = 12.sp,
+        modifier = Modifier
+            .clip(Capsule())
+            .clickable { onPanelChanged(FullscreenPanel.Speed) }
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    )
+    Text(
+        text = info.qualityLabel,
+        color = Color.White,
+        fontSize = 12.sp,
+        modifier = Modifier
+            .clip(Capsule())
+            .clickable { onPanelChanged(FullscreenPanel.Quality) }
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    )
+    // 竖屏没有横向那条弹幕输入胶囊，这里留一个入口，否则竖屏发不了弹幕
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(onClick = actions.onSendDanmaku),
+        contentAlignment = Alignment.Center,
+    ) {
+        AppGlyph(LucideIcons.SendHorizontalFilled, Color.White, Modifier.size(19.dp))
+    }
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(onClick = actions.onBack),
+        contentAlignment = Alignment.Center,
+    ) {
+        AppGlyph(LucideIcons.ChevronDown, Color.White, Modifier.size(22.dp))
     }
 }
 

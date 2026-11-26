@@ -13,6 +13,26 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 
+/**
+ * 本轮刷新的结果快照。
+ *
+ * 这五个字段描述的都是「最近一次刷新发生了什么」：新内容的身份、新增数量、
+ * 提示是否还没被忽略、旧内容从哪一条开始、能不能撤销。它们要么同时有效要么同时无效，
+ * 分散在 UiState 里容易漏传，所以打包成一个对象。
+ */
+internal data class HomeRefreshRoll(
+    /** 每次刷新成功自增；定位胶囊与分隔条都以它作为本轮刷新的身份。 */
+    val key: Int = 0,
+    /** 本轮刷新新增了多少条内容，0 表示没有新增。 */
+    val newItemCount: Int = 0,
+    /** 「新增 N 条内容」提示是否还没被忽略。 */
+    val newItemsTipVisible: Boolean = false,
+    /** 旧内容在列表中的起始下标；-1 表示本轮刷新没有旧内容。 */
+    val oldContentStartIndex: Int = -1,
+    /** 撤销刷新胶囊是否可用（刷新成功且拿到了刷新前的快照）。 */
+    val undoAvailable: Boolean = false,
+)
+
 internal data class HomeFeedUiState(
     val videos: List<VideoItem> = emptyList(),
     val loading: Boolean = true,
@@ -25,16 +45,8 @@ internal data class HomeFeedUiState(
     val scrollRevision: Long = 0,
     val filteredPage: Boolean = false,
     val empty: Boolean = false,
-    /** 每次刷新成功自增；定位胶囊与分隔条都以它作为本轮刷新的身份。 */
-    val refreshKey: Int = 0,
-    /** 本轮刷新新增了多少条内容，0 表示没有新增。 */
-    val newItemCount: Int = 0,
-    /** 「新增 N 条内容」提示是否还没被忽略。 */
-    val newItemsTipVisible: Boolean = false,
-    /** 旧内容在列表中的起始下标；-1 表示本轮刷新没有旧内容。 */
-    val oldContentStartIndex: Int = -1,
-    /** 撤销刷新胶囊是否可用（刷新成功且拿到了刷新前的快照）。 */
-    val undoAvailable: Boolean = false,
+    /** 本轮刷新的身份与提示；见 [HomeRefreshRoll]。 */
+    val roll: HomeRefreshRoll = HomeRefreshRoll(),
 ) : UiState
 
 /** 刷新前的列表快照；撤销只恢复刚看到的那一段，不回头重放分页。 */
@@ -132,9 +144,9 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
             HomeRefreshUndo(
                 videos = before.videos.take(HOME_REFRESH_UNDO_MAX_ITEMS),
                 endReached = before.endReached,
-                refreshKey = before.refreshKey,
-                newItemCount = before.newItemCount,
-                oldContentStartIndex = before.oldContentStartIndex,
+                refreshKey = before.roll.key,
+                newItemCount = before.roll.newItemCount,
+                oldContentStartIndex = before.roll.oldContentStartIndex,
             )
         } else null
         val mode = optimizer?.ticket()
@@ -162,11 +174,13 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
                                 videos = fresh + retained,
                                 endReached = if (fresh.isNotEmpty()) false else old.endReached,
                                 scrollRevision = old.scrollRevision + 1,
-                                refreshKey = old.refreshKey + 1,
-                                newItemCount = fresh.size,
-                                newItemsTipVisible = shouldShowHomeNewItemsTip(fresh.size),
-                                oldContentStartIndex = if (retained.isEmpty()) -1 else fresh.size,
-                                undoAvailable = undoSnapshot != null,
+                                roll = HomeRefreshRoll(
+                                    key = old.roll.key + 1,
+                                    newItemCount = fresh.size,
+                                    newItemsTipVisible = shouldShowHomeNewItemsTip(fresh.size),
+                                    oldContentStartIndex = if (retained.isEmpty()) -1 else fresh.size,
+                                    undoAvailable = undoSnapshot != null,
+                                ),
                             )
                         }
                         cache?.write(items)
@@ -187,25 +201,27 @@ internal class HomeFeedStateHolder(private val feed: FeedRepository, private val
             old.copy(
                 videos = snapshot.videos,
                 endReached = snapshot.endReached,
-                refreshKey = snapshot.refreshKey,
-                newItemCount = snapshot.newItemCount,
-                newItemsTipVisible = false,
-                oldContentStartIndex = snapshot.oldContentStartIndex,
-                undoAvailable = false,
+                roll = HomeRefreshRoll(
+                    key = snapshot.refreshKey,
+                    newItemCount = snapshot.newItemCount,
+                    newItemsTipVisible = false,
+                    oldContentStartIndex = snapshot.oldContentStartIndex,
+                    undoAvailable = false,
+                ),
                 scrollRevision = old.scrollRevision + 1,
             )
         }
     }
 
     fun dismissUndo() {
-        if (closed || !mutable.value.undoAvailable) return
+        if (closed || !mutable.value.roll.undoAvailable) return
         undoSnapshot = null
-        mutable.update { it.copy(undoAvailable = false) }
+        mutable.update { it.copy(roll = it.roll.copy(undoAvailable = false)) }
     }
 
     fun dismissNewItemsTip() {
-        if (closed || !mutable.value.newItemsTipVisible) return
-        mutable.update { it.copy(newItemsTipVisible = false) }
+        if (closed || !mutable.value.roll.newItemsTipVisible) return
+        mutable.update { it.copy(roll = it.roll.copy(newItemsTipVisible = false)) }
     }
 
     suspend fun loadMore() {

@@ -37,11 +37,11 @@ class HomeFeedState internal constructor(private val controller: HomeFeedStateHo
     val loadMoreError get() = observed.loadMoreError?.messageOr("加载失败")
         ?: if (observed.filteredPage) "本页内容已过滤，点击继续加载" else null
     /** 本轮刷新的身份：定位胶囊的计时与分隔条都以它为准。 */
-    val refreshKey get() = observed.refreshKey
-    val newItemCount get() = observed.newItemCount
-    val newItemsTipVisible get() = observed.newItemsTipVisible
-    val oldContentStartIndex get() = observed.oldContentStartIndex
-    val undoAvailable get() = observed.undoAvailable
+    val refreshKey get() = observed.roll.key
+    val newItemCount get() = observed.roll.newItemCount
+    val newItemsTipVisible get() = observed.roll.newItemsTipVisible
+    val oldContentStartIndex get() = observed.roll.oldContentStartIndex
+    val undoAvailable get() = observed.roll.undoAvailable
     init {
         optimizer?.let { optimization -> scope.launch {
             var previous = optimization.state.value.generation

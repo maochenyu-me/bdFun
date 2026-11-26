@@ -36,7 +36,24 @@ interface AppearanceSettings {
     fun markBlurSessionHealthy()
 }
 
-interface PlaybackSettings {
+/**
+ * 空降助手（赞助片段跳过）的设置。
+ *
+ * 单独成接口是因为它是一块完整的功能领域，与播放器主体设置没有依赖；
+ * [PlaybackSettings] 继承它，所以 `playback.sponsorSkipMode` 这类调用路径不变。
+ */
+interface SponsorSkipSettings {
+    /** 空降助手：0 关闭 / 1 提示 / 2 自动跳过。 */
+    var sponsorSkipMode: Int
+    /** 空降助手：短于该秒数的片段不处理，0 表示不限。 */
+    var sponsorMinimumDuration: Int
+    /** 空降助手：自动跳过时是否弹一条简短提示。 */
+    var sponsorSkipNotice: Boolean
+    /** 空降助手：参与跳过的片段类别白名单。 */
+    var sponsorCategories: Set<String>
+}
+
+interface PlaybackSettings : SponsorSkipSettings {
     var adaptiveBuffering: Boolean
     var qualityPreference: Int
     var lowPower: Boolean
@@ -66,14 +83,6 @@ interface PlaybackSettings {
     var showFullscreenTime: Boolean
     var showFullscreenActions: Boolean
     var progressBarMode: Int
-    /** 空降助手：0 关闭 / 1 提示 / 2 自动跳过。 */
-    var sponsorSkipMode: Int
-    /** 空降助手：短于该秒数的片段不处理，0 表示不限。 */
-    var sponsorMinimumDuration: Int
-    /** 空降助手：自动跳过时是否弹一条简短提示。 */
-    var sponsorSkipNotice: Boolean
-    /** 空降助手：参与跳过的片段类别白名单。 */
-    var sponsorCategories: Set<String>
     var bluetoothLatencyMs: Int
     var decoderMode: Int
     var codecPreference: String

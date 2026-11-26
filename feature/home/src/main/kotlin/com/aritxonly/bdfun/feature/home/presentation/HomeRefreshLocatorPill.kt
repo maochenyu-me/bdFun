@@ -113,63 +113,91 @@ fun HomeRefreshLocatorPill(
             },
     ) {
         val colors = MiuixTheme.colorScheme
-        Row(
+        LocatorPillBody(
+            colors = colors,
+            onDragStart = { dragging = true },
+            onDragEnd = {
+                dragging = false
+                onPositionChanged(position.x, position.y)
+            },
+            onDragCancel = { dragging = false },
+            onDrag = { dx, dy ->
+                if (position.availableWidth > 0) {
+                    position.x = (position.x + dx / position.availableWidth).coerceIn(0f, 1f)
+                }
+                if (position.availableHeight > 0) {
+                    position.y = (position.y + dy / position.availableHeight).coerceIn(0f, 1f)
+                }
+            },
+            onClick = {
+                onClick()
+                closed = true
+                onDismiss()
+            },
+            onClose = {
+                closed = true
+                onDismiss()
+            },
+            // 原实现按 position 作 key：位置对象换掉时手势要重新绑定。保持同一个依赖。
+            dragKey = position,
+        )
+    }
+}
+
+/** 胶囊本体：拖动、点击回顶、关闭三件事。位置计算留在调用方，这里只管手势与外观。 */
+@Composable
+private fun LocatorPillBody(
+    colors: top.yukonga.miuix.kmp.theme.Colors,
+    onDragStart: () -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onDrag: (dx: Float, dy: Float) -> Unit,
+    onClick: () -> Unit,
+    onClose: () -> Unit,
+    /** 手势重绑定的 key：调用方传位置对象，与原来 pointerInput(position) 等价。 */
+    dragKey: Any,
+) {
+    Row(
+        modifier = Modifier
+            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(50))
+            .background(colors.surfaceContainerHigh.copy(alpha = 0.92f))
+            .pointerInput(dragKey) {
+                detectDragGestures(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragCancel() },
+                ) { change, dragAmount ->
+                    change.consume()
+                    onDrag(dragAmount.x, dragAmount.y)
+                }
+            }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Text(
+            text = "定位上次刷新",
+            color = colors.onSurface,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        Spacer(Modifier.width(TextCloseGap))
+        Box(
             modifier = Modifier
-                .heightIn(min = 40.dp)
-                .clip(RoundedCornerShape(50))
-                .background(colors.surfaceContainerHigh.copy(alpha = 0.92f))
-                .pointerInput(position) {
-                    detectDragGestures(
-                        onDragStart = { dragging = true },
-                        onDragEnd = {
-                            dragging = false
-                            onPositionChanged(position.x, position.y)
-                        },
-                        onDragCancel = { dragging = false },
-                    ) { change, dragAmount ->
-                        change.consume()
-                        if (position.availableWidth > 0) {
-                            position.x = (position.x + dragAmount.x / position.availableWidth).coerceIn(0f, 1f)
-                        }
-                        if (position.availableHeight > 0) {
-                            position.y = (position.y + dragAmount.y / position.availableHeight).coerceIn(0f, 1f)
-                        }
-                    }
-                }
-                .clickable {
-                    onClick()
-                    closed = true
-                    onDismiss()
-                }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+                .size(CloseHitSize)
+                .clip(CircleShape)
+                .clickable(onClick = onClose),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "定位上次刷新",
-                color = colors.onSurface,
-                fontSize = 13.sp,
+                text = "×",
+                color = colors.onSurfaceVariantSummary,
+                fontSize = CloseGlyphSize,
                 fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.width(TextCloseGap))
-            Box(
-                modifier = Modifier
-                    .size(CloseHitSize)
-                    .clip(CircleShape)
-                    .clickable {
-                        closed = true
-                        onDismiss()
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "×",
-                    color = colors.onSurfaceVariantSummary,
-                    fontSize = CloseGlyphSize,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                )
-            }
         }
     }
 }

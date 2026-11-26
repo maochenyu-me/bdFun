@@ -16,7 +16,7 @@ internal fun CommentScreen(
 ) {
     val runtime = rememberCommentPageRuntime(request)
     CommentPageEffects(runtime, layout)
-    if (layout.scrollTop) RegisterScrollTop(runtime.listState, "comment")
+    if (layout.insets.scrollTop) RegisterScrollTop(runtime.listState, "comment")
     if (layout.trackBackProgress) TrackTeakPageScroll(runtime.listState)
     if (!layout.bare) BackHandler(onBack = onBack)
     Box(Modifier.fillMaxSize()) {
@@ -38,7 +38,7 @@ private fun CommentPageList(
             ui.flashSeq),
         layout = CommentListViewLayout(layout.bare, runtime.request.title, layout.topInset,
             layout.bottomPadding, layout.showLoading, header, layout.flatList, layout.compactHeaderSpacing,
-            layout.immersiveStatusBar, layout.skipStatusInset),
+            layout.insets.immersiveStatusBar, layout.insets.skipStatusInset),
         actions = CommentListViewActions(
             onSort = { runtime.scope.launch { runtime.list.reset(state.query.copy(sortHot = !state.query.sortHot)) } },
             onLike = runtime::toggleLike,

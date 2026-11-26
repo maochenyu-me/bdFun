@@ -9,7 +9,9 @@ internal class PlaybackSettingsStateHolder(
     values: SettingsValuesStateHolder,
     floats: FloatSettingsWriter,
     codec: SearchHistoryCodec,
-) : SettingsGroupStateHolder(prefs, values, floats, codec), PlaybackSettings {
+) : SettingsGroupStateHolder(prefs, values, floats, codec), PlaybackSettings,
+    // 空降助手是一块独立功能领域，见 SponsorSkipSettingsStateHolder；用委托接回同一个接口。
+    SponsorSkipSettings by SponsorSkipSettingsStateHolder(prefs, values, floats, codec) {
     private val adaptiveBufferingState = stateCell("adaptiveBufferingState",
         prefs.getBoolean("adaptive_buffering", com.aritxonly.bdfun.core.domain.buffering.DEFAULT_ADAPTIVE_BUFFERING))
     override var adaptiveBuffering: Boolean
@@ -111,16 +113,6 @@ internal class PlaybackSettingsStateHolder(
     /** 进度条常显模式：0=关闭，1=仅半屏，2=仅全屏，3=永久。 */
 
     private val progressBarModeState = stateCell("progressBarModeState", prefs.getInt("progress_bar_mode", 0))
-
-    private val sponsorSkipModeState = stateCell("sponsorSkipModeState", prefs.getInt("sponsor_skip_mode", 1))
-
-    private val sponsorMinimumDurationState =
-        stateCell("sponsorMinimumDurationState", prefs.getInt("sponsor_min_duration", 0))
-
-    private val sponsorSkipNoticeState = stateCell("sponsorSkipNoticeState", prefs.getBoolean("sponsor_skip_notice", true))
-
-    private val sponsorCategoriesState =
-        stateCell("sponsorCategoriesState", prefs.getStringSet("sponsor_categories", null) ?: SPONSOR_CATEGORIES.toSet())
 
     private val btLatencyMsState = stateCell("btLatencyMsState", prefs.getInt("bt_latency_ms", 100))
 
@@ -345,37 +337,6 @@ internal class PlaybackSettingsStateHolder(
         set(value) {
             progressBarModeState.value = value.coerceIn(0, 3)
             prefs.edit().putInt("progress_bar_mode", progressBarModeState.value).apply()
-        }
-
-    override var sponsorSkipMode: Int
-        get() = sponsorSkipModeState.value.coerceIn(0, 2)
-        set(value) {
-            sponsorSkipModeState.value = value.coerceIn(0, 2)
-            prefs.edit().putInt("sponsor_skip_mode", sponsorSkipModeState.value).apply()
-        }
-
-    /** 0 表示不限时长；上限 60 秒只是防脏数据，设置页最大选项是 10 秒。 */
-    override var sponsorMinimumDuration: Int
-        get() = sponsorMinimumDurationState.value.coerceIn(0, 60)
-        set(value) {
-            sponsorMinimumDurationState.value = value.coerceIn(0, 60)
-            prefs.edit().putInt("sponsor_min_duration", sponsorMinimumDurationState.value).apply()
-        }
-
-    override var sponsorSkipNotice: Boolean
-        get() = sponsorSkipNoticeState.value
-        set(value) {
-            sponsorSkipNoticeState.value = value
-            prefs.edit().putBoolean("sponsor_skip_notice", value).apply()
-        }
-
-    /** 类别白名单只保留已知类别，避免旧版本残留或手写脏值让过滤永远命中。 */
-    override var sponsorCategories: Set<String>
-        get() = sponsorCategoriesState.value
-        set(value) {
-            val normalized = value.filterTo(linkedSetOf()) { it in SPONSOR_CATEGORIES }
-            sponsorCategoriesState.value = normalized
-            prefs.edit().putStringSet("sponsor_categories", normalized).apply()
         }
 
     override var bluetoothLatencyMs: Int

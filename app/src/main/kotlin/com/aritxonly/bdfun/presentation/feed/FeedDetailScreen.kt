@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.aritxonly.bdfun.core.model.feed.FeedItem
 import com.aritxonly.bdfun.ui.CommentScreen
+import com.aritxonly.bdfun.ui.CommentInsetPolicy
 import com.aritxonly.bdfun.ui.CommentScreenRequest
 import com.aritxonly.bdfun.ui.CommentScreenLayout
 
@@ -42,9 +43,8 @@ internal fun FeedDetailScreen(dynamic: FeedItem, onBack: () -> Unit) {
                 trackBackProgress = true,
                 flatList = true,
                 compactHeaderSpacing = true,
-                scrollTop = true,
                 // 动态详情要沉浸：列表滚到状态栏下面，不留下一条挡住内容的空白。
-                immersiveStatusBar = true,
+                insets = CommentInsetPolicy(scrollTop = true, immersiveStatusBar = true),
             ),
             header = { dynamicDetailHeader(snapshot, actions) },
         )

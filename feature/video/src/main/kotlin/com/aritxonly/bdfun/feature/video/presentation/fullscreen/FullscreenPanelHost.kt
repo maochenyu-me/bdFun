@@ -66,27 +66,7 @@ internal fun FullscreenPanelHost(
         if (portrait) {
             // 竖屏：整块实心底板从底部顶起来。横屏那套"左透明右变黑"的渐变在窄屏里只剩一条，
             // 白字直接压在画面上看不清。
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.42f))
-                    .graphicsLayer { alpha = reveal }
-                    .clickable(interactionSource = null, indication = null, onClick = onClose),
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.82f)
-                    .graphicsLayer {
-                        alpha = reveal
-                        translationY = (1f - reveal) * 140f
-                    }
-                    .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                    .background(Color(0xFF1A1A1E))
-                    .clickable(interactionSource = null, indication = null) {}
-                    .padding(start = 22.dp, end = 22.dp, top = 16.dp, bottom = 20.dp),
-            ) {
+            PortraitPanelShell(reveal, onClose) {
                 FullscreenPanelContent(shown, info, playback, actions, onClose, accentColor, danmakuSettings)
             }
         } else {
@@ -123,6 +103,43 @@ internal fun FullscreenPanelHost(
                 FullscreenPanelContent(shown, info, playback, actions, onClose, accentColor, danmakuSettings)
             }
         }
+    }
+}
+
+/**
+ * 竖屏面板外壳：遮罩 + 从底部顶起来的实心底板。
+ *
+ * 与横屏那套两侧渐变外壳分开，是因为两者在窄屏/宽屏下不是同一套观感，
+ * 混在一个函数里会让调用点难以判断自己走的是哪条路径。
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.PortraitPanelShell(
+    reveal: Float,
+    onClose: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.42f))
+            .graphicsLayer { alpha = reveal }
+            .clickable(interactionSource = null, indication = null, onClick = onClose),
+    )
+    Column(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .fillMaxHeight(0.82f)
+            .graphicsLayer {
+                alpha = reveal
+                translationY = (1f - reveal) * 140f
+            }
+            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+            .background(Color(0xFF1A1A1E))
+            .clickable(interactionSource = null, indication = null) {}
+            .padding(start = 22.dp, end = 22.dp, top = 16.dp, bottom = 20.dp),
+    ) {
+        content()
     }
 }
 

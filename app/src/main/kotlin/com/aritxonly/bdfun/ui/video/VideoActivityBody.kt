@@ -92,21 +92,36 @@ internal fun VideoActivityBody(
             pager = pager,
         )
     }, comments = { c, onBack ->
-        val target = com.aritxonly.bdfun.core.domain.videoCommentTarget(c)
-        key(c.bvid, c.aid, target.oid, target.type) {
-            CommentScreen(
-                request = CommentScreenRequest(aid = c.aid, upMid = if (c.isPgc) 0L else c.ownerMid,
-                    title = c.title, bvid = c.bvid,
-                    commentOid = target.oid, commentType = target.type),
-                onBack = onBack,
-                // 竖屏面板顶部不再让状态栏留白，留白由面板自己的把手顶上。
-                layout = CommentScreenLayout(
-                    flatList = true,
+        PortraitCommentSlot(c, onBack, portraitComments)
+    })
+}
+
+/**
+ * 竖屏评论面板里挂的评论区。
+ *
+ * [portraitComments] 同时决定沉浸与跳过状态栏留白：面板自己已经在状态栏下面，
+ * 再补一次状态栏高度会让首条评论凭空下移。
+ */
+@Composable
+private fun PortraitCommentSlot(video: com.aritxonly.bdfun.core.model.video.VideoDetail, onBack: () -> Unit, portraitComments: Boolean) {
+    val target = com.aritxonly.bdfun.core.domain.videoCommentTarget(video)
+    key(video.bvid, video.aid, target.oid, target.type) {
+        CommentScreen(
+            request = CommentScreenRequest(
+                aid = video.aid, upMid = if (video.isPgc) 0L else video.ownerMid,
+                title = video.title, bvid = video.bvid,
+                commentOid = target.oid, commentType = target.type,
+            ),
+            onBack = onBack,
+            // 竖屏面板顶部不再让状态栏留白，留白由面板自己的把手顶上。
+            layout = CommentScreenLayout(
+                flatList = true,
+                insets = CommentInsetPolicy(
                     scrollTop = true,
                     immersiveStatusBar = portraitComments,
                     skipStatusInset = portraitComments,
                 ),
-            )
-        }
-    })
+            ),
+        )
+    }
 }
