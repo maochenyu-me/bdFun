@@ -50,20 +50,27 @@ internal fun HomeVideoGrid(
     // 定位胶囊要能滚到这里：网格 item 下标 = 前置的轮播项 + 分隔条之前的条目数。
     val dividerItemIndex = if (dividerIndex < 0) -1 else dividerIndex + if (hero.isEmpty()) 0 else 1
     androidx.compose.runtime.SideEffect { ui.refreshDividerIndex = dividerItemIndex }
-    LazyVerticalGrid(
-        columns = if (width >= 600.dp) host.gridCells(180.dp, 260.dp) else GridCells.Fixed(if (largeCards) 1 else 2),
-        state = state.gridState,
-        modifier = Modifier
-            .fillMaxSize()
-            .offset { IntOffset(0, ui.pullOffset.roundToInt()) }
-            .nestedScroll(refreshConnection),
-        contentPadding = PaddingValues(
+    // 列定义与内边距只在宽度/样式变化时重建，避免每次重组都让整张网格重新测量。
+    val columns = remember(width, largeCards, host) {
+        if (width >= 600.dp) host.gridCells(180.dp, 260.dp) else GridCells.Fixed(if (largeCards) 1 else 2)
+    }
+    val contentPadding = remember(host, statusBarTop, sectionGap) {
+        PaddingValues(
             start = 12.dp,
             top = host.topBarHeight + statusBarTop + 6.dp + sectionGap,
             end = 12.dp,
             // 让最后一排卡片能滚出悬浮底栏
             bottom = 104.dp,
-        ),
+        )
+    }
+    LazyVerticalGrid(
+        columns = columns,
+        state = state.gridState,
+        modifier = Modifier
+            .fillMaxSize()
+            .offset { IntOffset(0, ui.pullOffset.roundToInt()) }
+            .nestedScroll(refreshConnection),
+        contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
