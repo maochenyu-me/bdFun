@@ -1,41 +1,61 @@
 package com.aritxonly.bdfun.ui
 
 import android.app.Activity
-import android.view.WindowManager
+import android.content.pm.ActivityInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.aritxonly.bdfun.core.domain.isTabletDevice
 import com.aritxonly.bdfun.core.model.video.Quality
+
+/**
+ * 全屏期间由我们这一侧写进窗口的朝向：
+ * `BindPlayerOrientation` 写的 LOCKED / SENSOR_LANDSCAPE / SENSOR，
+ * 以及 `VideoActivity` 姿态监听写的 LANDSCAPE / PORTRAIT。
+ *
+ * `VideoActivity` 只在 `!fullscreen` 时把窗口交还系统，而横屏退回竖屏那一刻
+ * `onConfigurationChanged` 跑在 Compose 把 fullscreen 改回 false 之前，
+ * 那时它看到的还是全屏，补不上这一手；退出全屏时若朝向仍是这些值，就得自己还原。
+ */
+private val playerForcedOrientations = setOf(
+    ActivityInfo.SCREEN_ORIENTATION_LOCKED,
+    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+    ActivityInfo.SCREEN_ORIENTATION_SENSOR,
+)
 
 @Composable
 fun BindPlayerSystemBars(
     fullscreen: Boolean,
     immersiveStatusBar: Boolean,
-    portraitVideo: Boolean,
+    ui: VideoPlayerUiStateHolder,
+    portraitVideo: Boolean = false,
 ) {
     val activity = LocalContext.current as? Activity
-    DisposableEffect(fullscreen, immersiveStatusBar, portraitVideo) {
+    val tablet = isTabletDevice(LocalConfiguration.current.smallestScreenWidthDp)
+    var inlineOrientation by ui.inlineOrientation
+    DisposableEffect(fullscreen, immersiveStatusBar, portraitVideo, tablet) {
         val window = activity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
-        val previousCutoutMode = window?.attributes?.layoutInDisplayCutoutMode
         if (fullscreen) {
-            // 竖屏全屏要顶到挖孔区，否则状态栏那一带会留一条纯黑边。
-            // 朝向本身由 BindPlayerOrientation 统一决定，这里不再抢着写。
-            if (portraitVideo && window != null) {
-                runCatching {
-                    window.attributes = window.attributes.apply {
-                        layoutInDisplayCutoutMode =
-                            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                    }
-                }
-            }
+            inlineOrientation = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             controller?.apply {
                 systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 hide(WindowInsetsCompat.Type.systemBars())
+            }
+            // 竖屏视频：保持竖屏全屏，铺满整屏；横屏视频仍走原来的横屏全屏。
+            activity?.requestedOrientation = if (portraitVideo) {
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
         } else {
             if (immersiveStatusBar) {
@@ -53,18 +73,17 @@ fun BindPlayerSystemBars(
         }
         onDispose {
             controller?.show(WindowInsetsCompat.Type.systemBars())
-            if (portraitVideo && window != null) {
-                previousCutoutMode?.let { mode ->
-                    runCatching {
-                        window.attributes = window.attributes.apply {
-                            layoutInDisplayCutoutMode = mode
-                        }
-                    }
+            // 退出全屏后详情页要是被钉在某个方向，就只能退出视频重进才恢复旋转，
+            // 所以在放开 systemBars 之后，只把仍被我们钉住的朝向还给系统。
+            if (fullscreen) {
+                val current = activity?.requestedOrientation
+                activity?.requestedOrientation = if (current in playerForcedOrientations) {
+                    if (tablet) ActivityInfo.SCREEN_ORIENTATION_USER
+                    else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                } else {
+                    inlineOrientation
                 }
             }
-            // 退出全屏把朝向还给系统旋转这件事只在 VideoActivity 一处做（退出全屏的
-            // 所有路径都经过那里），这里不再插手：两处都写会互相覆盖，也容易出现
-            // 「谁的 key 先失效」的竞态。此处只负责系统栏与挖孔区。
         }
     }
 
