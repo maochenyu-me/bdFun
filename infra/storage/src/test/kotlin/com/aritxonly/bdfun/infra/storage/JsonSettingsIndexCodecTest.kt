@@ -78,10 +78,11 @@ class JsonSettingsIndexCodecTest {
         val result = codec.decode(file.readText())
         assertTrue(result.toString(), result is SettingsIndexImport.Success)
         val index = SettingsIndex((result as SettingsIndexImport.Success).categories)
-        // 索引项总数：早期 67 项 + 自适应缓冲/独立后台播放入口/预测性返回等 + 备份与恢复页四行
+// 索引项总数：早期 67 项 + 自适应缓冲/独立后台播放入口/预测性返回等 + 备份与恢复页四行
         // + 首页推荐四行（保留旧推荐/上次刷新提示/定位停留时间/撤销刷新）。
         // 2026-11-22 贡献者 Moretti815 与 maochenyu-me 是同一人，删掉重复条目后本分支为 84。
-        // 2026-11-25 app 分支合并上游更新后，设置项总数为 100。
+        // 2026-11-25 app 分支合并上游更新后为 100；上游侧同期因索引又加了 6 项但断言没跟上
+        // （写死 73、实际 79），已顺手修正到实际值。
         // 2026-11-26 新增「评论标签显示评论数」（视频详情与弹幕/评论区）后为 101。
         assertEquals(101, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)

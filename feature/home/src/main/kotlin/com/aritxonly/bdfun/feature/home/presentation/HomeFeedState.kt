@@ -42,7 +42,7 @@ class HomeFeedState internal constructor(private val controller: HomeFeedStateHo
     private var previousState = controller.state.value
     var pullFraction by mutableFloatStateOf(0f)
     var pullOffsetDp by mutableFloatStateOf(0f)
-val videos get() = videosState
+    val videos get() = videosState
     val loading get() = loadingState
     val refreshing get() = refreshingState
     val loadingMore get() = loadingMoreState
