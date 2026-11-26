@@ -82,14 +82,28 @@ internal fun HomePullRefreshBox(
                 .offset { IntOffset(0, offsetPx.floatValue.roundToInt()) }
                 .nestedScroll(session.connection()),
         )
-        val offsetDp = with(density) { offsetPx.floatValue.toDp().value }
-        HomePullIndicator(
-            reveal = if (latestRefreshing) 1f else ((offsetDp - 58f) / 26f).coerceIn(0f, 1f),
-            animated = latestRefreshing,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = topPadding),
-        )
+        // 下拉位移是拖拽回调每帧写入的：位移本身在 offset 里绘制期读，
+        // 小电视的淡入/位移也走绘制期 lambda，拖动时不再每帧重组指示器。
+        // 显隐单独用 derivedStateOf 只在越过阈值那一刻重组一次；
+        // 不可见时不合成指示器，避免语义节点常驻。
+        val indicatorVisible by remember(offsetPx) {
+            androidx.compose.runtime.derivedStateOf {
+                ((offsetPx.floatValue - 58f) / 26f) > 0.005f
+            }
+        }
+        if (latestRefreshing || indicatorVisible) {
+            HomePullIndicator(
+                reveal = {
+                    if (latestRefreshing) 1f
+                    else with(density) { ((offsetPx.floatValue.toDp().value - 58f) / 26f) }
+                        .coerceIn(0f, 1f)
+                },
+                animated = latestRefreshing,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = topPadding),
+            )
+        }
     }
 }
