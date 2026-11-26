@@ -28,6 +28,12 @@ _snapshots/
 _icons_src/
 _shadow_frames/
 _batch_stash/
+# 本机调试产物：uiautomator dump、截图、性能日志
+/output/
+bdq-log.txt
+
+# AI 助手工作目录（记忆与临时文件）
+/.workbuddy/
 
 # Signing material (never commit)
 *.jks
