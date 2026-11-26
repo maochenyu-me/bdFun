@@ -107,7 +107,10 @@ fun FullscreenPlayerChrome(
                 visible = panel != FullscreenPanel.None,
                 accentColor = appearance.accentColor,
                 danmakuSettings = slots.danmakuSettings,
+                // 竖屏窗口换用底部实心面板，横屏仍是右侧渐变换出。
                 portrait = portraitChrome,
+                // 评论面板走自己的外壳，需要拿到评论列表与回复栏插槽。
+                slots = slots,
             )
         }
     }
