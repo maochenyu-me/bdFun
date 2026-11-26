@@ -77,6 +77,8 @@ internal fun SearchLanding(
         }
 // 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
         // 编辑态只换渲染的数据源，不改变两块的先后顺序。
+        // [searchHistorySection] 只是把编辑态参数摊平后转给 searchHistoryItems，
+        // 与上游固定顺序那段等价，所以这里保留本地可切换顺序的写法。
         if (hotFirst) {
             searchHotItems(hot, colors, onPickKeyword)
             searchHistorySection(history, colors, onPickKeyword, onClearHistory, style, historyEdit)
