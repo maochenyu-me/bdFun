@@ -82,7 +82,8 @@ class JsonSettingsIndexCodecTest {
         // + 首页推荐四行（保留旧推荐/上次刷新提示/定位停留时间/撤销刷新）。
         // 2026-11-22 贡献者 Moretti815 与 maochenyu-me 是同一人，删掉重复条目后本分支为 84。
         // 2026-11-25 app 分支合并上游更新后，设置项总数为 100。
-        assertEquals(100, index.settings.size)
+        // 2026-11-26 新增「评论标签显示评论数」（视频详情与弹幕/评论区）后为 101。
+        assertEquals(101, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)
     }
 }

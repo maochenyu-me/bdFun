@@ -82,6 +82,8 @@ interface PlaybackSettings : SponsorSkipSettings {
     var boostDefaultSpeed: Float
     var showFullscreenTime: Boolean
     var showFullscreenActions: Boolean
+    /** 详情页「评论」标签是否附带评论数（如「评论 406」）。 */
+    var showCommentCount: Boolean
     var progressBarMode: Int
     var bluetoothLatencyMs: Int
     var decoderMode: Int
