@@ -149,6 +149,7 @@ override var searchHotFirst: Boolean by projection.property("searchHotFirstState
     override fun markBlurSessionHealthy() { controller.markBlurSessionHealthy(); projection.refresh() }
     override fun addSearchHistory(keyword: String) { controller.addSearchHistory(keyword); projection.refresh() }
     override fun clearSearchHistory() { controller.clearSearchHistory(); projection.refresh() }
+    override fun removeSearchHistory(keywords: Collection<String>) { controller.removeSearchHistory(keywords); projection.refresh() }
     override fun searchHistory(scope: String): List<String> = controller.searchHistory(scope)
     override fun addSearchHistory(scope: String, keyword: String) { controller.addSearchHistory(scope, keyword); projection.refresh() }
     override fun clearSearchHistory(scope: String) { controller.clearSearchHistory(scope); projection.refresh() }

@@ -40,6 +40,8 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
     flatHistory: Boolean = false,
     /** 媒体库搜索：胶囊略大、行距略宽。 */
     roomyHistory: Boolean = false,
+    /** 首页搜索的记录编辑态；为 null 时不支持长按删除。 */
+    historyEdit: HistoryEditSlots? = null,
 ) {
     val colors = MiuixTheme.colorScheme
     // 内容从顶栏下方开始，但整块可以滚到顶栏下面（顶部留白放 contentPadding 里），
@@ -54,6 +56,8 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
     TrackTeakPageScroll(listState)
     // 热搜/搜索发现是异步到的：数据插到列表最前面时，带 key 的 LazyColumn 会按「原来第一项」
     // 锚定，列表看起来就停在了热搜中间。所以打开页面后、数据到齐时各顶一次。
+    // 这里用落盘的 history.size（编辑态下它不会随草稿变化），
+    // 删除某条只是换了渲染的数据源，不会把列表顶回顶部。
     LaunchedEffect(resetKey, hot.size, discovery.size, history.size) {
         listState.scrollToItem(0)
     }
@@ -78,15 +82,55 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
             return@LazyColumn
         }
         // 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
+        // 编辑态只换渲染的数据源，不改变两块的先后顺序。
         if (hotFirst) {
             searchHotItems(hot, colors, onPickKeyword)
-            searchHistoryItems(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory)
+            searchHistorySection(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory, historyEdit)
         } else {
-            searchHistoryItems(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory)
+            searchHistorySection(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory, historyEdit)
             searchHotItems(hot, colors, onPickKeyword)
         }
         searchDiscoveryItems(discovery, colors, onPickKeyword)
 
     }
     }
+}
+
+/**
+ * 搜索记录编辑态的渲染槽位：谁负责管状态由调用方决定，这里只声明要显示什么。
+ * [visible] 在非编辑态下必须等于外面传进来的历史，否则会漏掉刚写入的新记录。
+ */
+internal class HistoryEditSlots(
+    val editing: Boolean,
+    val visible: List<String>,
+    val onBegin: () -> Unit,
+    val onRemove: (String) -> Unit,
+    val onCancel: () -> Unit,
+    val onCommit: () -> Unit,
+)
+
+/** 搜索记录板块：把编辑态参数摊平后转给 [searchHistoryItems]，好让热搜/记录两种顺序共用。 */
+private fun androidx.compose.foundation.lazy.LazyListScope.searchHistorySection(
+    history: List<String>,
+    colors: top.yukonga.miuix.kmp.theme.Colors,
+    onPickKeyword: (String) -> Unit,
+    onClearHistory: () -> Unit,
+    flat: Boolean,
+    roomy: Boolean,
+    edit: HistoryEditSlots?,
+) {
+    searchHistoryItems(
+        // 只有编辑态才用草稿：非编辑态直接读落盘的列表，外部新增记录不会漏。
+        history = if (edit?.editing == true) edit.visible else history,
+        colors = colors,
+        onPickKeyword = onPickKeyword,
+        onClearHistory = onClearHistory,
+        flat = flat,
+        roomy = roomy,
+        editing = edit?.editing == true,
+        onBeginEdit = edit?.onBegin,
+        onRemove = edit?.onRemove,
+        onCancelEdit = edit?.onCancel ?: {},
+        onCommitEdit = edit?.onCommit ?: {},
+    )
 }
