@@ -20,7 +20,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun SearchLanding(
     history: List<String>,
-hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
+    hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
     discovery: List<String>,
     hotFirst: Boolean = true,
     query: String,
@@ -32,21 +32,15 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
      * 再打开时会带着上次的位置；这里按这个 key 把列表顶回顶部。
      */
     resetKey: Int = 0,
-    /** 顶部给搜索栏留出的高度；媒体库搜索的输入栏比首页顶栏矮。 */
-    topContentPadding: androidx.compose.ui.unit.Dp = HomeTopBarHeight,
-    /** 外层已经消费过状态栏避让时传 false，避免再垫一条状态栏高度。 */
-    includeStatusBar: Boolean = true,
-    /** 媒体库搜索：搜索记录不再套圆角卡片，直接铺在页面背景上。 */
-    flatHistory: Boolean = false,
-    /** 媒体库搜索：胶囊略大、行距略宽。 */
-    roomyHistory: Boolean = false,
+    /** 版式差异（媒体库搜索与首页搜索的差别），合并成一个参数控制。 */
+    style: SearchLandingStyle = SearchLandingStyle(),
     /** 首页搜索的记录编辑态；为 null 时不支持长按删除。 */
     historyEdit: HistoryEditSlots? = null,
 ) {
     val colors = MiuixTheme.colorScheme
     // 内容从顶栏下方开始，但整块可以滚到顶栏下面（顶部留白放 contentPadding 里），
     // 这样滚动时是顶栏的渐进模糊，而不是被一条白边裁断。
-    val statusTop = if (includeStatusBar) {
+    val statusTop = if (style.includeStatusBar) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     } else {
         0.dp
@@ -70,7 +64,7 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
             // 顶栏高度放进列表留白：列表本身铺满窗口，滚上去的内容由顶栏做渐进模糊。
             // 媒体库搜索的输入栏是页面里真实占位的一行，不再额外留顶栏高度，
             // 搜索记录紧贴输入框下方（只留 6dp）。
-            top = statusTop + topContentPadding + if (includeStatusBar) 14.dp else 6.dp,
+            top = statusTop + style.topContentPadding + if (style.includeStatusBar) 14.dp else 6.dp,
             end = TeakUiStyle.design.contentInset(16.dp),
             bottom = 32.dp,
         ),
@@ -81,13 +75,13 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
             searchSuggestionItems(suggestions, colors, onPickKeyword)
             return@LazyColumn
         }
-        // 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
+// 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
         // 编辑态只换渲染的数据源，不改变两块的先后顺序。
         if (hotFirst) {
             searchHotItems(hot, colors, onPickKeyword)
-            searchHistorySection(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory, historyEdit)
+            searchHistorySection(history, colors, onPickKeyword, onClearHistory, style, historyEdit)
         } else {
-            searchHistorySection(history, colors, onPickKeyword, onClearHistory, flatHistory, roomyHistory, historyEdit)
+            searchHistorySection(history, colors, onPickKeyword, onClearHistory, style, historyEdit)
             searchHotItems(hot, colors, onPickKeyword)
         }
         searchDiscoveryItems(discovery, colors, onPickKeyword)
@@ -95,6 +89,23 @@ hot: List<com.aritxonly.bdfun.core.domain.SearchHotWord>,
     }
     }
 }
+
+/**
+ * 搜索首页的版式差异：首页搜索用默认值，媒体库搜索（收藏 / 历史 / 稍后再看）另传一份。
+ *
+ * 打包成一个参数是因为 [SearchLanding] 的参数个数有上限（tools/kotlin-audit 的 12 个），
+ * 而这三项永远是成套出现的同一件事：媒体库的输入栏是页面里真实占位的一行。
+ */
+internal data class SearchLandingStyle(
+    /** 顶部给搜索栏留出的高度；媒体库搜索的输入栏比首页顶栏矮。 */
+    val topContentPadding: androidx.compose.ui.unit.Dp = HomeTopBarHeight,
+    /** 外层已经消费过状态栏避让时传 false，避免再垫一条状态栏高度。 */
+    val includeStatusBar: Boolean = true,
+    /** 媒体库搜索：搜索记录不再套圆角卡片，直接铺在页面背景上。 */
+    val flatHistory: Boolean = false,
+    /** 媒体库搜索：胶囊略大、行距略宽。 */
+    val roomyHistory: Boolean = false,
+)
 
 /**
  * 搜索记录编辑态的渲染槽位：谁负责管状态由调用方决定，这里只声明要显示什么。
@@ -115,8 +126,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchHistorySection(
     colors: top.yukonga.miuix.kmp.theme.Colors,
     onPickKeyword: (String) -> Unit,
     onClearHistory: () -> Unit,
-    flat: Boolean,
-    roomy: Boolean,
+    style: SearchLandingStyle,
     edit: HistoryEditSlots?,
 ) {
     searchHistoryItems(
@@ -125,8 +135,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchHistorySection(
         colors = colors,
         onPickKeyword = onPickKeyword,
         onClearHistory = onClearHistory,
-        flat = flat,
-        roomy = roomy,
+        flat = style.flatHistory,
+        roomy = style.roomyHistory,
         editing = edit?.editing == true,
         onBeginEdit = edit?.onBegin,
         onRemove = edit?.onRemove,
