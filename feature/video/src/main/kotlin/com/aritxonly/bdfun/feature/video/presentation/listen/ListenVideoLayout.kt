@@ -31,16 +31,17 @@ fun resolveListenLayout(widthDp: Float, heightDp: Float): ListenLayoutSpec {
 
 enum class ListenPage { Cover, Lyrics }
 
-data class ListenPageSpec(val page: ListenPage, val label: String, val hasLyricsPage: Boolean = false)
+data class ListenPageSpec(val page: ListenPage, val label: String)
 
-fun listenPageCount(hasLyrics: Boolean): Int = if (hasLyrics) 2 else 1
+/**
+ * 两页始终存在：没有字幕时歌词页显示空态 + 导入入口，
+ * 所以胶囊与横滑不能因为「暂时没歌词」而消失——那会让界面看起来时有时无。
+ */
+fun listenPages(): List<ListenPageSpec> = listOf(
+    ListenPageSpec(ListenPage.Cover, "封面"),
+    ListenPageSpec(ListenPage.Lyrics, "歌词"),
+)
 
-fun listenPages(hasLyrics: Boolean): List<ListenPageSpec> = buildList {
-    add(ListenPageSpec(ListenPage.Cover, "封面"))
-    if (hasLyrics) add(ListenPageSpec(ListenPage.Lyrics, "歌词", hasLyricsPage = true))
-}
+fun listenPageCount(): Int = listenPages().size
 
-fun clampListenPage(index: Int, hasLyrics: Boolean): Int {
-    val last = listenPageCount(hasLyrics) - 1
-    return index.coerceIn(0, last)
-}
+fun clampListenPage(index: Int): Int = index.coerceIn(0, listenPageCount() - 1)

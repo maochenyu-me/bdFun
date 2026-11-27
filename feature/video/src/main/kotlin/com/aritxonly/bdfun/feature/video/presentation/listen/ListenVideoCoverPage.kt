@@ -15,6 +15,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -54,7 +59,6 @@ internal fun ListenVideoCoverPage(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val layout = resolveListenLayout(maxWidth.value, maxHeight.value)
         ListenVideoTopBar(
-            title = info.title,
             onBack = actions.onBack,
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
@@ -91,8 +95,9 @@ private fun LandscapeCoverBody(
     Row(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
             .padding(horizontal = 44.dp)
-            .padding(top = 62.dp, bottom = 30.dp),
+            .padding(top = 54.dp, bottom = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(34.dp),
     ) {
@@ -146,20 +151,29 @@ private fun PortraitCoverBody(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
             .padding(horizontal = 26.dp)
-            .padding(top = 62.dp, bottom = 62.dp),
+            .padding(top = 54.dp, bottom = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(0.6f))
+        // 封面吃「剩余空间」，不写死尺寸：写死会让固定高度内容超出屏幕，
+        // 底部那排次级按钮就被挤出可视区（之前正是这样丢的）。
         Box(
-            modifier = Modifier
-                .size(layout.coverSizeDp.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White.copy(alpha = 0.08f)),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentAlignment = Alignment.Center,
         ) {
-            coverImage(info.cover, Modifier.fillMaxSize())
+            BoxWithConstraints {
+                val side = minOf(layout.coverSizeDp, maxWidth.value, maxHeight.value).dp
+                Box(
+                    modifier = Modifier
+                        .size(side)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.08f)),
+                ) {
+                    coverImage(info.cover, Modifier.fillMaxSize())
+                }
+            }
         }
-        Spacer(Modifier.weight(0.5f))
         ListenLyricsPreview(
             lyrics = lyrics,
             positionMs = playback.positionMs,
@@ -167,7 +181,7 @@ private fun PortraitCoverBody(
             onSeek = actions.onLyricsSeek,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(14.dp))
         Text(
             text = info.title,
             color = Color.White,
@@ -186,20 +200,19 @@ private fun PortraitCoverBody(
             textAlign = TextAlign.Center,
             maxLines = 1,
         )
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(16.dp))
         ListenVideoProgress(playback, actions)
         Spacer(Modifier.height(6.dp))
         ListenVideoTransport(playback, info, actions, icons.play, icons.next, size = 52.dp)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         ListenVideoVolume(ui, actions)
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(8.dp))
         ListenVideoDock(ui, playback, actions, onOpenQueue)
-        Spacer(Modifier.weight(0.4f))
     }
 }
 
 /**
- * 封面页的实时歌词预览：当前行高亮，上下各两行做淡出。
+ * 封面页的实时歌词预览：当前行高亮，上下各一行做淡出。
  * 没有歌词时整块不占位，让封面和标题自然上移。
  */
 @Composable
@@ -213,7 +226,8 @@ private fun ListenLyricsPreview(
     if (lyrics.lines.isEmpty()) return
     val index = lyrics.indexAt(positionMs)
     val center = index.coerceAtLeast(0)
-    val window = (center - 2..center + 2).filter { it in lyrics.lines.indices }
+    // 只看当前行和上下各一行：五行会挤掉底部按钮。
+    val window = (center - 1..center + 1).filter { it in lyrics.lines.indices }
     Column(
         modifier = modifier.padding(horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

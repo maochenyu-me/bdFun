@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -63,62 +68,54 @@ fun ListenVideoScreen(
             .withTranslation(info.secondaryLyrics)
             .withOffset(ui.lyricsOffsetMs)
     }
-    val hasLyrics = lyrics.lines.isNotEmpty()
-    val pages = listenPages(hasLyrics)
+    val pages = remember { listenPages() }
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
 
-    // 字幕没了（切集/关字幕）时把页码收回 0，否则 Pager 会停在不存在的页上。
-    LaunchedEffect(hasLyrics) {
-        val clamped = clampListenPage(pagerState.currentPage, hasLyrics)
-        if (clamped != pagerState.currentPage) pagerState.scrollToPage(clamped)
-        ui.pageIndex = clamped
-    }
     LaunchedEffect(pagerState.currentPage) { ui.pageIndex = pagerState.currentPage }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         ListenVideoBackground(info.cover, palette, coverImage)
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = hasLyrics,
-        ) { index ->
-            when (pages[index].page) {
-                ListenPage.Cover -> ListenVideoCoverPage(
-                    info = info,
-                    playback = playback,
-                    actions = actions,
-                    ui = ui,
-                    palette = palette,
-                    lyrics = lyrics,
-                    coverImage = coverImage,
-                    icons = icons,
-                    onOpenMore = { ui.moreSheet = true },
-                    onOpenQueue = { ui.queueSheet = true },
-                )
-                ListenPage.Lyrics -> ListenVideoLyricsPage(
-                    info = info,
-                    playback = playback,
-                    actions = actions,
-                    ui = ui,
-                    palette = palette,
-                    lyrics = lyrics,
-                    icons = icons,
-                    onOpenMore = { ui.moreSheet = true },
-                    onOpenQueue = { ui.queueSheet = true },
-                )
+        // 胶囊单独占一行，不再浮在内容上：之前绝对定位会压住底部四个按钮。
+        Column(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            ) { index ->
+                when (pages[index].page) {
+                    ListenPage.Cover -> ListenVideoCoverPage(
+                        info = info,
+                        playback = playback,
+                        actions = actions,
+                        ui = ui,
+                        palette = palette,
+                        lyrics = lyrics,
+                        coverImage = coverImage,
+                        icons = icons,
+                        onOpenMore = { ui.moreSheet = true },
+                        onOpenQueue = { ui.queueSheet = true },
+                    )
+                    ListenPage.Lyrics -> ListenVideoLyricsPage(
+                        info = info,
+                        playback = playback,
+                        actions = actions,
+                        ui = ui,
+                        palette = palette,
+                        lyrics = lyrics,
+                        icons = icons,
+                        onOpenMore = { ui.moreSheet = true },
+                        onOpenQueue = { ui.queueSheet = true },
+                    )
+                }
             }
-        }
-
-        // 胶囊只在两页都存在时才有意义；单页时它是纯装饰，直接不画。
-        if (hasLyrics) {
             ListenVideoPageCapsule(
                 pages = pages,
                 current = pagerState.currentPage,
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 26.dp),
+                    .align(Alignment.CenterHorizontally)
+                    .navigationBarsPadding()
+                    .padding(top = 4.dp, bottom = 12.dp),
                 onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
             )
         }
@@ -128,7 +125,7 @@ fun ListenVideoScreen(
                 text = text,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 84.dp),
+                    .padding(bottom = 76.dp),
                 onShown = { ui.message = null },
             )
         }
@@ -253,16 +250,23 @@ private fun ListenVideoToast(text: String, modifier: Modifier, onShown: () -> Un
     }
 }
 
-/** 顶栏：返回 / 标题区 / 右侧动作。两页共用，保证标题与按钮位置一致。 */
+/**
+ * 顶栏只放动作，不放标题：手机挖孔/刘海就压在标题位置上，
+ * 而且听视频页面的标题在下面信息区已经完整显示过，重复一次没有意义。
+ */
 @Composable
 internal fun ListenVideoTopBar(
-    title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     trailing: @Composable () -> Unit = {},
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            // 听视频是全屏页面，状态栏可能被隐藏，此时 statusBars 给 0；
+            // 挖孔固定在屏幕上，必须并进同一个 inset，否则按钮会压在孔里。
+            .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -283,15 +287,7 @@ internal fun ListenVideoTopBar(
                 modifier = Modifier.size(20.dp),
             )
         }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = title,
-            color = Color.White.copy(alpha = 0.75f),
-            fontSize = 13.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Spacer(Modifier.weight(1f))
         trailing()
     }
 }

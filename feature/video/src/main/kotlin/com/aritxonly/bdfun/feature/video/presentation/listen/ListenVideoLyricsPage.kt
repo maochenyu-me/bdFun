@@ -62,9 +62,8 @@ internal fun ListenVideoLyricsPage(
     onOpenQueue: () -> Unit,
 ) {
     var offsetEditing by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize().padding(top = 6.dp, bottom = 54.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(top = 4.dp, bottom = 8.dp)) {
         ListenVideoTopBar(
-            title = info.title,
             onBack = actions.onBack,
         ) {
             if (lyrics.lines.isNotEmpty()) {

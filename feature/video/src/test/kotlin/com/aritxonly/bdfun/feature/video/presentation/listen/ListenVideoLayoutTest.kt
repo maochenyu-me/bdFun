@@ -35,27 +35,24 @@ class ListenVideoLayoutTest {
         }
     }
 
-    @Test fun lyricsPageShowsPagerOnlyWhenBothPagesExist() {
-        assertTrue(listenPageCount(hasLyrics = true) == 2)
-        assertTrue(listenPageCount(hasLyrics = false) == 1)
+    @Test fun pagerAlwaysHasBothPages() {
+        // 没有字幕时歌词页显示空态与导入入口，所以页面数不能跟着字幕变，
+        // 否则胶囊和横滑会「时有时无」。
+        assertEquals(2, listenPageCount())
     }
 
-    @Test fun pageIndexClampsWhenLyricsDisappear() {
-        // 正在歌词页时字幕被关掉：页面数变成 1，下标要收回 0，否则 Pager 会越界空白。
-        assertEquals(0, clampListenPage(1, hasLyrics = false))
-        assertEquals(1, clampListenPage(1, hasLyrics = true))
-        assertEquals(1, clampListenPage(9, hasLyrics = true))
+    @Test fun pageIndexClampsToAvailablePages() {
+        assertEquals(0, clampListenPage(-3))
+        assertEquals(1, clampListenPage(1))
+        assertEquals(1, clampListenPage(9))
     }
 
-    @Test fun capsuleOnlyOffersPagesThatExist() {
-        val pages = listenPages(hasLyrics = true)
-        assertEquals(listOf("封面", "歌词"), pages.map { it.label })
-        assertEquals(listOf("封面"), listenPages(hasLyrics = false).map { it.label })
+    @Test fun capsuleAlwaysOffersBothPages() {
+        assertEquals(listOf("封面", "歌词"), listenPages().map { it.label })
     }
 
     @Test fun defaultPageIsCover() {
-        assertEquals(ListenPage.Cover, listenPages(hasLyrics = true).first().page)
-        assertFalse(listenPages(hasLyrics = true).first().hasLyricsPage)
+        assertEquals(ListenPage.Cover, listenPages().first().page)
     }
 
     @Test fun coverIsSquareInCardStyle() {
