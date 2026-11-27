@@ -3,31 +3,42 @@ package com.aritxonly.bdfun.core.application
 import com.aritxonly.bdfun.core.application.videoTextUrls
 import com.aritxonly.bdfun.core.application.videoTextTokens
 import com.aritxonly.bdfun.core.application.trimVideoTextToken
+import com.aritxonly.bdfun.core.domain.commentTimestamps
 
 internal val EmoteToken = Regex("\\[([^\\]]+)]")
 
 data class RichTextHit(
     val start: Int, val end: Int, val emoteToken: String? = null, val emoteUrl: String? = null,
     val mentionName: String? = null, val mentionMid: Long = 0L, val linkUrl: String? = null, val video: Boolean = false,
+    /** 评论正文里的「1:00」这类时间点：点击时由页面决定是否真的跳转。 */
+    val timestampMs: Long? = null,
 )
 data class RichTextAnalysis(
     val hits: List<RichTextHit>, val hasEmote: Boolean, val hasMention: Boolean, val hasUrl: Boolean,
-    val mentionList: List<Map.Entry<String, Long>>,
+    val mentionList: List<Map.Entry<String, Long>>, val hasTimestamp: Boolean = false,
 ) {
-    fun plainText(trailing: Boolean) = !hasEmote && !hasMention && !hasUrl && !trailing
+    fun plainText(trailing: Boolean) = !hasEmote && !hasMention && !hasUrl && !hasTimestamp && !trailing
 }
 
-/** 优先级、去重与首次 indexOf 均保留原逻辑；这里只决定区间，不依赖 Compose。 */
-fun analyzeRichText(text: String, emotes: Map<String, String>, mentions: Map<String, Long>, mentionClick: Boolean): RichTextAnalysis {
+/**
+ * 优先级、去重与首次 indexOf 均保留原逻辑；这里只决定区间，不依赖 Compose。
+ *
+ * [timestamps] 由评论等「点得到播放器」的入口打开：链接、表情、提及都先占用区间，
+ * 时间点只在剩下的正文里生效，避免把链接里的冒号数字读成时间。
+ */
+fun analyzeRichText(text: String, emotes: Map<String, String>, mentions: Map<String, Long>,
+    mentionClick: Boolean, timestamps: Boolean = false): RichTextAnalysis {
     val compiled = mentionPattern(mentions, mentionClick)
     val mentionRegex = compiled.pattern
     val mentionList = compiled.list
     val hits = collectRichLinks(text).toMutableList()
     addRichEmotes(hits, text, emotes)
     if (mentionRegex != null) addRichMentions(hits, text, mentionRegex, mentions)
+    if (timestamps) addRichTimestamps(hits, text)
     return RichTextAnalysis(hits.sortedBy { it.start }, emotes.isNotEmpty() && EmoteToken.containsMatchIn(text),
         mentionClick && mentionRegex?.containsMatchIn(text) == true,
-        videoTextUrls.containsMatchIn(text) || videoTextTokens(text).isNotEmpty(), mentionList)
+        videoTextUrls.containsMatchIn(text) || videoTextTokens(text).isNotEmpty(), mentionList,
+        timestamps && hits.any { it.timestampMs != null })
 }
 
 fun collectRichLinks(text: String): List<RichTextHit> {
@@ -104,5 +115,13 @@ private fun addRichMentions(hits: MutableList<RichTextHit>, text: String, regex:
         val start = match.range.first; val end = match.range.last + 1
         if (hits.any { it.start < end && start < it.end }) continue
         hits += RichTextHit(start, end, mentionName = name, mentionMid = mid)
+    }
+}
+
+/** 时间点最后并入：已被链接/表情/提及占用的区间不再重复染色。 */
+private fun addRichTimestamps(hits: MutableList<RichTextHit>, text: String) {
+    for (stamp in commentTimestamps(text)) {
+        if (hits.any { it.start < stamp.end && stamp.start < it.end }) continue
+        hits += RichTextHit(stamp.start, stamp.end, timestampMs = stamp.positionMs)
     }
 }

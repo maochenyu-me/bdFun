@@ -127,6 +127,7 @@ override var searchHotFirst: Boolean by projection.property("searchHotFirstState
     override var showFullscreenTime: Boolean by projection.property("showFullscreenTimeState", { controller.showFullscreenTime }, { controller.showFullscreenTime = it })
     override var showFullscreenActions: Boolean by projection.property("showFullscreenActionsState", { controller.showFullscreenActions }, { controller.showFullscreenActions = it })
     override var showCommentCount: Boolean by projection.property("showCommentCountState", { controller.showCommentCount }, { controller.showCommentCount = it })
+    override var commentTimestampJump: Boolean by projection.property("commentTimestampJumpState", { controller.commentTimestampJump }, { controller.commentTimestampJump = it })
     override var progressBarMode: Int by projection.property("progressBarModeState", { controller.progressBarMode }, { controller.progressBarMode = it })
     override var sponsorSkipMode: Int by projection.property("sponsorSkipModeState", { controller.sponsorSkipMode }, { controller.sponsorSkipMode = it })
     override var sponsorMinimumDuration: Int by projection.property("sponsorMinimumDurationState", { controller.sponsorMinimumDuration }, { controller.sponsorMinimumDuration = it })

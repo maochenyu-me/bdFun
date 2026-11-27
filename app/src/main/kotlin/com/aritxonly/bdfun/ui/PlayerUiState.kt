@@ -135,6 +135,24 @@ internal class VideoPagePresentationState(
                 consumedDismissReply = value,
             ),
         ) }
+    override val seekRequest: Int
+        get() = snapshot.seekRequest
+    override val seekTargetMs: Long
+        get() = snapshot.seekTargetMs
+    override var consumedSeekRequest: Int
+        get() = snapshot.consumedSeekRequest
+        set(value) = update { it.copy(
+            requests = it.requests.copy(
+                consumedSeekRequest = value,
+            ),
+        ) }
+    /** 评论里的「1:00」：只登记请求，是否真的跳由播放器按当前时长判定。 */
+    fun requestSeek(positionMs: Long) = update { state ->
+        state.copy(requests = state.requests.copy(
+            seekRequest = state.requests.seekRequest + 1,
+            seekTargetMs = positionMs,
+        ))
+    }
     var commentThreadVisible: Boolean
         get() = snapshot.commentThreadVisible
         set(value) = update { it.copy(

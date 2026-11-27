@@ -75,5 +75,6 @@ internal fun androidx.compose.foundation.layout.RowScope.CommentPreviewText(
                 navigateToSpace(context, mid)
             }
         },
+        onTimestampClick = LocalCommentTimestampJump.current,
     )
 }

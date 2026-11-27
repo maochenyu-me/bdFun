@@ -711,6 +711,13 @@
             "default": true
           },
           {
+            "pref_name": "comment_timestamp_jump",
+            "type": "switch",
+            "title": "评论时间戳跳转",
+            "subtitle": "评论里的「1:00」可点击跳到对应位置，仅视频页生效",
+            "default": true
+          },
+          {
             "pref_name": "comment_ai_block",
             "type": "switch",
             "title": "「大肥鱼」屏蔽",

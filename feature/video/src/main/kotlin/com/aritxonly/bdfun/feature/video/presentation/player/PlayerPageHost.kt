@@ -11,6 +11,11 @@ interface PlayerPageHost {
 
     /** 竖屏视频标记：Activity 侧据此放弃传感器转屏，画中画也用竖屏比例。 */
     var portraitVideo: Boolean
+    /** 评论区时间戳跳转：序号变化即一次新请求，目标位置见 [seekTargetMs]。 */
+    val seekRequest: Int
+    val seekTargetMs: Long
+    /** 已处理到的请求序号：重组/旋转后不再重复跳转。 */
+    var consumedSeekRequest: Int
     fun registerPause(owner: Any?, hook: (Boolean) -> Unit)
     fun unregisterPause(hook: (Boolean) -> Unit)
     /** 被后台/其他页面暂停时登记续播动作，回到本页由 Activity 显式调用。 */

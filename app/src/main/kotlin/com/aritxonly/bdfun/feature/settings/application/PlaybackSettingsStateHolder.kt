@@ -113,6 +113,8 @@ internal class PlaybackSettingsStateHolder(
 
     private val showCommentCountState =
         stateCell("showCommentCountState", prefs.getBoolean("show_comment_count", true))
+
+    private val commentTimestampJumpState = stateCell("commentTimestampJump", prefs.getBoolean("comment_timestamp_jump", true))
     /** 进度条常显模式：0=关闭，1=仅半屏，2=仅全屏，3=永久。 */
 
     private val progressBarModeState = stateCell("progressBarModeState", prefs.getInt("progress_bar_mode", 0))
@@ -339,6 +341,14 @@ internal class PlaybackSettingsStateHolder(
         set(value) {
             showCommentCountState.value = value
             prefs.edit().putBoolean("show_comment_count", value).apply()
+        }
+
+    /** 评论正文里的「1:00」是否可点击跳转；关闭后按普通文字渲染。 */
+    override var commentTimestampJump: Boolean
+        get() = commentTimestampJumpState.value
+        set(value) {
+            commentTimestampJumpState.value = value
+            prefs.edit().putBoolean("comment_timestamp_jump", value).apply()
         }
 
     /** 进度条常显：0 关闭 / 1 仅半屏 / 2 仅全屏 / 3 永久。 */

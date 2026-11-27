@@ -85,4 +85,29 @@ class RichTextPolicyTest {
         val resolved = mapOf("av123" to ResolvedVideoLink(bv, "标题"))
         assertEquals("标题", displayVideoTextToken("av123", resolved)); assertEquals(bv, videoTextClickBvid("av123", resolved))
     }
+
+    @Test fun timestampsOnlyShowUpWhenTheCallerCanJump() {
+        val text = "前奏 0:10，正片 1:00"
+        assertTrue(analyzeRichText(text, emptyMap(), emptyMap(), false).hits.isEmpty())
+        assertTrue(analyzeRichText(text, emptyMap(), emptyMap(), false).plainText(false))
+        val plan = analyzeRichText(text, emptyMap(), emptyMap(), false, timestamps = true)
+        assertEquals(listOf(10_000L, 60_000L), plan.hits.map { it.timestampMs })
+        assertEquals(listOf("0:10", "1:00"), plan.hits.map { text.substring(it.start, it.end) })
+        assertTrue(plan.hasTimestamp); assertFalse(plan.plainText(false))
+    }
+
+    @Test fun linksEmotesAndMentionsKeepTheirRangesAwayFromTimestamps() {
+        val text = "https://x.test/a?t=1:00 [doge] @甲 2:30"
+        val plan = analyzeRichText(text, mapOf("doge" to "image"), mapOf("甲" to 1), true, timestamps = true)
+        assertEquals(listOf(150_000L), plan.hits.mapNotNull { it.timestampMs })
+        assertEquals(1, plan.hits.count { it.linkUrl != null })
+        assertEquals(1, plan.hits.count { it.emoteToken != null })
+        assertEquals(1, plan.hits.count { it.mentionName != null })
+    }
+
+    @Test fun timestampsKeepSourceOrderWithTheOtherHits() {
+        val plan = analyzeRichText("@甲 1:00 [doge] 2:00", mapOf("doge" to "image"), mapOf("甲" to 1), true, timestamps = true)
+        assertEquals(listOf(null, 60_000L, null, 120_000L), plan.hits.map { it.timestampMs })
+        assertTrue(plan.hits.zipWithNext().all { (a, b) -> a.start < b.start })
+    }
 }

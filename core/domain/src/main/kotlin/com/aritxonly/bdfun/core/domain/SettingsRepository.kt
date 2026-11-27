@@ -84,6 +84,8 @@ interface PlaybackSettings : SponsorSkipSettings {
     var showFullscreenActions: Boolean
     /** 详情页「评论」标签是否附带评论数（如「评论 406」）。 */
     var showCommentCount: Boolean
+    /** 评论正文里的「1:00」是否可点击跳到对应位置。 */
+    var commentTimestampJump: Boolean
     var progressBarMode: Int
     var bluetoothLatencyMs: Int
     var decoderMode: Int

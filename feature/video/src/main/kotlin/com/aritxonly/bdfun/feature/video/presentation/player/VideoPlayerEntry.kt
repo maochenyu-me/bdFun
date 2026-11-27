@@ -39,6 +39,7 @@ fun VideoPlayerEntry(
     BindPlayerContinuation(playback, presentation.fullscreenInfo, actions.transport.onPageSelected, ui,
         ports.engine.page, ports.hasNext, ports.engine.diagnostics.toast, ports.engine.diagnostics.log)
     BindPlayerEngineEffects(playback, observed, media, presentation, actions, ui, tracking, ports.engine)
+    BindPlayerCommentSeek(playback, ports.engine.page, ports.engine.diagnostics.toast)
     val audioOnly by ui.fsAudioOnly
     val danmakuVisible = !audioOnly && ports.danmakuOn() && media.danmaku.isNotEmpty()
     val playing by observed.playing

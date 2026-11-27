@@ -94,7 +94,7 @@ internal fun VideoActivityBody(
             pager = pager,
         )
     }, comments = { c, onBack ->
-        PortraitCommentSlot(c, onBack, portraitComments)
+        PortraitCommentSlot(c, onBack, portraitComments, collapseOnJump = portraitComments && !pageFullscreen)
     })
 }
 
@@ -103,27 +103,38 @@ internal fun VideoActivityBody(
  *
  * [portraitComments] 同时决定沉浸与跳过状态栏留白：面板自己已经在状态栏下面，
  * 再补一次状态栏高度会让首条评论凭空下移。
+ * [collapseOnJump] 只在「面板压着播放器」时打开：点时间戳先收面板回到画面，
+ * 铺满整页的评论区（以及已经全屏的形态）不能跟着收。
  */
 @Composable
-private fun PortraitCommentSlot(video: com.aritxonly.bdfun.core.model.video.VideoDetail, onBack: () -> Unit, portraitComments: Boolean) {
+private fun PortraitCommentSlot(
+    video: com.aritxonly.bdfun.core.model.video.VideoDetail, onBack: () -> Unit,
+    portraitComments: Boolean, collapseOnJump: Boolean,
+) {
+    val page = LocalVideoPageState.current
     val target = com.aritxonly.bdfun.core.domain.videoCommentTarget(video)
     key(video.bvid, video.aid, target.oid, target.type) {
-        CommentScreen(
-            request = CommentScreenRequest(
-                aid = video.aid, upMid = if (video.isPgc) 0L else video.ownerMid,
-                title = video.title, bvid = video.bvid,
-                commentOid = target.oid, commentType = target.type,
-            ),
-            onBack = onBack,
-            // 竖屏面板顶部不再让状态栏留白，留白由面板自己的把手顶上。
-            layout = CommentScreenLayout(
-                flatList = true,
-                insets = CommentInsetPolicy(
-                    scrollTop = true,
-                    immersiveStatusBar = portraitComments,
-                    skipStatusInset = portraitComments,
+        CommentTimestampJumpHost(onJump = { positionMs ->
+            page.requestSeek(positionMs)
+            if (collapseOnJump) onBack()
+        }) {
+            CommentScreen(
+                request = CommentScreenRequest(
+                    aid = video.aid, upMid = if (video.isPgc) 0L else video.ownerMid,
+                    title = video.title, bvid = video.bvid,
+                    commentOid = target.oid, commentType = target.type,
                 ),
-            ),
-        )
+                onBack = onBack,
+                // 竖屏面板顶部不再让状态栏留白，留白由面板自己的把手顶上。
+                layout = CommentScreenLayout(
+                    flatList = true,
+                    insets = CommentInsetPolicy(
+                        scrollTop = true,
+                        immersiveStatusBar = portraitComments,
+                        skipStatusInset = portraitComments,
+                    ),
+                ),
+            )
+        }
     }
 }
