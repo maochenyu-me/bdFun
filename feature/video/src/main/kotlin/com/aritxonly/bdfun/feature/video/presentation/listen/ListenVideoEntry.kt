@@ -1,10 +1,13 @@
 package com.aritxonly.bdfun.feature.video.presentation.listen
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.zIndex
 import com.aritxonly.bdfun.ui.FullscreenActions
 import com.aritxonly.bdfun.ui.FullscreenPanel
 import com.aritxonly.bdfun.ui.FullscreenPanelHost
@@ -48,12 +51,7 @@ internal fun PlayerListenVideo(
     if (imported != null && imported !== state.importedLyrics) state.importedLyrics = imported
 
     // 进听视频但还没选过字幕：自动挑一条中文轨当歌词，再挑一条不同语言的当「译」。
-    androidx.compose.runtime.LaunchedEffect(info.currentCid, info.subtitles) {
-        if (info.subtitleCues.isNotEmpty() || info.subtitles.isEmpty()) return@LaunchedEffect
-        val primary = pickPrimarySubtitle(info.subtitles)
-        if (primary != null) fsActions.onSubtitleSelected(primary)
-        pickSecondarySubtitle(info.subtitles, primary)?.let(fsActions.onSecondarySubtitleSelected)
-    }
+    AutoPickSubtitles(info, fsActions)
 
     val sleepAt = ui.fsSleepAt.value
     val playback = ListenVideoPlayback(
@@ -111,7 +109,11 @@ internal fun PlayerListenVideo(
         modifier = modifier,
     )
 
-    ListenPanelHost(media, presentation, ui, fsActions, ports, playing, positionMs, durationMs, bufferedMs)
+    ListenPanelHost(
+        media, presentation, ui, fsActions, ports, playing, positionMs, durationMs, bufferedMs,
+        // 听视频页整页铺满且带 zIndex(30)，配置面板必须比它更高，否则会被压在下面看不见。
+        modifier = Modifier.fillMaxSize().zIndex(31f),
+    )
 }
 
 /** 选集 / 音质 / 倍速 / 收藏 / 字幕面板复用现有实现，听视频里也要能开。 */
@@ -126,24 +128,27 @@ private fun ListenPanelHost(
     positionMs: Long,
     durationMs: Long,
     bufferedMs: Long,
+    modifier: Modifier = Modifier,
 ) {
     val panel = ui.fsPanel.value
     if (panel == FullscreenPanel.None || panel == FullscreenPanel.Comments) return
     val visuals = ports.fullscreenVisuals()
-    FullscreenPanelHost(
-        panel = panel,
-        info = presentation.fullscreenInfo,
-        playback = fullscreenPlaybackProjection(
-            media, ui, playing, positionMs, durationMs, bufferedMs, visuals,
-            alwaysShowTransport = true,
-        ),
-        actions = fsActions,
-        onClose = { ui.fsPanel.value = FullscreenPanel.None },
-        accentColor = visuals.appearance.accentColor,
-        danmakuSettings = visuals.slots.danmakuSettings,
-        portrait = true,
-        slots = visuals.slots,
-    )
+    Box(modifier = modifier) {
+        FullscreenPanelHost(
+            panel = panel,
+            info = presentation.fullscreenInfo,
+            playback = fullscreenPlaybackProjection(
+                media, ui, playing, positionMs, durationMs, bufferedMs, visuals,
+                alwaysShowTransport = true,
+            ),
+            actions = fsActions,
+            onClose = { ui.fsPanel.value = FullscreenPanel.None },
+            accentColor = visuals.appearance.accentColor,
+            danmakuSettings = visuals.slots.danmakuSettings,
+            portrait = true,
+            slots = visuals.slots,
+        )
+    }
 }
 
 private fun toggleActivityOrientation(activity: android.app.Activity) {
@@ -162,6 +167,20 @@ private fun sleepTimerLabel(sleepAtMs: Long): String {
     if (sleepAtMs <= now) return ""
     val minutes = ((sleepAtMs - now + 59_999L) / 60_000L).toInt()
     return "$minutes 分钟后"
+}
+
+/** 没手动选过字幕时自动挑主/副两条，避免听视频进来是一片空白歌词。 */
+@Composable
+private fun AutoPickSubtitles(
+    info: com.aritxonly.bdfun.ui.FullscreenPlayerInfo,
+    fsActions: FullscreenActions,
+) {
+    androidx.compose.runtime.LaunchedEffect(info.currentCid, info.subtitles) {
+        if (info.subtitleCues.isNotEmpty() || info.subtitles.isEmpty()) return@LaunchedEffect
+        val primary = pickPrimarySubtitle(info.subtitles)
+        if (primary != null) fsActions.onSubtitleSelected(primary)
+        pickSecondarySubtitle(info.subtitles, primary)?.let(fsActions.onSecondarySubtitleSelected)
+    }
 }
 
 /** 主字幕优先中文（含 AI 中文），否则取第一条。 */

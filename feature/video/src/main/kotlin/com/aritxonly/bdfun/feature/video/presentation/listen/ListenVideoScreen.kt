@@ -131,8 +131,23 @@ fun ListenVideoScreen(
         }
     }
 
-    ListenVideoSheets(info, playback, actions, ui, palette)
+    ListenVideoSheets(
+        info = info,
+        playback = playback,
+        actions = actions,
+        ui = ui,
+        palette = palette,
+        orientationLabel = orientationSwitchLabel(),
+    )
 }
+
+/** 菜单里只标「点了会转成什么」，不能写死横屏。 */
+@Composable
+private fun orientationSwitchLabel(): String =
+    if (
+        androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    ) "竖屏" else "横屏"
 
 /** 更多 / 队列两个浮层；抽出来避免主容器过长。 */
 @Composable
@@ -142,13 +157,14 @@ private fun ListenVideoSheets(
     actions: ListenVideoActions,
     ui: ListenVideoUiStateHolder,
     palette: ListenVideoPalette,
+    orientationLabel: String,
 ) {
     if (ui.moreSheet) {
         ListenVideoMoreSheet(
             visible = true,
             onDismiss = { ui.moreSheet = false },
             capabilities = info.capabilities,
-            state = info.menuState(ui, playback),
+            state = info.menuState(ui, playback, orientationLabel),
             accent = Color(palette.accent),
             onEntry = { entry -> actions.onMenuEntry(entry); ui.moreSheet = false },
             sleepAtMs = playback.sleepAtMs,

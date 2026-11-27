@@ -11,6 +11,8 @@ import kotlin.math.roundToInt
 fun BindVideoFullscreenState(
     ui: VideoDetailUiStateHolder, publish: (Boolean) -> Unit, autoRotate: Boolean,
     requestedFullscreen: Boolean = false, pictureInPicture: Boolean = false,
+    /** 听视频独占整屏：横竖屏都不该被「转回竖屏就退出全屏」收回半屏。 */
+    listenMode: Boolean = false,
 ) {
     var fullscreen by ui.fullscreen
     var coinSheet by ui.coinSheet
@@ -35,9 +37,9 @@ fun BindVideoFullscreenState(
     val landscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     // 横屏宽度会把直板机也判成分栏；用不随旋转交换的最小宽度区分紧凑设备。
     val smallestWidthDp = configuration.smallestScreenWidthDp
-    LaunchedEffect(landscape, smallestWidthDp) {
+    LaunchedEffect(landscape, smallestWidthDp, listenMode) {
         com.aritxonly.bdfun.core.domain.fullscreenAfterVideoRotation(
-            landscape, smallestWidthDp, autoRotate,
+            landscape, smallestWidthDp, autoRotate, listenMode,
         )?.let { fullscreen = it }
     }
 }

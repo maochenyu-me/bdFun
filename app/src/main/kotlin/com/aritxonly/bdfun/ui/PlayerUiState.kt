@@ -142,6 +142,8 @@ internal class VideoPagePresentationState(
                 commentThreadVisible = value,
             ),
         ) }
+    /** 听视频正在独占整屏：详情页据此不再因旋转自动退出全屏。 */
+    var listenMode by mutableStateOf(false)
     var fullscreen: Boolean
         get() = snapshot.fullscreen
         set(value) = update { it.copy(

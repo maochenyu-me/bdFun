@@ -154,7 +154,17 @@ private fun ListenVideoLayer(
         onExitFullscreen = onToggleFullscreen,
         modifier = Modifier.fillMaxSize().zIndex(30f),
     )
+    // 听视频接管整屏：任何来源（换稿件、旧状态残留）把播放器收回半屏时，都顶回全屏。
+    val fullscreen = presentation.fullscreen
+    LaunchedEffect(fullscreen) {
+        if (!fullscreen) onToggleFullscreen()
+    }
     BackHandler(enabled = true) {
+        // 配置面板（音质/倍速/字幕…）开在听视频页之上，返回键先收面板。
+        if (ui.fsPanel.value != FullscreenPanel.None) {
+            ui.fsPanel.value = FullscreenPanel.None
+            return@BackHandler
+        }
         fsActions.onAudioOnlyChanged(false)
         if (ui.listenFromInline.value) {
             ui.listenFromInline.value = false

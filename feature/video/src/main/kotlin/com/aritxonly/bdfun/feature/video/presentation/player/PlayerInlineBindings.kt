@@ -77,7 +77,6 @@ private fun inlineChromeActions(
     val onToggleFullscreen = actions.navigation.onToggleFullscreen
     var fsScrubbing by ui.fsScrubbing
     var fsSeekLook by ui.fsSeekLook
-    var fsAudioOnly by ui.fsAudioOnly
     var halfMoreOpen by ui.halfMoreOpen
     fun touch() { ui.interactionTick.intValue++ }
     return InlineChromeActions(
@@ -113,7 +112,8 @@ private fun inlineChromeActions(
             // 点「听视频」就是为了后台听：顺手把后台播放打开，
             // 不用再进「更多」里单独开一次「后台听视频」。
             fsActions.onBackgroundPlayChanged(true)
-            fsAudioOnly = true
+            // 走统一动作而不是直接写状态：详情页要靠同一个口子知道「听视频在独占整屏」。
+            fsActions.onAudioOnlyChanged(true)
             // 听视频是整页界面：半屏进入时一并进全屏，退出时再回到详情页。
             if (!fullscreen) {
                 ui.listenFromInline.value = true

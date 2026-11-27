@@ -80,6 +80,17 @@ ListenVideoScreen（整页，接管屏幕）
 A-B 循环与双语翻译收进「更多」面板，避免底部一排按钮既占宽度又语义混杂；
 随机与循环的互斥规则落在 `core:domain/ListenPlayModePolicy.kt`，有纯 JVM 测试。
 
+### 6.1 三处必须守住的边界
+
+| 边界 | 做法 |
+|---|---|
+| 更多面板里点的配置项要真的打开面板 | `ListenPanelHost` 用 `zIndex(31f)` 盖在听视频层（`zIndex(30f)`）之上；否则面板开在下面看不见 |
+| 面板打开时返回键先收面板 | 听视频层的 `BackHandler` 先判 `fsPanel`，再判退出听视频 |
+| 切横竖屏后仍要整页 | `fullscreenAfterVideoRotation(..., listenMode)` 在听视频时返回 `null`，不把播放器收回半屏；「听视频中」由 `PlayerInlineBindings.onListen → fsActions.onAudioOnlyChanged(true)` 写入 `VideoPagePresentationState.listenMode`，不能直接改 `fsAudioOnly` 绕过它 |
+
+横屏空间紧：右侧信息列（标题/进度/传输）可滚动，底部那排按钮常驻，不再整排被裁掉。
+
+
 **本次不接入（项目暂缺，菜单里直接隐藏）**：
 
 | 项 | 原因 |

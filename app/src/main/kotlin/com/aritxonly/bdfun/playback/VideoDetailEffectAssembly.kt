@@ -11,5 +11,7 @@ internal fun videoDetailEffectPorts(): VideoDetailEffectPorts {
         updateBackground = { item, detail, cid, quality ->
             background.updateInfo(video = item, title = item.title, author = item.ownerName, cover = item.cover)
             background.updateSession(video = item, detail = detail, currentCid = cid, qualityId = quality)
-        })
+        },
+        listenMode = { page.listenMode },
+    )
 }

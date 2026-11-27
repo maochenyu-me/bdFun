@@ -23,4 +23,6 @@ class VideoDetailEffectPorts(
     val sentHistory: () -> SentHistoryRepository,
     val publishFullscreen: (Boolean) -> Unit,
     val updateBackground: (VideoItem, VideoDetail?, Long, Int) -> Unit,
+    /** 当前是不是听视频在独占整屏：决定旋转要不要自动退出全屏。 */
+    val listenMode: () -> Boolean = { false },
 )

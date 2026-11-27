@@ -196,6 +196,8 @@ internal class VideoFullscreenActionBindings(
 
     private val onAudioOnlyChanged: (Boolean) -> Unit = { enabled ->
         fsAudioOnly = enabled
+        // 听视频接管整屏这件事要让详情页也认：它决定旋转时要不要自动退出全屏。
+        VideoPageBus.listenMode = enabled
         if (enabled) {
             fsPanel = FullscreenPanel.None
             controlsVisible = true

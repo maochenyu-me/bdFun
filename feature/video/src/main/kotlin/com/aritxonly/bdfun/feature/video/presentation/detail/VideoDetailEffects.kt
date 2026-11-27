@@ -42,7 +42,10 @@ fun BindVideoDetailEffects(
     LoadInitialVideo(request.video, request.defaultQuality, request.epId, request.seasonId, controllers, ui, load)
     BindVideoPageMetadata(detail, currentCid, content.loggedIn, holders.metadata, controllers.interaction, ui)
     RegisterVideoDanmakuSender(detail, currentCid, holders.metadata, controllers.detail, ports)
-    BindVideoFullscreenState(ui, ports.publishFullscreen, autoRotate, requestedFullscreen, pictureInPicture)
+    BindVideoFullscreenState(
+        ui, ports.publishFullscreen, autoRotate, requestedFullscreen, pictureInPicture,
+        listenMode = ports.listenMode(),
+    )
     BindBackgroundVideoMetadata(request.video, detail, currentCid, content.quality, ports)
     ReconcileVideoPager(pager)
 }

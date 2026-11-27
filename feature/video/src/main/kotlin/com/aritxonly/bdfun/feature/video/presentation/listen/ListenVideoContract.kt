@@ -27,7 +27,12 @@ data class ListenVideoInfo(
     fun previousCid(): Long? = pages.getOrNull(pages.indexOfFirst { it.cid == currentCid } - 1)?.cid
     fun nextCid(): Long? = pages.getOrNull(pages.indexOfFirst { it.cid == currentCid } + 1)?.cid
 
-    fun menuState(ui: ListenVideoUiStateHolder, playback: ListenVideoPlayback): ListenMenuState =
+    fun menuState(
+        ui: ListenVideoUiStateHolder,
+        playback: ListenVideoPlayback,
+        /** 菜单里只标「点了会转成什么」，不能写死横屏。 */
+        orientationLabel: String = "横屏",
+    ): ListenMenuState =
         ListenMenuState(
             speed = playback.speed,
             loopMode = playback.loopMode,
@@ -37,6 +42,7 @@ data class ListenVideoInfo(
             qualityLabel = qualityLabel,
             favorited = favorited,
             backgroundPlay = playback.backgroundPlay,
+            orientationLabel = orientationLabel,
         )
 }
 

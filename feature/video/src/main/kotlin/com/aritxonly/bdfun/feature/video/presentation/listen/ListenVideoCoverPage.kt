@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -97,7 +100,7 @@ private fun LandscapeCoverBody(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout))
             .padding(horizontal = 44.dp)
-            .padding(top = 54.dp, bottom = 18.dp),
+            .padding(top = 42.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(34.dp),
     ) {
@@ -109,28 +112,35 @@ private fun LandscapeCoverBody(
         ) {
             coverImage(info.cover, Modifier.fillMaxSize())
         }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = info.title,
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = info.author.ifBlank { "UP 主" },
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(22.dp))
-            ListenVideoProgress(playback, actions)
-            Spacer(Modifier.height(10.dp))
-            ListenVideoTransport(playback, info, actions, icons.play, icons.next, size = 58.dp)
-            Spacer(Modifier.height(18.dp))
+        // 横屏高度很紧：文字块可滚动，底部那排按钮常驻，避免整排被裁掉。
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Text(
+                    text = info.title,
+                    color = Color.White,
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    text = info.author.ifBlank { "UP 主" },
+                    color = Color.White.copy(alpha = 0.55f),
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(16.dp))
+                ListenVideoProgress(playback, actions)
+                Spacer(Modifier.height(8.dp))
+                ListenVideoTransport(playback, info, actions, icons.play, icons.next, size = 52.dp)
+            }
             ListenVideoDock(ui, playback, actions, onOpenQueue)
         }
     }

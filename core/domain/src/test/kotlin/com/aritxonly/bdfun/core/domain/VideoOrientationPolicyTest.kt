@@ -20,4 +20,11 @@ class VideoOrientationPolicyTest {
         assertEquals(false, fullscreenAfterVideoRotation(false, 393, true))
         assertEquals(false, fullscreenAfterVideoRotation(false, 840, false))
     }
+
+    @Test fun listenModeNeverCollapsesOutOfFullscreen() {
+        // 听视频是整页界面，转回竖屏也不能被收回半屏播放器。
+        assertNull(fullscreenAfterVideoRotation(false, 393, true, listenMode = true))
+        assertNull(fullscreenAfterVideoRotation(false, 840, false, listenMode = true))
+        assertNull(fullscreenAfterVideoRotation(true, 393, true, listenMode = true))
+    }
 }
