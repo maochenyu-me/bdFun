@@ -84,7 +84,8 @@ class JsonSettingsIndexCodecTest {
         // 2026-11-25 app 分支合并上游更新后为 100；上游侧同期因索引又加了 6 项但断言没跟上
         // （写死 73、实际 79），已顺手修正到实际值。
         // 2026-11-26 新增「评论标签显示评论数」（视频详情与弹幕/评论区）后为 101。
-        assertEquals(101, index.settings.size)
+        // 2026-11-27 新增「评论时间戳跳转」（同一分组）后为 102。
+        assertEquals(102, index.settings.size)
         assertEquals("switch", index.settings.getValue("adaptive_buffering").type)
         // 索引里的默认值必须和代码常量一致：两者不一致时，设置页显示的值会和实际
         // 生效的值对不上（上游 5f1fc303 就把常量改成 120 却漏改了索引，曾长期错位）。

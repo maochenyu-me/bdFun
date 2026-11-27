@@ -19,10 +19,8 @@ class DanmakuRuleMatcher(rules: List<DanmakuCloudRule>) {
         keywords.any { item.text.contains(it) } || patterns.any { it.containsMatchIn(item.text) }
 }
 
-private val danmakuTimestamp = Regex("""(?<![\d:])(?:(\d{1,3}):)?(\d{1,3}):([0-5]\d)(?![\d:])""")
-
 fun danmakuTimestampMs(text: String, durationMs: Long): Long? {
-    val match = danmakuTimestamp.find(text) ?: return null
+    val match = textTimestampPattern.find(text) ?: return null
     val hours = match.groupValues[1].toLongOrNull() ?: 0
     val minutes = match.groupValues[2].toLong()
     if (hours > 0 && minutes >= 60) return null

@@ -82,6 +82,27 @@ private fun AnnotatedString.Builder.appendVideoPlayGlyph(
     appendInlineContent(id)
 }
 
+/**
+ * 评论正文里的「1:00」：和链接同一套配色，点一下交给页面去跳转。
+ * 时间点用原文字符串直接 append，不参与表情占位，因此不会打乱 inline content 的 id 序号。
+ */
+internal fun AnnotatedString.Builder.appendRichTimestamp(runtime: RichTextRenderContext, hit: RichTextHit) {
+    val positionMs = hit.timestampMs ?: return
+    val onTimestampClick = runtime.actions.onTimestampClick
+    val label = runtime.content.text.substring(hit.start, hit.end)
+    withLink(
+        androidx.compose.ui.text.LinkAnnotation.Clickable(
+            tag = "time-${hit.start}",
+            styles = androidx.compose.ui.text.TextLinkStyles(
+                style = SpanStyle(color = runtime.linkColor),
+            ),
+            linkInteractionListener = { onTimestampClick?.invoke(positionMs) },
+        ),
+    ) {
+        append(label)
+    }
+}
+
 internal fun AnnotatedString.Builder.appendRichMention(runtime: RichTextRenderContext, inline: MutableMap<String, InlineTextContent>, hit: RichTextHit) {
     val text = runtime.content.text
     val mentionColor = runtime.style.mentionColor

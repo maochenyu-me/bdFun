@@ -44,6 +44,7 @@ internal fun CommentRowMessage(item: CommentItem) {
                 navigateToSpace(context, mid)
             }
         },
+        onTimestampClick = LocalCommentTimestampJump.current,
     )
     if (item.pictures.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))

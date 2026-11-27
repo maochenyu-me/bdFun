@@ -117,6 +117,7 @@ SettingCase("searchHotFirst", true, false, { it.searchHotFirst }, { s, v -> s.se
             SettingCase("showFullscreenTime", true, false, { it.showFullscreenTime }, { s, v -> s.showFullscreenTime = v }),
             SettingCase("showFullscreenActions", true, false, { it.showFullscreenActions }, { s, v -> s.showFullscreenActions = v }),
             SettingCase("showCommentCount", true, false, { it.showCommentCount }, { s, v -> s.showCommentCount = v }),
+            SettingCase("commentTimestampJump", true, false, { it.commentTimestampJump }, { s, v -> s.commentTimestampJump = v }),
             SettingCase("progressBarMode", 0, 1, { it.progressBarMode }, { s, v -> s.progressBarMode = v }),
             SettingCase("sponsorSkipMode", 1, 2, { it.sponsorSkipMode }, { s, v -> s.sponsorSkipMode = v }),
             SettingCase("sponsorMinimumDuration", 0, 3, { it.sponsorMinimumDuration }, { s, v -> s.sponsorMinimumDuration = v }),

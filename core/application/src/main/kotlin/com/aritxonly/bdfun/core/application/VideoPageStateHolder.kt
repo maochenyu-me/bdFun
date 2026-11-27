@@ -24,6 +24,10 @@ data class VideoPageState(
     val consumedReplyFocus get() = requests.consumedReplyFocus
     val dismissReply get() = requests.dismissReply
     val consumedDismissReply get() = requests.consumedDismissReply
+    /** 评论区时间戳跳转：tick 变了就是一次新请求，目标位置在同一次快照里。 */
+    val seekRequest get() = requests.seekRequest
+    val seekTargetMs get() = requests.seekTargetMs
+    val consumedSeekRequest get() = requests.consumedSeekRequest
     val commentThreadVisible get() = reply.commentThreadVisible
     val fullscreen get() = player.fullscreen
     val portraitVideo get() = player.portraitVideo
@@ -48,6 +52,11 @@ data class VideoPageRequests(
     val consumedReplyFocus: Int = 0,
     val dismissReply: Int = 0,
     val consumedDismissReply: Int = 0,
+    /** 评论时间戳跳转请求序号；0 表示没有请求。 */
+    val seekRequest: Int = 0,
+    /** 与 [seekRequest] 同一次写入，避免播放器读到上一单的目标位置。 */
+    val seekTargetMs: Long = 0L,
+    val consumedSeekRequest: Int = 0,
 )
 
 data class VideoPagePlayerState(

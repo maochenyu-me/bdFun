@@ -39,27 +39,31 @@ internal fun androidx.compose.foundation.layout.BoxScope.VideoScreenPager(
 @Composable
 private fun VideoScreenComments(pane: VideoCommentPane, scrollTop: Boolean) {
     val d = pane.detail
+    val page = LocalVideoPageState.current
     // PGC 评论挂在 epId 上；换集后 bvid/aid/oid 都会变，显式换 key，评论列表、滚动位置、楼中楼全部从新集重建。
     val target = com.aritxonly.bdfun.core.domain.videoCommentTarget(d)
     key(d.bvid, d.aid, target.oid, target.type) {
-        CommentScreen(
-            request = CommentScreenRequest(aid = d.aid, upMid = if (d.isPgc) 0L else d.ownerMid,
-                title = d.title, bvid = d.bvid,
-                commentOid = target.oid, commentType = target.type,
-                focusRootRpid = pane.root, focusTargetRpid = pane.target),
-            onBack = {},
-            layout = CommentScreenLayout(bare = true, flatList = true, topInset = pane.topInset,
-                trackBackProgress = pane.trackBackProgress, threadPlayerBottom = pane.threadPlayerBottom,
-                threadPaneWidth = pane.threadPaneWidth, playerFullscreen = pane.fullscreen,
-                compactHeaderSpacing = pane.compactHeaderSpacing,
-                // 竖屏：topInset 已是「tab 行底边 + 12dp」的绝对偏移（含状态栏），列表不能再补，
-                // 否则沉浸页里 statusBarsPadding() 给 0dp、上一层又减了状态栏，两处互相打架。
-                // 横屏分栏：topInset 只有 52dp 行高，状态栏留白仍由列表自己补，保持原样。
-                insets = CommentInsetPolicy(
-                    scrollTop = scrollTop,
-                    immersiveStatusBar = !pane.splitPanes,
-                    skipStatusInset = !pane.splitPanes,
-                )),
-        )
+        // 评论 tab / 横屏分栏：播放器一直在画面上，跳转后不用收任何东西。
+        CommentTimestampJumpHost(onJump = { positionMs -> page.requestSeek(positionMs) }) {
+            CommentScreen(
+                request = CommentScreenRequest(aid = d.aid, upMid = if (d.isPgc) 0L else d.ownerMid,
+                    title = d.title, bvid = d.bvid,
+                    commentOid = target.oid, commentType = target.type,
+                    focusRootRpid = pane.root, focusTargetRpid = pane.target),
+                onBack = {},
+                layout = CommentScreenLayout(bare = true, flatList = true, topInset = pane.topInset,
+                    trackBackProgress = pane.trackBackProgress, threadPlayerBottom = pane.threadPlayerBottom,
+                    threadPaneWidth = pane.threadPaneWidth, playerFullscreen = pane.fullscreen,
+                    compactHeaderSpacing = pane.compactHeaderSpacing,
+                    // 竖屏：topInset 已是「tab 行底边 + 12dp」的绝对偏移（含状态栏），列表不能再补，
+                    // 否则沉浸页里 statusBarsPadding() 给 0dp、上一层又减了状态栏，两处互相打架。
+                    // 横屏分栏：topInset 只有 52dp 行高，状态栏留白仍由列表自己补，保持原样。
+                    insets = CommentInsetPolicy(
+                        scrollTop = scrollTop,
+                        immersiveStatusBar = !pane.splitPanes,
+                        skipStatusInset = !pane.splitPanes,
+                    )),
+            )
+        }
     }
 }
