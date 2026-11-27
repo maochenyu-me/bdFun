@@ -75,7 +75,7 @@ internal fun SearchLanding(
             searchSuggestionItems(suggestions, colors, onPickKeyword)
             return@LazyColumn
         }
-// 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
+        // 热搜和搜索记录谁在上由设置决定；「搜索发现」固定排在最后，块间距由各块自己补。
         // 编辑态只换渲染的数据源，不改变两块的先后顺序。
         // [searchHistorySection] 只是把编辑态参数摊平后转给 searchHistoryItems，
         // 与上游固定顺序那段等价，所以这里保留本地可切换顺序的写法。
@@ -116,8 +116,10 @@ internal data class SearchLandingStyle(
 internal class HistoryEditSlots(
     val editing: Boolean,
     val visible: List<String>,
+    val selected: Set<String>,
     val onBegin: () -> Unit,
-    val onRemove: (String) -> Unit,
+    val onToggle: (String) -> Unit,
+    val onDelete: () -> Unit,
     val onCancel: () -> Unit,
     val onCommit: () -> Unit,
 )
@@ -141,8 +143,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchHistorySection(
         roomy = style.roomyHistory,
         editing = edit?.editing == true,
         onBeginEdit = edit?.onBegin,
-        onRemove = edit?.onRemove,
+        selected = edit?.selected.orEmpty(),
+        onToggle = edit?.onToggle,
+        onDelete = edit?.onDelete,
         onCancelEdit = edit?.onCancel ?: {},
-        onCommitEdit = edit?.onCommit ?: {},
     )
 }

@@ -21,6 +21,44 @@ class VideoOrientationPolicyTest {
         assertEquals(false, fullscreenAfterVideoRotation(false, 840, false))
     }
 
+    @Test fun halfScreenCompactPhoneRotatingToLandscapeRequestsLandscape() {
+        assertEquals(
+            VideoRotationTarget.Landscape,
+            rotationTargetForPose(landscape = true, fullscreen = false, smallestWidthDp = 393,
+                autoRotate = true, orientationLocked = false),
+        )
+        assertEquals(
+            VideoRotationTarget.Landscape,
+            rotationTargetForPose(landscape = true, fullscreen = false, smallestWidthDp = 599,
+                autoRotate = true, orientationLocked = false),
+        )
+    }
+
+    @Test fun halfScreenPortraitPoseDoesNothing() {
+        // 半屏本来就是锁竖屏，这里再请求竖屏只会和 idle 锁互相打架。
+        assertNull(rotationTargetForPose(landscape = false, fullscreen = false, smallestWidthDp = 393,
+            autoRotate = true, orientationLocked = false))
+    }
+
+    @Test fun tabletHalfScreenNeverStealsSystemRotation() {
+        assertNull(rotationTargetForPose(landscape = true, fullscreen = false, smallestWidthDp = 840,
+            autoRotate = true, orientationLocked = false))
+        assertNull(rotationTargetForPose(landscape = true, fullscreen = false, smallestWidthDp = 0,
+            autoRotate = true, orientationLocked = false))
+    }
+
+    @Test fun fullscreenFollowsPoseBothWays() {
+        assertEquals(VideoRotationTarget.Landscape,
+            rotationTargetForPose(true, true, 840, true, false))
+        assertEquals(VideoRotationTarget.Portrait,
+            rotationTargetForPose(false, true, 393, true, false))
+    }
+
+    @Test fun disabledOrLockedRotationDoesNothing() {
+        assertNull(rotationTargetForPose(true, true, 393, false, false))
+        assertNull(rotationTargetForPose(true, false, 393, true, true))
+    }
+
     @Test fun listenModeNeverCollapsesOutOfFullscreen() {
         // 听视频是整页界面，转回竖屏也不能被收回半屏播放器。
         assertNull(fullscreenAfterVideoRotation(false, 393, true, listenMode = true))

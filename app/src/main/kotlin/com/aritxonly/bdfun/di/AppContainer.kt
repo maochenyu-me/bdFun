@@ -157,13 +157,16 @@ internal class AppContainer(
         val scope = CoroutineScope(presentationScope.coroutineContext + job)
         val view = com.aritxonly.bdfun.feature.home.presentation.createHomeFeedState(
             feedRepository, videoRepository,
-            BiliRecommendationActionsRepository(api::addWatchLater, api::dislikeRecommendation), scope,
+            BiliRecommendationActionsRepository(
+                api::addWatchLater, api::dislikeRecommendation, api::cancelDislikeRecommendation,
+            ), scope,
             optimizer = recommendationOptimizer,
             cache = context?.let { createHomeRecommendationCache(it, sessionController.state.value.user?.mid ?: 0L,
                 settings.recommendWeb, recommendationOptimizer) },
             // 开关在刷新时才读，设置页改动下一轮刷新即生效。
             keepOldContent = { settings.keepRecommendOldContent },
-            undoEnabled = { settings.homeRefreshUndo })
+            undoEnabled = { settings.homeRefreshUndo },
+            blockUser = { mid -> commentContentRepository.block(mid) })
         HomeSlot(job, view)
     }, { it.view.close(); it.job.cancel() })
     val homeFeedState: HomeFeedState get() = homeSlot.get().view
@@ -214,7 +217,7 @@ internal class AppContainer(
             com.aritxonly.bdfun.core.model.pgc.BangumiRankTab(rankId, title, oid))
 
     private val dynamicRepository by lazy {
-        BiliFeedPageRepository({ type, offset, mid -> api.dynamicPage(type, offset, mid) }, api::dynamicPortal, api::dynamicUpList, api::likeFeed)
+        BiliFeedPageRepository({ type, offset, mid -> api.dynamicPage(type, offset, mid) }, api::dynamicPortal, api::dynamicUpList, api::likeFeed, api::reportDynamic)
     }
     private val dynamicFeedSlots by lazy {
         DynamicFeedSlots(

@@ -102,7 +102,6 @@ class BiliRequestGateway(
         if (code != 0) throw BiliException(code, apiMessage(code, result.optString("message")))
         return result.optJSONObject("data") ?: JSONObject()
     }
-
 }
 
 /**

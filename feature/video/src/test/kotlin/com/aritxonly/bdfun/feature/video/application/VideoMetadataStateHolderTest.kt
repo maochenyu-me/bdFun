@@ -19,6 +19,7 @@ class VideoMetadataStateHolderTest {
         override suspend fun followers(mid: Long): Outcome<Long> = Outcome.Success(100)
         override suspend fun videoCount(mid: Long): Outcome<Long> = Outcome.Success(20)
         override suspend fun online(aid: Long, cid: Long) = online(cid)
+        override suspend fun tags(bvid: String): Outcome<List<VideoTag>> = Outcome.Success(emptyList())
         override suspend fun subtitles(aid: Long, cid: Long): Outcome<List<SubtitleTrack>> = Outcome.Success(listOf(track))
         override suspend fun subtitleCues(url: String): Outcome<List<SubtitleCue>> {
             cuesGate?.await()

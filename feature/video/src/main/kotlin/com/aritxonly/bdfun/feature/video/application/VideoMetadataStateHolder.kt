@@ -13,6 +13,7 @@ data class VideoMetadataState(
     val onlineCount: Long = 0, val onlineText: String = "",
     val subtitles: List<SubtitleTrack> = emptyList(), val selectedSubtitle: SubtitleTrack? = null,
     val subtitleCues: List<SubtitleCue> = emptyList(),
+    val tags: List<VideoTag> = emptyList(),
     /** 听视频双语：副字幕轨与它的时间轴，和主字幕互不影响。 */
     val secondaryTrack: SubtitleTrack? = null,
     val secondaryCues: List<SubtitleCue> = emptyList(),
@@ -25,6 +26,7 @@ class VideoMetadataStateHolder(private val repository: VideoMetadataRepository) 
     private var pageRevision = 0L
     private var subtitleRevision = 0L
     private var onlineRevision = 0L
+    private var tagsRevision = 0L
 
     suspend fun loadAuthor(mid: Long, loggedIn: Boolean, fallbackFollowed: Boolean, onRelation: (Boolean) -> Unit) {
         val version = ++authorRevision
@@ -40,6 +42,14 @@ class VideoMetadataStateHolder(private val repository: VideoMetadataRepository) 
         val version = ++onlineRevision
         val online = repository.online(aid, cid).valueOr(0L to "")
         if (version == onlineRevision) mutableState.update { it.copy(onlineCount = online.first, onlineText = online.second) }
+    }
+
+    /** 视频标签只在换稿件时拉一次；失败保留空列表，不能挡住正文。 */
+    suspend fun loadTags(bvid: String) {
+        if (bvid.isBlank()) return
+        val version = ++tagsRevision
+        val tags = repository.tags(bvid).valueOr(emptyList())
+        if (version == tagsRevision) mutableState.update { it.copy(tags = tags) }
     }
 
     suspend fun loadSubtitles(aid: Long, cid: Long) {

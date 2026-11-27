@@ -886,3 +886,53 @@ bdFun 对应调整：`Media3PlayerBuilder` 恢复 `setEnableAudioTrackPlaybackPa
 
 Miuix 源码固定到上游 \c1024d78a154f5167efff262ae5ed66264c481e\（0.9.5 线，AGP 9.5.3 / Kotlin 2.4.21 / Compose 1.13.0-rc01）；\miuix-shader\ 已并入 \miuix-material\，\GlassDefaults/GlassShape/GlassMaterials/EdgeStroke/RuntimeShader\ 改从 \	op.yukonga.miuix.kmp.material\ 导入，\overScrollVertical\ 的 estedScrollToParent\ 参数移除。主工程与所有 Android 库模块统一 \compileSdk 37.2\（\minorApiLevel = 2\），否则 Compose 1.13 的 AAR 元数据会拒绝构建。两个本地补丁（NavDisplay 的 \predictiveBackPreview\、GlassPopupSurface 退场立即释放输入）已按新文件重新生成，升级快照时必须同步刷新 \	ools/miuix-patches\。
 图片查看器：入场改为 HyperOS 4 搜索展开同款 \spring(0.97, 0.4s)\ 非线性速率（\PhotoViewerMotion\，归一化到 0/1），关闭用同一曲线 0.3s；\PhotoMorphView\ 预创建为 1dp 热视图，首次打开不再现场实例化。长按菜单收起时通过 Dialog \FLAG_NOT_TOUCHABLE\ 立即释放输入，GlassPopupSurface 非交互态不再挂全屏消费层；查看器退出会先撤菜单与 backdrop 再回落，消除闪一帧。
+
+### 2026-11-27 大标题一镜到底、点顶栏回顶与视频转屏
+
+大标题仍画在顶栏前景（不进 backdrop 录制，避免 progressive blur 二次采样）；页面内容自己只对局部做退让时（设置页搜索要留住底部搜索框和结果面板），由内容侧调用 `TeakLargeTitleSearchUnderlay(progress, alpha, blur)` 把同一份变换登记给 `TeakLargeTitleAnchorState`，吸顶大标题在绘制阶段按同一位移/淡出/模糊跟随。设置页搜索的空态没有标题，提示固定在屏幕中间，列表从 `TopBarHeight` 之下开始。
+
+搜索页 chrome 与旧页 chrome 是两层：外壳按 `searchTitle`(可为空串) + 搜索退让进度画第二份顶栏/返回键，旧的一份缩到 0.9 淡出、新的一份从下方抬入（`SearchedChromeRise`），不再复用同一个返回键。`TeakTopBar` 不再有 `overlayTitle`，宽屏走 `WideFoldTopAppBar` 自己的交叉淡出。
+
+点顶栏回顶（`TeakStatusBarScrollToTop`）常开无开关：铺在状态栏 + TopBarHeight 上并画在顶栏按钮下面，返回键/搜索框/分段优先；因为系统状态栏窗口会吃掉最上面那一段点击，实际可点区域是顶栏空白处。
+
+视频转屏：`rotationTargetForPose` 在 `core:domain`，半屏时紧凑手机（smallestWidthDp<600）转到横屏才请求横屏，靠 `fullscreenAfterVideoRotation` 进全屏；已全屏时姿态两向跟随，平板/关闭自动旋转/锁方向都不干预。`VideoActivity` 的 idle 锁必须用 `autoLandscapePending()` 让路，否则 onConfigurationChanged 会把刚请求的横屏立刻锁回竖屏。
+
+### 2026-11-27 首页撤销态、哔哩哔哩分段弹簧、视频标签展开与搜索勾选尺寸
+
+首页卡片点“不感兴趣”后的撤销态不再用固定高度占位：`GridVideoContent`/`LargeVideoContent` 会把正常标题与 UP 行整块以 `alpha=0` 保留，再把“撤销”盖在 `matchParentSize` 的居中 Box 上。这样文字落在整块文字区域的几何中心，卡片高度也与正常态逐像素一致，不要再改回 `Spacer(22.dp)` 之类的固定高度。
+
+哔哩哔哩（interfaceStyle=0）布局的顶部分段不传 pager 连续位置，走 `AdaptiveScrollableTabs` 的无 position 分支：指示器用 `spring(DampingRatioLowBouncy, StiffnessMediumLow)`，与悬浮底栏一致；经典布局仍保留连续位置，HyperOS 4 的内联分段不变。官方横屏走同一份 `HomeTopBarTabs`，position 同样为空。
+
+视频标签必须作为简介的尾部内容传给 `CollapsibleDescription(trailing=...)`，由 `SubcomposeLayout` 把正文和标签一起量高、共用同一段 420ms 裁剪高度动画；禁止再给标签套独立的 `AnimatedVisibility`/fade，否则会出现“标签先撑开、正文后收缩”的两套动画。收起高度始终是两行正文高度，标签只在展开后随整块高度出现。
+
+搜索历史编辑态的 Miuix `Checkbox` 内部用 `requiredSize(26.dp)` 固定尺寸，外层 `.size()` 不生效；要缩小只能用 `scale`。当前按一半显示（0.5 倍 = 13dp），并用 offset 补偿缩放前后的位置；未勾选底色用 `onBackground.copy(alpha=0.10f)`，不要再用纯白。
+
+“不感兴趣”成功后不再弹 toast：提示写进 `HomeFeedState.undoMessages`（bvid -> 文案），由 `LocalHomeUndoMessages` 投到对应模糊封面的 `BlurredCoverNotice`（白字+阴影、最多两行）；撤销按钮左侧用 `MiuixIcons.Undo`。多张卡可以同时待撤销，每张保留自己的文案和撤销动作，`HomeFeedStateHolder.pendingDismisses` 也按 bvid 分开存，禁止再改回单个 `undoVideo`/`PendingDismiss`。撤销调用 `RecommendationActionsRepository.cancelDislike(video, reason)` 走 App 端 `/x/feed/dislike/cancel`，参数必须和提交时一致（`goto`、`id`、`reason_id`、`build`、`mobi_app` 再签名），成功后才清除该卡；失败只把该卡的封面提示改成重试文案。
+
+“不感兴趣/撤销”不能瞬间切模糊：封面 blur 半径用 `animateFloatAsState` 0→48dp，播放量/时长等覆盖层按 `1-blurProgress` 淡出，模糊提示按 `blurProgress` 淡入；标题区和撤销按钮各用 240ms alpha 动画。新增卡片状态时保持这套渐变，不要恢复硬切。
+
+搜索历史删除使用粒子飘散：通用实现在 TeakUI `common/motion/TeakParticleFlow.kt`（`TeakParticleFlow` + `TeakParticleDefaults`），业务侧只剩 `HistoryPillsFlow` 接线（`ui/search/SearchHistoryParticles.kt`）。组件删除前用 `onGloballyPositioned` 记住每项 bounds，数据变化时对消失项在原位置炸出小方块粒子，剩余项用 `LookaheadScope + Modifier.animateBounds` 滑到新位置，卡片高度用 `animateContentSize` 一起收；粒子调色板由 `burstColor` 按被删项现算（只取胶囊自己的底色 `surfaceContainerHigh`，层次靠同色透明度；**不要**混 `primary`/`onBackground`，灰色胶囊会炸出红黑碎屑）。每项必须按 key 分组，否则删中间项时 Compose 复用槽位，后一项会“原地换字”而不是滑动。MIUIX 0.9.5-rc01 **没有**任何粒子/删除动效组件，不要再去找。
+
+长按/省略号形变菜单挂在主壳玻璃采样树外，不随首页 pager 离开；底栏 `onBarItem` 必须先调用 `HomeFeedState.dismissMenu()`（即 `menuState.close()`），否则菜单会停在新页面并用旧锚点错位。
+
+### 2026-11-27 搜索历史粒子下沉 TeakUI
+
+先核对过 MIUIX 再动手：固定快照 `bc1024d`（0.9.5-rc01）与仓库里的新版快照 `45645854` 的全部 Kotlin 源码、`miuix-src` 的 git 全历史（`git log -S particle`）以及 `docs/components/**` 组件目录，都**没有**粒子飘散或删除类动效组件。搜索相关的只有 `SearchBar` / `InputField` / `SearchClearButton` / `GlassSearchOverlay`，`MiuixIcons.Basic.SearchCleanup` 是一张静态图标，MIUIX 自身连 `Modifier.animateItem` 都不用。所以这个动画只能自研，别再按“MIUIX 里有”去找。
+
+自研实现已从业务包下沉到 TeakUI `common/motion/TeakParticleFlow.kt`：`TeakParticleFlow` 负责按 key 记录每项 bounds、删除时在原位置爆炸、剩余项 `LookaheadScope + Modifier.animateBounds` 滑动；参数集中在 `TeakParticleDefaults`；`TeakMotion.enabled=false` 时跳过粒子并让重排直接落位。业务侧 `HistoryPillsFlow`（`ui/search/SearchHistoryParticles.kt`）只保留胶囊内容与 `burstColor` 取色——**只取被删胶囊自己的底色**（`surfaceContainerHigh`），层次靠同色透明度；不要混 `primary` 或 `onBackground`，灰色胶囊会炸出红/黑碎屑。其他列表要同样的删除过渡时复用 `TeakParticleFlow`，不要再往业务包里复制一份 Canvas 粒子。
+
+### 2026-11-27 视频分P整页列表与动态页 UP 模式
+
+分P：`VideoPagesSection` 必须自己套一层 `Column`——调用方把它放在 `Box` 里，`Row`/`Spacer`/`VideoPageStrip` 若直接当 Box 的三个子项会全部重叠，横向分P条会盖住「分P」行，看起来就是"没有分P字样、也没有箭头、点不开 sheet"。标题行不带卡片底色和横向内边距，让「分P」和分P首卡左边缘对齐、箭头压右边缘；上下留白要小。sheet 必须**常驻组合**、用 `show` 控制（不要 `if (open)` 包住），否则自带的收起动画来不及播。列表每项封面用 `pages[].first_frame`（`VideoPage.firstFrame`，映射在 `VideoDetailMapper`，回退整稿 `pic`，与 PiliPlus `episode_panel` 一致）；右上角回顶/回底/定位与合集标题栏同尺寸（24dp 圆 + 14dp 图标）。
+
+动态页 UP 模式：选中某个 UP 后 `HorizontalPager` 锁住横向滑动（`userScrollEnabled=false`），改由 `FeedScreen.feedUpModeSwipe` 左右滑切换上一个/下一个 UP（顺序见 `feedUpMids`，不含「全部动态」）；返回键、点顶部分段（含点当前项，靠 `shell.ui.dynamicTabClickTick` 记数）、点「全部动态」都退出，退出时用 `FeedState.exitUpFocus` → `switchTo(tabKey)` 回到该分段自己的分类，**不要**在视频/番剧分段里统一切成 all。选中环 `FeedAvatarRingState` 必须由页面（`FeedTabPage`）持有、动画 `moveTo` 由头像卡片里的 `LaunchedEffect(selectedKey)` 驱动，不能挂在懒列表里的头像卡片上当状态，否则过滤一变卡片重建就"瞬间跳变"；环在源头像底部解体、沿直线滑到目标底部再缠绕成圈。**不要用 `PathMeasure` 截窗口**：它只返回"当前 contour"的长度，`arcTo(±360°) + lineTo + arcTo` 会变成多 contour，`measure.length` 只等于圆周长，`getSegment` 直接画不出东西（表现为环消失再出现＝瞬间跳变）。现在用 `drawArc` + `drawLine` 分两段画：前半段源环 sweep 从 360 收到 0、线从源底部伸出；后半段线收进目标底部、目标环 sweep 从 0 涨到 360。锚点用 `boundsInRoot`、覆盖层用 `positionInRoot` 换算；滚出视口的锚点必须在 `DisposableEffect.onDispose` 里删掉。**切换时不要自动把选中头像滚到第一位**——已在视口内就不动，目标在屏幕外才往前滚一屏（落在最后一格），退出 UP 模式才滚回行首；否则头像行边滑、环的起止坐标被冻结，看起来就是跳变。
+
+### 2026-11-27 动态卡片菜单与 UP 环出屏方向
+
+环的方向必须是**显式记忆**，不能等播动画时再拿旧坐标猜：`FeedAvatarRingState` 在 `onAnchor`/`clearAnchor` 里用**卡片内坐标**和覆盖层宽度算出 `FeedRingSide`（左/右）；源头像被回收后，起点圆由 `feedRingOffscreenStart` 完全放到该侧视口外、纵向对齐目标行，前半段只画线（`startOffscreen` 时跳过源环），线才会真的从边缘滑进来。两个关键坑：①`anchors` 是 root 坐标，判断左右必须先 `toLocal()`，宽屏带侧栏时拿 root 坐标和卡片宽度比会差整个侧栏；②头像也会因为**整张头像卡纵向滚出列表**被回收，那时最后一次测量是完整可见的，不能按它的水平位置猜左右，只能用「头像行此刻的滚动方向」兜底（`AvatarRowScrollState`），拿不到就保持未知。切换前会为把目标滚进视口而滚动头像行：**只有源头像滚前还有实时锚点**时，才用滚动方向推断出屏侧；源头像本来就在屏幕外时，滚动方向会把它猜反，必须保留记忆。几何规则全在 `FeedRingGeometry.kt`，有单测。
+
+UP 之间切换必须用**真正的 `HorizontalPager`**（和空间页 `SpaceContentPager` 同一套：`beyondViewportPageCount = 1`、`overscrollEffect = null`、默认翻页物理），**不要再手写阻尼/位移/阈值**——手感对不上，拖动时也没有邻页。`FeedUpPagerLayout` 把头像行放在 pager **外面**固定住（窄屏固定在顶部，宽屏用固定作者侧栏），所以 UP 栏不参与翻页、也不会跟着页面滑走；每个 UP 是 pager 的一页，页内只放动态卡片（`FeedCardsGrid`）。**停稳（`settledPage`）后才提交 `filterMid`**；点选头像只让 pager 滑过去，不直接改筛选，否则正在看的那页会在滑动中途变成预览/骨架。相邻页用 `FeedState.previewItems` + `prefetchUp` 预取首屏（`FeedStateHolder.prefetchUp` 写回同一份 cache，停稳后 `filterTo` 直接命中、不二次请求），离开某个 UP 时 `seedPreview` 把当前首屏留下，往回滑不白屏。宽屏作者侧栏的点击也必须走 pager 的 `selectUp`。UP 模式的下拉刷新/分页/自动播放只作用于常驻（live）页，预览页只读。切页时不要再给整个内容挂 `graphicsLayer`/快照/alpha：那会闪帧并搬走 UP 栏。
+
+动态卡片菜单：省略号在作者行最右（与头像垂直居中），长按整卡；两者都复用首页的 `TeakMorphMenuHost` + 形变锚点（省略号从图标长、长按从手指位置长且不画图标副本），宿主必须挂在主壳玻璃采样树之外的 `MainFeedChrome`。每张卡有独立 `TeakMorphMenuState`，页面级只有一份长按点锚点（`FeedCardMenuUi`）。条目固定为：添加至稍后再看、复制、关闭自动播放、分享、取消关注、举报，后两项用 `0xFFE5484D`；「关闭自动播放」写 `settings.dynamicAutoPlay=false`。举报走 `FeedPageRepository.reportDynamic`，端点和参数对齐 PiliPlus `UserHttp.dynamicReport`（`/x/dynamic/feed/dynamic_report/add`，`accused_uid`/`dynamic_id`/`reason_type`/`reason_desc`），理由编号在 `core/domain/DynamicReportReason`；「其他」需要文字说明，暂不提供。切换底栏或顶部分类时先 `FeedState.dismissMenu()`，否则菜单会停在新页面并沿用旧锚点。
+
+`FeedGrid.kt`/`FeedImageGrid.kt` 在 HEAD 里带 UTF-8 BOM，Kotlin PSI 尺寸审计会把它当语法错误（`Expecting a top level declaration`）；checkout 后必须去掉 BOM，否则 `checkLayering` 永远红。当前 `checkKotlinSizes` 仍剩 4 条 HEAD 自带超标（`LargeVideoContent` 86 行、`VideoGridCard` 16 参、`VideoLargeCard` 13 参、`HomeVideoMorphHost` 93 行），正在 PR 分支处理，不是本轮新增。
