@@ -84,24 +84,10 @@ fun HomeScreen(
         if (ui.pressPoint != androidx.compose.ui.geometry.Offset.Zero) {
             com.aritxonly.teak.common.navigation.TeakMorphPointAnchor(ui.pointMenuState, ui.pressPoint)
         }
-        // 卡片要读模糊/撤销三个组合局部（上游「屏蔽后模糊 + 撤销」），网格必须包在里面。
-        androidx.compose.runtime.CompositionLocalProvider(
-            LocalHomeBlurredBvids provides state.blurredBvids,
-            LocalHomeUndoAction provides state::undoDismiss,
-            LocalHomeUndoMessages provides state.undoMessages,
-        ) {
-            HomeVideoGrid(
-                state, cardStyle == 1, maxWidth, statusBarTop, ui, refreshConnection, scope, onOpenVideo, host, hero,
-                refreshOptions = refresh,
-                onDividerClick = {
-                    // 「回顶刷新」：先回到顶部，再按一次刷新（会重新计算保留内容与分隔条）。
-                    scope.launch {
-                        state.gridState.animateScrollToItem(0)
-                        state.refresh()
-                    }
-                },
-            )
-        }
+        HomeGridWithLocals(
+            state, cardStyle == 1, maxWidth, statusBarTop, ui, refreshConnection, scope, onOpenVideo,
+            host, hero, refresh,
+        )
         HomeRefreshNewItemsTip(
             count = state.newItemCount,
             visible = state.newItemsTipVisible,
@@ -119,6 +105,43 @@ fun HomeScreen(
             ui.pointMenuState.openWithAnchorCopy(false)
             ui.openPointMenu = false
         }
+    }
+}
+
+/**
+ * 网格要读「屏蔽后模糊 / 撤销」三个组合局部，所以和提供者一起组装；
+ * 拆在 HomeScreen 里写会让主体再涨过行数上限。
+ */
+@Composable
+private fun HomeGridWithLocals(
+    state: HomeFeedState,
+    largeCards: Boolean,
+    width: androidx.compose.ui.unit.Dp,
+    statusBarTop: androidx.compose.ui.unit.Dp,
+    ui: HomePresentationStateHolder,
+    refreshConnection: androidx.compose.ui.input.nestedscroll.NestedScrollConnection,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onOpenVideo: (VideoItem) -> Unit,
+    host: HomePresentationHost,
+    hero: HomeHeroOptions,
+    refresh: HomeRefreshOptions,
+) {
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalHomeBlurredBvids provides state.blurredBvids,
+        LocalHomeUndoAction provides state::undoDismiss,
+        LocalHomeUndoMessages provides state.undoMessages,
+    ) {
+        HomeVideoGrid(
+            state, largeCards, width, statusBarTop, ui, refreshConnection, scope, onOpenVideo, host, hero,
+            refreshOptions = refresh,
+            onDividerClick = {
+                // 「回顶刷新」：先回到顶部，再按一次刷新（会重新计算保留内容与分隔条）。
+                scope.launch {
+                    state.gridState.animateScrollToItem(0)
+                    state.refresh()
+                }
+            },
+        )
     }
 }
 

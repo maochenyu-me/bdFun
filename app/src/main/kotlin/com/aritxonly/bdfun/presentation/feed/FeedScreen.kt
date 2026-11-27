@@ -188,12 +188,6 @@ private fun FeedTabPage(
     BackHandler(enabled = upFocus) {
         scope.launch { state.exitUpFocus(tabKey, loggedIn) }
     }
-    val settings = LocalSettingsBindings.current
-    // 动态刷新会整体换掉列表，所以这里的定位胶囊只负责「回到顶部」；位置/计时与首页同一套策略。
-    var locatorDismissedKey by remember { mutableIntStateOf(0) }
-    val locatorVisible = settings.homeRefreshLocator &&
-        state.refreshKey > locatorDismissedKey &&
-        state.items.isNotEmpty()
     Box(Modifier.fillMaxSize()) {
         FeedCardMenuAnchorHost(menuUi)
         if (!loggedIn) {
@@ -224,19 +218,32 @@ private fun FeedTabPage(
                 )
             }
             FeedIndicators(state, statusTop)
-            HomeRefreshLocatorPill(
-                refreshKey = state.refreshKey,
-                visible = locatorVisible,
-                x = settings.refreshLocatorX,
-                y = settings.refreshLocatorY,
-                durationSeconds = settings.refreshLocatorDurationSeconds,
-                onClick = { scope.launch { state.listState.animateScrollToItem(0) } },
-                onDismiss = { locatorDismissedKey = state.refreshKey },
-                onPositionChanged = { x, y -> settings.setRefreshLocatorPosition(x, y) },
-            )
+            FeedRefreshLocator(state, scope)
         }
         FeedReportHost(state, scope, context)
     }
+}
+
+/**
+ * 动态页的定位胶囊：这里只负责「回到顶部」——动态刷新会整体换掉列表，
+ * 没有「新内容分隔条」可跳；位置、计时、开关都与首页共用一套设置。
+ */
+@Composable
+private fun FeedRefreshLocator(state: FeedState, scope: CoroutineScope) {
+    val settings = LocalSettingsBindings.current
+    var dismissedKey by remember { mutableIntStateOf(0) }
+    HomeRefreshLocatorPill(
+        refreshKey = state.refreshKey,
+        visible = settings.homeRefreshLocator &&
+            state.refreshKey > dismissedKey &&
+            state.items.isNotEmpty(),
+        x = settings.refreshLocatorX,
+        y = settings.refreshLocatorY,
+        durationSeconds = settings.refreshLocatorDurationSeconds,
+        onClick = { scope.launch { state.listState.animateScrollToItem(0) } },
+        onDismiss = { dismissedKey = state.refreshKey },
+        onPositionChanged = { x, y -> settings.setRefreshLocatorPosition(x, y) },
+    )
 }
 
 /** 长按锚点先组合一帧，再让形变面板从手指位置展开（和首页同一时序）。 */

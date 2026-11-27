@@ -59,10 +59,7 @@ fun VideoPlayerLayout(
         }
 
         // 自动跳过：进入片段即跳到结尾；不写 dismissed，用户拖回片段时会再次生效。
-        val autoSkip = sponsor.autoSkip
-        LaunchedEffect(autoSkip) {
-            autoSkip?.let { playback.seekTo(it.endMs) }
-        }
+        SponsorAutoSkipEffect(sponsor, playback)
 
         // 新视频/分 P 首帧未出来时保持黑屏加载，不再先闪一下封面；
         // 换 CDN 和清晰度仍由播放器保留上一帧。
@@ -88,7 +85,6 @@ fun VideoPlayerLayout(
 
         // 竖屏 chrome 的右侧已经是一整列互动按钮，锁按钮会和它叠在一起，所以竖屏不给锁；
         // 听视频关掉视频轨后整屏只有一块听视频界面，没有能看的画面，锁也没有意义。
-        val audioOnly by ui.fsAudioOnly
         if (!portraitChrome && !audioOnly) PlayerLockOverlay(ui, fullscreen, ports.page)
         PlayerScrubOverlay(ui, fullscreen, positionMs, durationMs, bufferedMs)
 
@@ -108,6 +104,17 @@ fun VideoPlayerLayout(
 
         ports.inlineMore()
         if (!presentation.pictureInPicture) ports.danmaku.overlays(this, danmakuVisible)
+    }
+}
+
+@Composable
+private fun SponsorAutoSkipEffect(
+    sponsor: PlayerSponsorPresentation,
+    playback: VideoPlaybackPlatform,
+) {
+    val autoSkip = sponsor.autoSkip
+    LaunchedEffect(autoSkip) {
+        autoSkip?.let { playback.seekTo(it.endMs) }
     }
 }
 
