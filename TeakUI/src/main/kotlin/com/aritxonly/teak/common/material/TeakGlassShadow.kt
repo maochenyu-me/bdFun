@@ -9,7 +9,6 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -128,10 +127,9 @@ internal fun Modifier.teakGlassShadow(
             host, shape, isDark, alpha, alphaProvider, official, profile, material.shadowPreset,
         )
     }
-    if (alphaProvider != null) {
-        return Modifier.graphicsLayer { this.alpha = alphaProvider().coerceIn(0f, 1f) }
-            .drawTeakGlassShadow(shape, isDark, 1f, official, profile, material.shadowPreset)
-    }
+    // alphaProvider 只在顶栏宿主分支里生效（由宿主在绘制阶段处理）。
+    // 走到这里的普通宿主不能把 alpha 包成 graphicsLayer：那会把子内容（Tab 文字、
+    // 发弹幕胶囊）整体变成透明，视频页在顶部时进度为 0，整条就会彻底消失。
     return drawTeakGlassShadow(shape, isDark, alpha, official, profile, material.shadowPreset)
 }
 
