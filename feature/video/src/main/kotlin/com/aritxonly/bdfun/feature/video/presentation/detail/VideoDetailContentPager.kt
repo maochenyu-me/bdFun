@@ -92,18 +92,19 @@ private fun VideoScreenComments(
     if (d != null) {
         slots.comments(VideoCommentPane(
             detail = d, root = initialCommentRoot, target = initialCommentTarget,
-            // 竖屏：评论列表自己会补一次状态栏，这里按「tab 行底边 + 12dp」反算，
-            // 不再用固定 24+36：既贴合 tab，也不会在高状态栏机型上离得太远。
+            // 竖屏：评论区自己不再补状态栏（沉浸页，状态栏不可见时补的是 0dp），
+            // 所以这里按「tab 行底边 + 12dp」给出绝对偏移，不再减 statusBarTop。
             // 横屏分栏：tab 行在详情栏顶部自带状态栏，只需要 52dp 行高。
             topInset = if (splitPanes) 52.dp else {
                 val tabRowBottom = playerBlockHeight + 52.dp
-                (tabRowBottom + 12.dp - statusBarTop - 4.dp).coerceAtLeast(0.dp)
+                (tabRowBottom + 12.dp - 4.dp).coerceAtLeast(0.dp)
             },
             trackBackProgress = pager.currentPage == 1,
             threadPlayerBottom = if (splitPanes) statusBarTop + 52.dp else playerBlockHeight,
             threadPaneWidth = if (splitPanes) paneWidth else null,
             fullscreen = fullscreen,
             compactHeaderSpacing = !splitPanes,
+            splitPanes = splitPanes,
         ))
     }
 }

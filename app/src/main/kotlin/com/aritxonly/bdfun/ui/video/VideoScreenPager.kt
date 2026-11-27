@@ -52,7 +52,14 @@ private fun VideoScreenComments(pane: VideoCommentPane, scrollTop: Boolean) {
                 trackBackProgress = pane.trackBackProgress, threadPlayerBottom = pane.threadPlayerBottom,
                 threadPaneWidth = pane.threadPaneWidth, playerFullscreen = pane.fullscreen,
                 compactHeaderSpacing = pane.compactHeaderSpacing,
-                insets = CommentInsetPolicy(scrollTop = scrollTop)),
+                // 竖屏：topInset 已是「tab 行底边 + 12dp」的绝对偏移（含状态栏），列表不能再补，
+                // 否则沉浸页里 statusBarsPadding() 给 0dp、上一层又减了状态栏，两处互相打架。
+                // 横屏分栏：topInset 只有 52dp 行高，状态栏留白仍由列表自己补，保持原样。
+                insets = CommentInsetPolicy(
+                    scrollTop = scrollTop,
+                    immersiveStatusBar = !pane.splitPanes,
+                    skipStatusInset = !pane.splitPanes,
+                )),
         )
     }
 }
