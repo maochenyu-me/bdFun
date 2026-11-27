@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import com.aritxonly.bdfun.ui.NextGlyph
 import com.aritxonly.bdfun.ui.formatPlayTime
 import com.aritxonly.bdfun.ui.FullscreenSeekBar
+import com.aritxonly.teak.common.icons.AppGlyph
+import com.aritxonly.teak.common.icons.LucideIcons
 import com.aritxonly.teak.common.player.PauseGlyph
 import com.aritxonly.teak.common.player.PlayGlyph
 import top.yukonga.miuix.kmp.basic.Icon
@@ -164,7 +166,10 @@ internal fun ListenVideoVolume(ui: ListenVideoUiStateHolder, actions: ListenVide
     }
 }
 
-/** 底部一排次级按钮：A-B 循环 / 翻译 / 播放队列 / 播放设置。 */
+/**
+ * 底部一排次级按钮：随机 / 播放模式 / 播放队列 / 播放设置。
+ * 和 BiliPai 一致：随机是独立开关，播放模式按 顺序 → 单曲 → 列表 循环。
+ */
 @Composable
 internal fun ListenVideoDock(
     ui: ListenVideoUiStateHolder,
@@ -177,37 +182,49 @@ internal fun ListenVideoDock(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ListenDockText("A-B", ui.abLoop.hasStart) { actions.onAbLoopMark() }
-        ListenDockText("翻译", ui.translationOn) { actions.onTranslationToggle(!ui.translationOn) }
-        ListenDockIcon(MiuixIcons.Playlist, "列表") { onOpenQueue() }
-        ListenDockIcon(MiuixIcons.Tune, "设置") { ui.moreSheet = true }
+        ListenDockIcon(
+            icon = null,
+            label = "随机",
+            selected = playback.shuffle,
+            glyph = {
+                ShuffleGlyph(
+                    tint = Color.White.copy(alpha = if (playback.shuffle) 1f else 0.65f),
+                    modifier = Modifier.size(19.dp),
+                )
+            },
+        ) { actions.onShuffleToggle() }
+        ListenDockIcon(
+            icon = null,
+            label = dockPlayModeLabel(playback.loopMode),
+            selected = playback.loopMode != 0,
+            glyph = {
+                RepeatGlyph(
+                    loopMode = playback.loopMode,
+                    tint = Color.White.copy(alpha = if (playback.loopMode != 0) 1f else 0.65f),
+                    modifier = Modifier.size(19.dp),
+                )
+            },
+        ) { actions.onPlayModeToggle() }
+        ListenDockIcon(icon = MiuixIcons.Playlist, label = "列表") { onOpenQueue() }
+        ListenDockIcon(icon = MiuixIcons.Tune, label = "设置") { ui.moreSheet = true }
     }
 }
 
-@Composable
-private fun ListenDockText(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = if (selected) 0.16f else 0f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-    ) {
-        Text(
-            text = label,
-            color = Color.White.copy(alpha = if (selected) 1f else 0.6f),
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-        )
-    }
+/** 底部按钮的短文案：和右侧「列表」按钮区分开，不用「列表循环」。 */
+private fun dockPlayModeLabel(loopMode: Int): String = when (loopMode) {
+    1 -> "单曲"
+    2 -> "循环"
+    else -> "顺序"
 }
 
 @Composable
-private fun ListenDockIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+private fun ListenDockIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    label: String,
+    selected: Boolean = false,
+    glyph: @Composable () -> Unit = {},
+    onClick: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .clip(CircleShape)
@@ -219,14 +236,57 @@ private fun ListenDockIcon(icon: androidx.compose.ui.graphics.vector.ImageVector
             .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = Color.White.copy(alpha = 0.65f),
-            modifier = Modifier.size(19.dp),
-        )
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White.copy(alpha = 0.65f),
+                modifier = Modifier.size(19.dp),
+            )
+        } else {
+            glyph()
+        }
         Spacer(Modifier.height(3.dp))
-        Text(text = label, color = Color.White.copy(alpha = 0.45f), fontSize = 9.sp)
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = if (selected) 0.95f else 0.45f),
+            fontSize = 9.sp,
+        )
+    }
+}
+
+/** 随机播放图标：两条交叉箭头，和参考实现一致。 */
+@Composable
+private fun ShuffleGlyph(tint: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = 1.6.dp.toPx()
+        // 上：左 → 右上
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.08f, h * 0.28f), androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.28f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.28f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.16f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.28f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.40f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+        // 下：左 → 右下
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.08f, h * 0.72f), androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.72f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.72f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.60f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.66f, h * 0.72f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.84f), stroke, androidx.compose.ui.graphics.StrokeCap.Round)
+    }
+}
+
+/** 循环图标：单曲循环在箭头旁多一个小圆点。 */
+@Composable
+private fun RepeatGlyph(loopMode: Int, tint: Color, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.Box(modifier = modifier) {
+        AppGlyph(LucideIcons.Repeat2, tint, size = 17.dp)
+        if (loopMode == 1) {
+            androidx.compose.material3.Text(
+                text = "1",
+                color = tint,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
     }
 }
 

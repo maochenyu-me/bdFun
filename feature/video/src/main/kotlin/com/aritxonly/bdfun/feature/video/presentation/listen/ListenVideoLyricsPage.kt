@@ -109,7 +109,7 @@ internal fun ListenVideoLyricsPage(
                 index = lyrics.indexAt(playback.positionMs),
                 translationOn = ui.translationOn,
                 modifier = Modifier.weight(1f),
-                onSeek = actions.onLyricsSeek,
+                onSeek = actions.onSeek,
                 onLongPress = { offsetEditing = true },
             )
         }

@@ -178,7 +178,7 @@ private fun PortraitCoverBody(
             lyrics = lyrics,
             positionMs = playback.positionMs,
             translationOn = ui.translationOn,
-            onSeek = actions.onLyricsSeek,
+            onSeek = actions.onSeek,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(14.dp))

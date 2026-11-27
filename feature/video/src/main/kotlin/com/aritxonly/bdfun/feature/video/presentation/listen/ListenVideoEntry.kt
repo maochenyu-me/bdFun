@@ -12,6 +12,8 @@ import com.aritxonly.bdfun.ui.PlayerRenderPorts
 import com.aritxonly.bdfun.ui.VideoMediaInput
 import com.aritxonly.bdfun.ui.VideoPlayerPresentation
 import com.aritxonly.bdfun.ui.VideoPlayerUiStateHolder
+import com.aritxonly.bdfun.core.domain.playModeAfterModeToggle
+import com.aritxonly.bdfun.core.domain.toggleShuffle
 import com.aritxonly.bdfun.ui.fullscreenPlaybackProjection
 
 /**
@@ -61,6 +63,7 @@ internal fun PlayerListenVideo(
         bufferedMs = bufferedMs,
         speed = ui.speed.value,
         loopMode = ui.fsLoopMode.value,
+        shuffle = ui.fsShuffle.value,
         backgroundPlay = listen.backgroundPlay(),
         sleepTimerLabel = sleepTimerLabel(sleepAt),
         sleepAtMs = sleepAt,
@@ -196,10 +199,17 @@ private fun listenActions(
                 ListenMenuEntry.COLLECTION -> ui.fsPanel.value = FullscreenPanel.Episodes
                 ListenMenuEntry.AUDIO_QUALITY -> ui.fsPanel.value = FullscreenPanel.Quality
                 ListenMenuEntry.SPEED -> ui.fsPanel.value = FullscreenPanel.Speed
-                ListenMenuEntry.PLAY_MODE -> fsActions.onLoopModeChanged(nextListenPlayMode(ui.fsLoopMode.value))
+                // 面板里的「播放模式」和底部按钮同一套语义：切模式时关掉随机。
+                ListenMenuEntry.PLAY_MODE -> {
+                    val (mode, shuffle) = playModeAfterModeToggle(ui.fsLoopMode.value, ui.fsShuffle.value)
+                    ui.fsLoopMode.value = mode
+                    ui.fsShuffle.value = shuffle
+                    fsActions.onLoopModeChanged(mode)
+                }
                 // 定时关闭由面板内联展开，不跳回视频播放器那套「更多」。
                 ListenMenuEntry.SLEEP_TIMER -> Unit
                 ListenMenuEntry.AB_LOOP -> state.abLoop = state.abLoop.mark(positionMs)
+                ListenMenuEntry.TRANSLATION -> state.translationOn = !state.translationOn
                 ListenMenuEntry.FAVORITE -> {
                     fsActions.onRequestFavorites()
                     ui.fsPanel.value = FullscreenPanel.Favorite
@@ -213,13 +223,22 @@ private fun listenActions(
                     fsActions.onBackgroundPlayChanged(!listen.backgroundPlay())
             }
         },
-        onLyricsSeek = fsActions.onSeek,
         onImportLyrics = listen.requestLyricsPicker,
         onVolumeChange = { listen.setVolume(it) },
         onTranslationToggle = { on -> state.translationOn = on },
-        onAbLoopMark = { state.abLoop = state.abLoop.mark(positionMs) },
         onSleepAtChanged = fsActions.onSleepAtChanged,
-    
+        onShuffleToggle = {
+            val (mode, shuffle) = toggleShuffle(ui.fsLoopMode.value, ui.fsShuffle.value)
+            ui.fsLoopMode.value = mode
+            ui.fsShuffle.value = shuffle
+            fsActions.onLoopModeChanged(mode)
+        },
+        onPlayModeToggle = {
+            val (mode, shuffle) = playModeAfterModeToggle(ui.fsLoopMode.value, ui.fsShuffle.value)
+            ui.fsLoopMode.value = mode
+            ui.fsShuffle.value = shuffle
+            fsActions.onLoopModeChanged(mode)
+        },
 )
 
 private fun exitListen(
@@ -227,6 +246,8 @@ private fun exitListen(
     fsActions: FullscreenActions,
     onExitFullscreen: () -> Unit,
 ) {
+    // 随机是听视频页面内的临时开关，回到视频播放器就归位，避免「明明没开过却乱跳」。
+    ui.fsShuffle.value = false
     fsActions.onAudioOnlyChanged(false)
     if (ui.listenFromInline.value) {
         ui.listenFromInline.value = false

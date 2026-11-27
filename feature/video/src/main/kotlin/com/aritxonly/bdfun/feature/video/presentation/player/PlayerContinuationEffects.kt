@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.aritxonly.bdfun.core.application.PlaybackController
 import com.aritxonly.bdfun.core.domain.PlaybackContinuation
 import com.aritxonly.bdfun.core.domain.playbackContinuation
+import com.aritxonly.bdfun.core.domain.shuffleNextIndex
 import kotlinx.coroutines.delay
 
 @Composable
@@ -40,13 +41,14 @@ fun BindPlayerContinuation(
     }
     // 有合集才谈得上“合集放完回到合集开头”，单集视频仍然走来源列表。
     val fsHasCollection = fullscreenInfo.collectionStartIndex >= 0 && fullscreenInfo.pages.size > 1
+    val fsShuffle by ui.fsShuffle
     val fsCollectionStart = fullscreenInfo.collectionStartIndex.coerceIn(0, fullscreenInfo.pages.lastIndex.coerceAtLeast(0))
     LaunchedEffect(fsResizeMode) {
         playerViewRef?.resizeMode = fsResizeMode
     }
 
     // 播完往哪走由「循环播放」决定，策略在 core:domain 里单独测过。
-    LaunchedEffect(ended, fsLoopMode, fsAutoPlayNext, fsHasNext, fsHasNextPart, fsHasCollection) {
+    LaunchedEffect(ended, fsLoopMode, fsAutoPlayNext, fsHasNext, fsHasNextPart, fsHasCollection, fsShuffle) {
         if (!ended) return@LaunchedEffect
         val queued = hasNext()
         log("QUEUE", "ended loop=$fsLoopMode autoNext=$fsAutoPlayNext fsHasNext=$fsHasNext fsHasNextPart=$fsHasNextPart hasNext=$queued")
@@ -58,6 +60,8 @@ fun BindPlayerContinuation(
                 hasNextPart = fsHasNextPart,
                 hasNextInQueue = queued,
                 hasCollection = fsHasCollection,
+                shuffle = fsShuffle,
+                shuffleable = fullscreenInfo.pages.size > 1,
             )
         ) {
             PlaybackContinuation.RepeatSingle -> {
@@ -72,6 +76,13 @@ fun BindPlayerContinuation(
                 ],
             )
             PlaybackContinuation.RestartCollection -> onPageSelected(fullscreenInfo.pages[fsCollectionStart])
+            PlaybackContinuation.NextShuffle -> {
+                // 随机下一项：排除当前项，避免「随机两次还是这一集」。
+                val pages = fullscreenInfo.pages
+                val current = pages.indexOfFirst { it.cid == fullscreenInfo.currentCid }
+                val next = shuffleNextIndex(current, pages.size, kotlin.random.Random.nextFloat())
+                if (next in pages.indices) onPageSelected(pages[next])
+            }
             PlaybackContinuation.NextInQueue -> {
                 playback.acknowledgeEnd()
                 page.requestAutoNext()

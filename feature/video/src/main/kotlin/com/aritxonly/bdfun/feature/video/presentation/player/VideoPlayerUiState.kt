@@ -32,6 +32,8 @@ class VideoPlayerUiStateHolder(
     val halfMoreOpen = mutableStateOf(false)
     val fsAutoPlayNext = mutableStateOf(initialAutoPlayNext)
     val fsLoopMode = mutableIntStateOf(initialLoopMode.coerceIn(0, 2))
+    /** 随机播放：与循环模式互斥，开启时播完从列表里随机挑下一项。 */
+    val fsShuffle = mutableStateOf(false)
     val fsMirror = mutableStateOf(false)
     val fsResizeMode = mutableIntStateOf(0)
     val fsColorAssist = mutableIntStateOf(0)

@@ -33,6 +33,7 @@ data class ListenVideoInfo(
             loopMode = playback.loopMode,
             sleepTimerLabel = playback.sleepTimerLabel,
             abLoopLabel = ui.abLoop.label(),
+            translationOn = ui.translationOn,
             qualityLabel = qualityLabel,
             favorited = favorited,
             backgroundPlay = playback.backgroundPlay,
@@ -47,6 +48,7 @@ data class ListenVideoPlayback(
     val bufferedMs: Long,
     val speed: Float,
     val loopMode: Int = 0,
+    val shuffle: Boolean = false,
     val backgroundPlay: Boolean,
     val sleepTimerLabel: String = "",
     /** 定时关闭的目标时间戳；0 表示未开启。 */
@@ -61,12 +63,14 @@ class ListenVideoActions(
     val onSeekRelative: (Long) -> Unit,
     val onSelectPage: (Long) -> Unit,
     val onMenuEntry: (ListenMenuEntry) -> Unit = {},
-    val onLyricsSeek: (Long) -> Unit = { onSeek(it) },
     val onImportLyrics: () -> Unit = {},
     val onVolumeChange: (Float) -> Unit = {},
     val onTranslationToggle: (Boolean) -> Unit = {},
-    val onAbLoopMark: () -> Unit = {},
     val onSleepAtChanged: (Long) -> Unit = {},
+    /** 随机播放开关；与播放模式互斥。 */
+    val onShuffleToggle: () -> Unit = {},
+    /** 顺序 → 单曲 → 列表 循环切换。 */
+    val onPlayModeToggle: () -> Unit = {},
 )
 
 /** 播放控件用到的像素图标资源由 app 侧提供（与全屏播放器同一套）。 */

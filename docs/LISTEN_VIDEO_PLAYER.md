@@ -27,7 +27,7 @@ ListenVideoScreen（整页，接管屏幕）
 ├── 顶栏：返回 / （歌词页）翻译、搜索 / 更多
 ├── 内容
 │   ├── 竖排（宽 ≤ 高 × 1.15）
-│   │   ├── 封面页：封面卡 → 实时歌词预览 → 标题/UP → 进度 → 传输 → 音量 → 四个次级按钮
+│   │   ├── 封面页：封面卡 → 实时歌词预览 → 标题/UP → 进度 → 传输 → 音量 → 四个次级按钮（随机 / 播放模式 / 列表 / 设置）
 │   │   └── 歌词页：全屏滚动歌词（当前行高亮 + 行内填充）→ 细进度 → 传输
 │   └── 横排（宽 > 高 × 1.15）
 │       └── 封面卡 + 右侧信息列（标题/UP/进度/时间/传输/次级按钮）
@@ -49,9 +49,8 @@ ListenVideoScreen（整页，接管屏幕）
 | `listen/ListenVideoScreen.kt` | 整页容器：背景、顶栏、Pager、胶囊 |
 | `listen/ListenVideoCoverPage.kt` | 封面页（竖排/横排两种摆放） |
 | `listen/ListenVideoLyricsPage.kt` | 歌词页 |
-| `listen/ListenVideoTransport.kt` | 进度条、传输键、音量条、次级按钮 |
-| `listen/ListenVideoMoreSheet.kt` | 更多面板 |
-| `listen/ListenVideoQueueSheet.kt` | 播放队列（分 P / 合集） |
+| `listen/ListenVideoTransport.kt` | 进度条、传输键、音量条、底部次级按钮（随机 / 播放模式 / 队列 / 设置） |
+| `listen/ListenVideoSheets.kt` | 更多面板（含定时分钟内联）与播放队列 |
 
 `app` 负责平台接线：封面取样（Coil + `dominantCoverColor`）、本地 lrc 选择（SAF）、音频码率/音量写入。
 
@@ -73,8 +72,13 @@ ListenVideoScreen（整页，接管屏幕）
 
 ## 6. 更多菜单：移植与搁置清单
 
-**本次接入（有基础设施）**：返回视频、选集/合集、音质、倍速、定时关闭、A-B 循环、
+**本次接入（有基础设施）**：返回视频、选集/合集、音质、倍速、播放模式、定时关闭、A-B 循环、双语翻译、
 收藏、分享、画中画、切换横竖屏、字幕/歌词设置、歌词搜索（本地）、后台播放开关。
+
+底部四个次级按钮对齐 BiliPai 的次级传输区：**随机**（独立开关，开启即把循环收回顺序）、
+**播放模式**（顺序 → 单曲 → 列表 循环，点击必关随机）、**播放队列**、**更多设置**。
+A-B 循环与双语翻译收进「更多」面板，避免底部一排按钮既占宽度又语义混杂；
+随机与循环的互斥规则落在 `core:domain/ListenPlayModePolicy.kt`，有纯 JVM 测试。
 
 **本次不接入（项目暂缺，菜单里直接隐藏）**：
 

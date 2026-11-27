@@ -1,5 +1,7 @@
 package com.aritxonly.bdfun.feature.video.presentation.listen
 
+import com.aritxonly.bdfun.core.domain.playModeLabel
+
 /**
  * 听视频「更多」面板的条目。只登记真正可用的项：
  * 项目没有对应基础设施的功能（在线歌词、纯音频缓存、歌单导入、设备接力、封面律动）
@@ -13,6 +15,7 @@ enum class ListenMenuEntry(val title: String) {
     PLAY_MODE("播放模式"),
     SLEEP_TIMER("定时关闭"),
     AB_LOOP("A-B 区间循环"),
+    TRANSLATION("双语翻译"),
     FAVORITE("收藏"),
     SHARE("分享"),
     PIP("画中画"),
@@ -59,6 +62,7 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
         add(ListenMenuEntry.PLAY_MODE)
         add(ListenMenuEntry.SLEEP_TIMER)
         add(ListenMenuEntry.AB_LOOP)
+        if (c.hasLyrics) add(ListenMenuEntry.TRANSLATION)
         if (c.canFavorite && c.loggedIn) add(ListenMenuEntry.FAVORITE)
         if (c.canShare) add(ListenMenuEntry.SHARE)
         add(ListenMenuEntry.BACKGROUND_PLAY)
@@ -72,11 +76,12 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
 /** 菜单里的当前值：没值就不显示右侧小字，避免出现「未知」「--」。 */
 fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = when (entry) {
     ListenMenuEntry.SPEED -> if (state.speed == 1f) "1.0x" else trimSpeedValue(state.speed)
-    ListenMenuEntry.PLAY_MODE -> listenPlayModeLabel(state.loopMode)
+    ListenMenuEntry.PLAY_MODE -> playModeLabel(state.loopMode)
     ListenMenuEntry.SLEEP_TIMER -> state.sleepTimerLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.AB_LOOP -> state.abLoopLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.AUDIO_QUALITY -> state.qualityLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.FAVORITE -> if (state.favorited) "已收藏" else null
+    ListenMenuEntry.TRANSLATION -> if (state.translationOn) "已开启" else "未开启"
     ListenMenuEntry.BACKGROUND_PLAY -> if (state.backgroundPlay) "已开启" else "未开启"
     ListenMenuEntry.ORIENTATION -> state.orientationLabel.takeIf { it.isNotBlank() }
     else -> null
@@ -84,6 +89,7 @@ fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = w
 
 data class ListenMenuState(
     val speed: Float = 1f,
+    val translationOn: Boolean = false,
     val loopMode: Int = 0,
     val sleepTimerLabel: String = "",
     val abLoopLabel: String = "",
@@ -94,18 +100,6 @@ data class ListenMenuState(
 )
 
 /** 与视频播放器的 loopMode 取值一致：0 不循环、1 单集、2 列表。 */
-fun listenPlayModeLabel(loopMode: Int): String = when (loopMode) {
-    1 -> "单集循环"
-    2 -> "列表循环"
-    else -> "不循环"
-}
-
-fun nextListenPlayMode(loopMode: Int): Int = when (loopMode) {
-    0 -> 1
-    1 -> 2
-    else -> 0
-}
-
 fun trimSpeedValue(speed: Float): String {
     val text = "%.2f".format(speed)
     return text.trimEnd('0').trimEnd('.') + "x"

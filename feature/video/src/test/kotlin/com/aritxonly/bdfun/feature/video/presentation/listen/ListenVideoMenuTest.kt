@@ -56,13 +56,17 @@ class ListenVideoMenuTest {
         assertEquals("未开启", listenMenuValue(ListenMenuEntry.BACKGROUND_PLAY, state))
     }
 
-    @Test fun playModeCyclesAndLabels() {
-        assertEquals(1, nextListenPlayMode(0))
-        assertEquals(2, nextListenPlayMode(1))
-        assertEquals(0, nextListenPlayMode(2))
-        assertEquals("不循环", listenPlayModeLabel(0))
-        assertEquals("单集循环", listenPlayModeLabel(1))
-        assertEquals("列表循环", listenPlayModeLabel(2))
+    @Test fun playModeLabelComesFromDomain() {
+        assertEquals("顺序播放", listenMenuValue(ListenMenuEntry.PLAY_MODE, ListenMenuState(loopMode = 0)))
+        assertEquals("单曲循环", listenMenuValue(ListenMenuEntry.PLAY_MODE, ListenMenuState(loopMode = 1)))
+        assertEquals("列表循环", listenMenuValue(ListenMenuEntry.PLAY_MODE, ListenMenuState(loopMode = 2)))
+    }
+
+    @Test fun translationRowOnlyShownWithLyrics() {
+        assertFalse(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.TRANSLATION))
+        assertTrue(visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true)).contains(ListenMenuEntry.TRANSLATION))
+        assertEquals("未开启", listenMenuValue(ListenMenuEntry.TRANSLATION, ListenMenuState()))
+        assertEquals("已开启", listenMenuValue(ListenMenuEntry.TRANSLATION, ListenMenuState(translationOn = true)))
     }
 
     @Test fun playModeIsAlwaysAvailable() {

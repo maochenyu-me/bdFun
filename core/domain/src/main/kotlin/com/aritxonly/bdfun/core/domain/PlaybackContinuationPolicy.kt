@@ -16,6 +16,9 @@ enum class PlaybackContinuation {
 
     /** 什么都不做，停在播完的状态。 */
     Stop,
+
+    /** 随机播放：在播放列表里随机挑一项跳过去（排除当前项）。 */
+    NextShuffle,
 }
 
 /**
@@ -39,17 +42,24 @@ fun playbackContinuation(
     hasNextPart: Boolean,
     hasNextInQueue: Boolean,
     hasCollection: Boolean,
-): PlaybackContinuation = when (loopMode) {
-    1 -> PlaybackContinuation.RepeatSingle
-    2 -> when {
-        hasNextPage -> PlaybackContinuation.NextPage
-        hasCollection -> PlaybackContinuation.RestartCollection
-        hasNextInQueue -> PlaybackContinuation.NextInQueue
-        else -> PlaybackContinuation.Stop
-    }
-    else -> when {
-        autoPlayNext && hasNextPart -> PlaybackContinuation.NextPage
-        autoPlayNext && hasNextInQueue -> PlaybackContinuation.NextInQueue
-        else -> PlaybackContinuation.Stop
+    /** 随机播放优先于循环模式：随机就是要「不按顺序听」。 */
+    shuffle: Boolean = false,
+    /** 列表里至少要有两项才谈得上随机（否则等于重播）。 */
+    shuffleable: Boolean = false,
+): PlaybackContinuation = when {
+    shuffle && shuffleable -> PlaybackContinuation.NextShuffle
+    else -> when (loopMode) {
+        1 -> PlaybackContinuation.RepeatSingle
+        2 -> when {
+            hasNextPage -> PlaybackContinuation.NextPage
+            hasCollection -> PlaybackContinuation.RestartCollection
+            hasNextInQueue -> PlaybackContinuation.NextInQueue
+            else -> PlaybackContinuation.Stop
+        }
+        else -> when {
+            autoPlayNext && hasNextPart -> PlaybackContinuation.NextPage
+            autoPlayNext && hasNextInQueue -> PlaybackContinuation.NextInQueue
+            else -> PlaybackContinuation.Stop
+        }
     }
 }
