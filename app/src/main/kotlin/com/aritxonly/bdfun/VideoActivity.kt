@@ -3,9 +3,7 @@ package com.aritxonly.bdfun
 import com.aritxonly.bdfun.navigation.readRouteIntent
 import com.aritxonly.bdfun.navigation.finishForMissingRoute
 import com.aritxonly.bdfun.navigateToVideo
-import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
