@@ -169,6 +169,7 @@ private fun ListenVideoSheets(
             sleepAtMs = playback.sleepAtMs,
             onSleepAtChanged = actions.onSleepAtChanged,
             onPlayModePicked = actions.onPlayModeSelected,
+            onLyricsStylePicked = { ui.lyricsStyle = it },
         )
     }
     if (ui.queueSheet) {

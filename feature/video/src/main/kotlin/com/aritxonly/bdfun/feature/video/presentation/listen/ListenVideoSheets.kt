@@ -52,9 +52,10 @@ internal fun ListenVideoMoreSheet(
     sleepAtMs: Long = 0L,
     onSleepAtChanged: (Long) -> Unit = {},
     onPlayModePicked: (loopMode: Int, shuffle: Boolean) -> Unit = { _, _ -> },
+    onLyricsStylePicked: (ListenLyricsStyle) -> Unit = {},
 ) {
     val entries = visibleListenMenuEntries(capabilities)
-    // 定时关闭与播放模式都在面板里就地展开，点一下只是展开选项，不会直接改值再收起面板。
+    // 这几项都在面板里就地展开，点一下只是展开选项，不会直接改值再收起面板。
     var expanded by remember { mutableStateOf<ListenMenuEntry?>(null) }
     TeakActionSheet(visible = visible, onDismiss = onDismiss, title = "更多") {
         Column(
@@ -70,7 +71,9 @@ internal fun ListenVideoMoreSheet(
                     accent = accent,
                     onClick = {
                         when (entry) {
-                            ListenMenuEntry.SLEEP_TIMER, ListenMenuEntry.PLAY_MODE ->
+                            ListenMenuEntry.SLEEP_TIMER,
+                            ListenMenuEntry.PLAY_MODE,
+                            ListenMenuEntry.LYRICS_STYLE ->
                                 expanded = if (expanded == entry) null else entry
                             else -> onEntry(entry)
                         }
@@ -82,6 +85,16 @@ internal fun ListenVideoMoreSheet(
                     entry == ListenMenuEntry.PLAY_MODE && expanded == entry ->
                         PlayModeOptions(state.loopMode, state.shuffle, accent) { option ->
                             onPlayModePicked(option.loopMode, option.shuffle)
+                            onDismiss()
+                        }
+                    entry == ListenMenuEntry.LYRICS_STYLE && expanded == entry ->
+                        InlineOptions(
+                            options = ListenLyricsStyle.entries.map {
+                                InlineOption(it.label, it.detail, it == state.lyricsStyle)
+                            },
+                            accent = accent,
+                        ) { index ->
+                            onLyricsStylePicked(ListenLyricsStyle.entries[index])
                             onDismiss()
                         }
                     else -> Unit
@@ -100,26 +113,36 @@ private fun PlayModeOptions(
     onPick: (PlayModeOption) -> Unit,
 ) {
     val current = currentPlayMode(loopMode, shuffle)
+    InlineOptions(
+        options = playModeOptions.map { InlineOption(it.label, it.detail, it == current) },
+        accent = accent,
+    ) { index -> onPick(playModeOptions[index]) }
+}
+
+/** 面板内联展开的一行选项：label + 右侧说明，当前项高亮。 */
+private data class InlineOption(val label: String, val detail: String, val selected: Boolean)
+
+@Composable
+private fun InlineOptions(options: List<InlineOption>, accent: Color, onPick: (Int) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        playModeOptions.forEach { option ->
-            val selected = option == current
+        options.forEachIndexed { index, option ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White.copy(alpha = if (selected) 0.10f else 0f))
+                    .background(Color.White.copy(alpha = if (option.selected) 0.10f else 0f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                    ) { onPick(option) }
+                    ) { onPick(index) }
                     .padding(horizontal = 10.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = option.label,
-                    color = if (selected) accent else Color.White.copy(alpha = 0.82f),
+                    color = if (option.selected) accent else Color.White.copy(alpha = 0.82f),
                     fontSize = 13.sp,
-                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = if (option.selected) FontWeight.Medium else FontWeight.Normal,
                     modifier = Modifier.weight(1f),
                 )
                 Text(

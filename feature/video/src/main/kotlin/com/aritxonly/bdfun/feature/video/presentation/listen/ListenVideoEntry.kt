@@ -240,6 +240,8 @@ private fun listenActions(
                 ListenMenuEntry.PIP -> fsActions.onPictureInPicture()
                 ListenMenuEntry.ORIENTATION -> activity?.let(::toggleActivityOrientation)
                 ListenMenuEntry.SUBTITLE_SETTINGS -> ui.fsPanel.value = FullscreenPanel.Subtitles
+                // 歌词样式由面板里内联展开，选中即写 ui.lyricsStyle。
+                ListenMenuEntry.LYRICS_STYLE -> Unit
                 ListenMenuEntry.LYRICS_SEARCH -> listen.requestLyricsPicker()
                 ListenMenuEntry.BACKGROUND_PLAY ->
                     fsActions.onBackgroundPlayChanged(!listen.backgroundPlay())

@@ -52,6 +52,7 @@ data class ListenVideoInfo(
             favorited = favorited,
             backgroundPlay = playback.backgroundPlay,
             orientationLabel = orientationLabel,
+            lyricsStyle = ui.lyricsStyle,
         )
 }
 

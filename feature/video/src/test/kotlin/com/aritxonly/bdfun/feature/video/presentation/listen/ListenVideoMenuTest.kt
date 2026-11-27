@@ -79,6 +79,28 @@ class ListenVideoMenuTest {
         assertTrue(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.PLAY_MODE))
     }
 
+    @Test fun lyricsStyleNeedsLyrics() {
+        assertFalse(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.LYRICS_STYLE))
+        assertTrue(
+            visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true))
+                .contains(ListenMenuEntry.LYRICS_STYLE),
+        )
+    }
+
+    @Test fun lyricsStyleValueFollowsState() {
+        assertEquals(
+            "KTV 逐字",
+            listenMenuValue(ListenMenuEntry.LYRICS_STYLE, ListenMenuState()),
+        )
+        assertEquals(
+            "普通",
+            listenMenuValue(
+                ListenMenuEntry.LYRICS_STYLE,
+                ListenMenuState(lyricsStyle = ListenLyricsStyle.PLAIN),
+            ),
+        )
+    }
+
     @Test fun speedValueTrimsTrailingZeros() {
         assertEquals("1.25x", trimSpeedValue(1.25f))
         assertEquals("1.5x", trimSpeedValue(1.5f))

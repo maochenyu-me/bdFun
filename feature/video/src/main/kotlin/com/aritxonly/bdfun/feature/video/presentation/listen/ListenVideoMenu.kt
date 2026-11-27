@@ -22,6 +22,7 @@ enum class ListenMenuEntry(val title: String) {
     ORIENTATION("切换横竖屏"),
     SUBTITLE_SETTINGS("字幕 / 歌词设置"),
     LYRICS_SEARCH("搜索歌词"),
+    LYRICS_STYLE("歌词样式"),
     BACKGROUND_PLAY("后台播放"),
     ;
 
@@ -68,6 +69,7 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
         if (c.canShare) add(ListenMenuEntry.SHARE)
         add(ListenMenuEntry.BACKGROUND_PLAY)
         if (c.hasLyrics) {
+            add(ListenMenuEntry.LYRICS_STYLE)
             add(ListenMenuEntry.LYRICS_SEARCH)
             add(ListenMenuEntry.SUBTITLE_SETTINGS)
         }
@@ -85,6 +87,7 @@ fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = w
     ListenMenuEntry.TRANSLATION -> if (state.translationOn) "已开启" else "未开启"
     ListenMenuEntry.BACKGROUND_PLAY -> if (state.backgroundPlay) "已开启" else "未开启"
     ListenMenuEntry.ORIENTATION -> state.orientationLabel.takeIf { it.isNotBlank() }
+    ListenMenuEntry.LYRICS_STYLE -> state.lyricsStyle.label
     else -> null
 }
 
@@ -101,6 +104,7 @@ data class ListenMenuState(
     val favorited: Boolean = false,
     val backgroundPlay: Boolean = false,
     val orientationLabel: String = "横屏",
+    val lyricsStyle: ListenLyricsStyle = ListenLyricsStyle.KARAOKE,
 )
 
 /** 与视频播放器的 loopMode 取值一致：0 不循环、1 单集、2 列表。 */

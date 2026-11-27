@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.feature.video.presentation.listen
 
+import com.aritxonly.bdfun.core.domain.karaokeLineProgress
 import com.aritxonly.bdfun.core.model.video.SubtitleCue
 
 /** 歌词一行的纯数据投影：解析、对齐、偏移都在这层算完，界面只负责画。 */
@@ -24,8 +25,7 @@ data class Lyrics(val lines: List<LyricLine>) {
     /** 当前行内的进度 0..1；用于逐字填充的近似插值（字幕本身只有整句时间）。 */
     fun progressAt(index: Int, positionMs: Long): Float {
         val line = lines.getOrNull(index) ?: return 0f
-        val span = (line.toMs - line.fromMs).coerceAtLeast(1L)
-        return ((positionMs - line.fromMs).toFloat() / span).coerceIn(0f, 1f)
+        return karaokeLineProgress(positionMs, line.fromMs, line.toMs)
     }
 
     fun withOffset(offsetMs: Long): Lyrics {

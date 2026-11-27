@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,8 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -103,11 +102,17 @@ internal fun ListenVideoLyricsPage(
                 onSwitchToCover = { ui.pageIndex = 0 },
             )
         } else {
+            // 播放器的位置每秒才来一次，逐字扫亮要按帧补齐，否则一句只亮两三下。
+            val positionNow = rememberSmoothLyricPosition(
+                sampledMs = playback.positionMs,
+                playing = playback.playing,
+                speed = playback.speed,
+            )
             ListenLyricsList(
                 lyrics = lyrics,
-                positionMs = playback.positionMs,
-                index = lyrics.indexAt(playback.positionMs),
+                positionNow = positionNow,
                 translationOn = ui.translationOn,
+                style = ui.lyricsStyle,
                 modifier = Modifier.weight(1f),
                 onSeek = actions.onSeek,
                 onLongPress = { offsetEditing = true },
@@ -131,14 +136,16 @@ internal fun ListenVideoLyricsPage(
 @Composable
 private fun ListenLyricsList(
     lyrics: Lyrics,
-    positionMs: Long,
-    index: Int,
+    positionNow: () -> Long,
     translationOn: Boolean,
+    style: ListenLyricsStyle,
     modifier: Modifier = Modifier,
     onSeek: (Long) -> Unit,
     onLongPress: () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    // 只有当前行变了才需要重组列表；位置本身每帧在变，走 derivedStateOf 挡掉。
+    val index by remember(lyrics) { derivedStateOf { lyrics.indexAt(positionNow()) } }
     // 当前行变化时才滚动，避免每秒都触发一次动画。
     LaunchedEffect(index) {
         if (index < 0) return@LaunchedEffect
@@ -167,8 +174,12 @@ private fun ListenLyricsList(
             ) {
                 LyricLineText(
                     text = line.text,
-                    progress = if (current) lyrics.progressAt(i, positionMs) else 0f,
+                    fromMs = line.fromMs,
+                    toMs = line.toMs,
                     current = current,
+                    style = style,
+                    distance = if (current) 0 else kotlin.math.abs(i - index),
+                    positionNow = positionNow,
                 )
                 if (translationOn && line.translation != null) {
                     Spacer(Modifier.height(4.dp))
@@ -181,43 +192,6 @@ private fun ListenLyricsList(
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * 逐字填充的近似实现：字幕只有整句时间，所以按行内进度从左往右裁一条亮色文字出来。
- * 视觉上和参考实现一致，但不要理解成真的逐字对齐。
- */
-@Composable
-private fun LyricLineText(text: String, progress: Float, current: Boolean) {
-    val base = if (current) Color.White.copy(alpha = 0.42f) else Color.White.copy(alpha = 0.34f)
-    val fontSize = if (current) 20.sp else 16.sp
-    val weight = if (current) FontWeight.SemiBold else FontWeight.Normal
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = text,
-            color = base,
-            fontSize = fontSize,
-            fontWeight = weight,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (current && progress > 0f) {
-            Text(
-                text = text,
-                color = Color.White,
-                fontSize = fontSize,
-                fontWeight = weight,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawWithContent {
-                        clipRect(right = size.width * progress.coerceIn(0f, 1f)) {
-                            this@drawWithContent.drawContent()
-                        }
-                    },
-            )
         }
     }
 }
