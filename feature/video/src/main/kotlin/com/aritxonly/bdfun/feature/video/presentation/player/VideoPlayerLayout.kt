@@ -38,11 +38,15 @@ fun VideoPlayerLayout(
     val positionMs by observed.positionMs
     val durationMs by observed.durationMs
     val bufferedMs by observed.bufferedMs
+    // 听视频整页有自己的手势（横滑切页、拖音量），播放器那套点击/滑动会让横滑失效。
+    val audioOnly by ui.fsAudioOnly
+    val interaction = if (audioOnly) Modifier else
+        playerInteractionModifier(playback, ui, fullscreen, ports.page, ports.gestures, onToggleFullscreen)
     Box(
         modifier = modifier
             .background(Color.Black)
             .onGloballyPositioned { ui.danmakuHit.coordinates = it }
-            .then(playerInteractionModifier(playback, ui, fullscreen, ports.page, ports.gestures, onToggleFullscreen)),
+            .then(interaction),
     ) {
         PlayerSurface(
             playback, media, presentation, ui, danmakuVisible, btLatencyMs,
@@ -86,8 +90,7 @@ fun VideoPlayerLayout(
         PlayerInlineControls(playback, observed, presentation, actions, fsActions, ui, ports)
 
         // 听视频是整页界面：盖住画面、弹幕和所有视频控件，只留这一层。
-        val audioOnlyNow by ui.fsAudioOnly
-        if (audioOnlyNow) {
+        if (audioOnly) {
             ListenVideoLayer(
                 media, presentation, ui, fsActions, ports, playing, positionMs, durationMs, bufferedMs,
                 onToggleFullscreen,
