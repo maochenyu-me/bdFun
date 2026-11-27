@@ -37,6 +37,10 @@ class VideoPlayerUiStateHolder(
     val fsColorAssist = mutableIntStateOf(0)
     val fsSubtitlesOn = mutableStateOf(true)
     val fsSleepAt = mutableLongStateOf(0L)
+    /** 听视频是从半屏进入的：退出时要一并退出全屏，回到详情页。 */
+    val listenFromInline = mutableStateOf(false)
+    /** 听视频里导入的本地歌词；null 表示没有，仍用 B 站字幕。 */
+    val listenImportedLyrics = mutableStateOf<com.aritxonly.bdfun.feature.video.presentation.listen.Lyrics?>(null)
     val fsSeekLook = mutableFloatStateOf(0f)
     val fsScrubbing = mutableStateOf(false)
     val fsBarPreviewMs = mutableLongStateOf(-1L)

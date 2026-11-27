@@ -49,6 +49,7 @@ fun BindPlayerPresentationSetup(
         presentation.portraitVideo || portraitVideo,
         ui,
         ports.page,
+        audioOnly = ui.fsAudioOnly.value,
     )
     var fsAutoPlayNext by ui.fsAutoPlayNext
     LaunchedEffect(fsAutoPlayNext) {

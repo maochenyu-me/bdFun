@@ -19,6 +19,11 @@ data class PlaybackSource(
     val mediaKey: String? = null,
     /** 投屏优先用能带声音的渐进流（durl）；没有时才退回 [videoUrl]。 */
     val castUrl: String? = null,
+    /**
+     * 只听声音：有独立音轨时不再挂视频源，省掉视频带宽与解码。
+     * 没有音轨（渐进流）时仍然回退到 videoUrl 播放，否则会变成静音。
+     */
+    val audioOnly: Boolean = false,
 )
 
 /** 前台、后台和系统媒体控件共享传输控制，不暴露 Media3 或 Android 类型。 */
@@ -35,6 +40,12 @@ interface PlaybackController {
     fun pause()
     fun seekTo(positionMs: Long)
     fun setSpeed(speed: Float)
+
+    /** 听视频的音量滑条；默认空实现，避免所有平台适配器被迫跟进。 */
+    fun setVolume(volume: Float) {}
+
+    /** 当前音量 0..1，仅用于界面初始位置。 */
+    val volume: Float get() = 1f
     fun acknowledgeEnd()
     fun release()
     fun addListener(listener: Listener)

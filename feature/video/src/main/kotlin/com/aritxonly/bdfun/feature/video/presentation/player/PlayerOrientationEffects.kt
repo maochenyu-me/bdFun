@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.aritxonly.bdfun.core.domain.FullscreenOrientation
 import com.aritxonly.bdfun.core.domain.fullscreenOrientation
+import com.aritxonly.bdfun.core.domain.listenVideoOrientation
 import kotlinx.coroutines.delay
 
 @Composable
@@ -18,6 +19,7 @@ fun BindPlayerOrientation(
     portraitVideo: Boolean,
     ui: VideoPlayerUiStateHolder,
     page: PlayerPageHost,
+    audioOnly: Boolean = false,
 ) {
     val activity = LocalContext.current as? Activity
     var fsLockHint by ui.fsLockHint
@@ -28,12 +30,13 @@ fun BindPlayerOrientation(
             fsLockHint = false
         }
     }
-    LaunchedEffect(fsLocked, fullscreen, portraitVideo) {
+    LaunchedEffect(fsLocked, fullscreen, portraitVideo, audioOnly) {
         page.orientationLocked = fsLocked && fullscreen
         if (fullscreen) {
-            // 竖屏视频不再强制横屏，交给传感器按视频本身的宽高比转
-            activity?.requestedOrientation =
-                fullscreenOrientation(portraitVideo, fsLocked).toActivityOrientation()
+            // 听视频要跟随设备方向；其余仍按视频本身的宽高比决定
+            val target = if (audioOnly) listenVideoOrientation(fsLocked)
+            else fullscreenOrientation(portraitVideo, fsLocked)
+            activity?.requestedOrientation = target.toActivityOrientation()
         }
     }
     DisposableEffect(Unit) {
@@ -45,4 +48,5 @@ private fun FullscreenOrientation.toActivityOrientation(): Int = when (this) {
     FullscreenOrientation.Locked -> ActivityInfo.SCREEN_ORIENTATION_LOCKED
     FullscreenOrientation.SensorPortrait -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
     FullscreenOrientation.SensorLandscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    FullscreenOrientation.FullSensor -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
 }

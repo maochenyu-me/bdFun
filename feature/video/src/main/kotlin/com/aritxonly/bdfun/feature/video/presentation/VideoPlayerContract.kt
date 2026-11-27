@@ -17,6 +17,8 @@ data class VideoPlayerPresentation(
 class VideoTransportActions(
     val onPlayStateChanged: (Boolean) -> Unit, val onPageSelected: (VideoPage) -> Unit,
     val onSubtitleSelected: (SubtitleTrack?) -> Unit, val onQualitySelected: (Int) -> Unit,
+    /** 听视频双语：选副字幕轨，不影响主字幕。 */
+    val onSecondarySubtitleSelected: (SubtitleTrack?) -> Unit = {},
     val onCacheVideo: (Quality) -> Unit,
     /** 选集缓存：一次把当前视频的全部分 P / 合集单集加入队列。 */
     val onCacheAll: (Quality) -> Unit = {},

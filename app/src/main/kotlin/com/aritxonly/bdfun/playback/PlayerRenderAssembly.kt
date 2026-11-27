@@ -8,6 +8,7 @@ import com.aritxonly.bdfun.ui.TeakIcon
 import com.aritxonly.bdfun.cast.CastDialog
 import com.aritxonly.bdfun.cast.CastRequestState
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
+import com.aritxonly.bdfun.playback.rememberListenVideoPorts
 
 /** 平台动作/资源按原页面装配；各getter与slot保留原条件分支中的读取时机。 */
 @Composable
@@ -60,12 +61,13 @@ context, playback, presentation.fullscreenInfo, actions, ui, presentation.portra
         fullscreenVisuals = {
             PlayerFullscreenVisuals(fullscreenChrome.appearance, fullscreenChrome.slots, settings.danmakuOn, settings.backgroundPlay)
         },
-        danmakuComposer = PlayerDanmakuComposePorts(
-            { page.styledDanmakuSender },
-            allowVipColor = viewer?.vip == true,
-            allowUpIdentity = viewer != null && viewer.mid > 0 && viewer.mid == page.danmakuOwnerMid,
-        ),
-        danmakuOverlays = { visible ->
+        danmaku = PlayerDanmakuPorts(
+            composer = PlayerDanmakuComposePorts(
+                { page.styledDanmakuSender },
+                allowVipColor = viewer?.vip == true,
+                allowUpIdentity = viewer != null && viewer.mid > 0 && viewer.mid == page.danmakuOwnerMid,
+            ),
+            overlays = { visible ->
             if (visible && !settings.danmakuBlockAdvanced && !ui.fsAudioOnly.value) {
                 SpecialVideoDanmakuOverlay(media.danmaku, playback, ui, page.aid, presentation.fullscreenInfo.currentCid)
                 if (settings.videoInteraction) {
@@ -76,8 +78,10 @@ context, playback, presentation.fullscreenInfo, actions, ui, presentation.portra
                         avatar = fullscreenChrome.slots.avatar)
                 }
             }
-            DanmakuSelectionActions(playback, presentation.fullscreenInfo.currentCid)
-        },
+                DanmakuSelectionActions(playback, presentation.fullscreenInfo.currentCid)
+            },
+        ),
         inlineMore = { PlayerInlineMore(playback, media, presentation, actions, fsActions, ui) },
+        listen = rememberListenVideoPorts(playback, presentation.fullscreenInfo.cover, ui, { settings.backgroundPlay }),
     )
 }

@@ -70,6 +70,7 @@ private fun fullscreenPlayerInfo(content: VideoPlayerContent): FullscreenPlayerI
             subtitles = metadata.subtitles,
             selectedSubtitle = metadata.selectedSubtitle,
             subtitleCues = metadata.subtitleCues,
+            secondaryCues = metadata.secondaryCues,
             danmakuItems = content.danmaku,
             // 评论身份跟详情页评论 tab 同源：PGC 用当前集 aid，UGC 用稿件 aid。
             comments = FullscreenCommentIdentity(

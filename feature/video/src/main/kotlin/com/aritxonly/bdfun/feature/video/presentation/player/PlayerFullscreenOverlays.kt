@@ -88,10 +88,12 @@ internal fun PlayerFullscreenOverlay(
 
 }
 
-private fun fullscreenPlaybackProjection(
+internal fun fullscreenPlaybackProjection(
     media: VideoMediaInput, ui: VideoPlayerUiStateHolder,
     playing: Boolean, positionMs: Long, durationMs: Long, bufferedMs: Long,
     settings: PlayerFullscreenVisuals,
+    /** 听视频整页没有「控件自动隐藏」概念，进度必须一直可读，不能被控件的显隐清零。 */
+    alwaysShowTransport: Boolean = false,
 ): FullscreenPlaybackState {
     val info = media.info
     val quality = media.quality
@@ -111,16 +113,16 @@ private fun fullscreenPlaybackProjection(
     return FullscreenPlaybackState(
         transport = FullscreenTransport(
             playing = playing,
-            positionMs = if (controlsVisible) {
+            positionMs = if (alwaysShowTransport || controlsVisible) {
                     if (seekPreviewMs >= 0L) seekPreviewMs else positionMs
                 } else {
                     0L
                 },
-            durationMs = if (controlsVisible) durationMs else 0L,
-            bufferedMs = if (controlsVisible) bufferedMs else 0L,
+            durationMs = if (alwaysShowTransport || controlsVisible) durationMs else 0L,
+            bufferedMs = if (alwaysShowTransport || controlsVisible) bufferedMs else 0L,
             speed = speed,
-            seekLook = if (controlsVisible) fsSeekLook else 0f,
-            scrubbing = controlsVisible && fsScrubbing,
+            seekLook = if (alwaysShowTransport || controlsVisible) fsSeekLook else 0f,
+            scrubbing = (alwaysShowTransport || controlsVisible) && fsScrubbing,
         ),
         options = FullscreenPlaybackOptions(
             qualities = info?.qualities.orEmpty(),

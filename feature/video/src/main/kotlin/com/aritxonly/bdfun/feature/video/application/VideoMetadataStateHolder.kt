@@ -13,6 +13,9 @@ data class VideoMetadataState(
     val onlineCount: Long = 0, val onlineText: String = "",
     val subtitles: List<SubtitleTrack> = emptyList(), val selectedSubtitle: SubtitleTrack? = null,
     val subtitleCues: List<SubtitleCue> = emptyList(),
+    /** 听视频双语：副字幕轨与它的时间轴，和主字幕互不影响。 */
+    val secondaryTrack: SubtitleTrack? = null,
+    val secondaryCues: List<SubtitleCue> = emptyList(),
 )
 
 class VideoMetadataStateHolder(private val repository: VideoMetadataRepository) {
@@ -59,6 +62,16 @@ class VideoMetadataStateHolder(private val repository: VideoMetadataRepository) 
         }
         val cues = repository.subtitleCues(track.url).valueOr(emptyList())
         if (version == subtitleRevision) mutableState.update { it.copy(subtitleCues = cues) }
+    }
+
+    /** 选定副字幕轨（听视频的「译」）。传 null 清空。 */
+    suspend fun selectSecondarySubtitle(track: SubtitleTrack?) {
+        if (track == null) {
+            mutableState.update { it.copy(secondaryTrack = null, secondaryCues = emptyList()) }
+            return
+        }
+        val cues = repository.subtitleCues(track.url).valueOr(emptyList())
+        mutableState.update { it.copy(secondaryTrack = track, secondaryCues = cues) }
     }
 
     suspend fun reportDanmaku(report: DanmakuReport): Outcome<Unit> =

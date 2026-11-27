@@ -56,19 +56,8 @@ fun FullscreenPlayerChrome(
     portraitVideo: Boolean = false,
 ) {
 
-    if (playback.audioOnly) {
-        val pages = info.pages
-        val index = pages.indexOfFirst { it.cid == info.currentCid }
-        FullscreenAudioMode(info = info, playback = playback,
-            onBack = { actions.onAudioOnlyChanged(false) }, onPlayPause = actions.onPlayPause,
-            onSeek = actions.onSeek,
-            onPrevious = { pages.getOrNull(index - 1)?.let(actions.onPageSelected) },
-            onNext = { pages.getOrNull(index + 1)?.let(actions.onPageSelected) },
-            hasPrevious = index > 0,
-            hasNext = index >= 0 && index < pages.lastIndex,
-            modifier = modifier, appearance = appearance, slots = slots)
-        return
-    }
+    // 听视频是独立整页，由 VideoPlayerLayout 最上层绘制；这里不再画视频控件。
+    if (playback.audioOnly) return
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val ui = rememberFullscreenPanelState(panel, onPanelHidden)

@@ -19,6 +19,7 @@ class VideoDetailPlayerActionBindings(
         onPlayStateChanged = { playing = it },
         onPageSelected = { actions.switchPage(it) },
         onSubtitleSelected = { track -> scope.launch { metadataController.selectSubtitle(track) } },
+        onSecondarySubtitleSelected = { track -> scope.launch { metadataController.selectSecondarySubtitle(track) } },
         onQualitySelected = { actions.switchQuality(it) },
         onCacheVideo = { actions.cacheVideo(it) },
         onCacheAll = { actions.cacheAll(it) },

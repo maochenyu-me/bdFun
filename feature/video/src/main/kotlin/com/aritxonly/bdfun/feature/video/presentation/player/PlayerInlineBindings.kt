@@ -55,7 +55,7 @@ internal fun PlayerInlineControls(
                     seekLook = if (controlsVisible) fsSeekLook else 0f,
                     immersiveStatusBar = immersiveStatusBar,
                 ),
-                actions = inlineChromeActions(playback, observed, actions, fsActions, ui),
+                actions = inlineChromeActions(playback, observed, actions, fsActions, ui, fullscreen),
                 appearance = ports.inlineAppearance(),
             )
         }
@@ -63,61 +63,13 @@ internal fun PlayerInlineControls(
 
 }
 
-@Composable
-internal fun PlayerInlineAudio(
-    playback: com.aritxonly.bdfun.core.application.PlaybackController,
-    observed: PlayerObservedStateHolder,
-    presentation: VideoPlayerPresentation,
-    fsActions: FullscreenActions,
-    ui: VideoPlayerUiStateHolder, ports: PlayerRenderPorts,
-) {
-    val playing by observed.playing
-    val positionMs by observed.positionMs
-    val durationMs by observed.durationMs
-    val fullscreen = presentation.fullscreen
-    val fullscreenInfo = presentation.fullscreenInfo
-    var fsAudioOnly by ui.fsAudioOnly
-    fun touch() { ui.interactionTick.intValue++ }
-    // 半屏听视频：不进入全屏也能用，播放器区域换成音频模式。
-    if (!fullscreen && fsAudioOnly) {
-        val pages = fullscreenInfo.pages
-        val index = pages.indexOfFirst { it.cid == fullscreenInfo.currentCid }
-        HalfScreenAudioMode(
-            appearance = ports.inlineAppearance(),
-            coverImage = ports.cover,
-            title = fullscreenInfo.title,
-            author = fullscreenInfo.author,
-            cover = fullscreenInfo.cover,
-            playing = playing,
-            positionMs = positionMs,
-            durationMs = durationMs,
-            onExit = { fsAudioOnly = false },
-            onPlayPause = { touch(); togglePlay(playback, playing) },
-            onSeek = { ms -> touch(); fsActions.onSeek(ms) },
-            episodes = HalfAudioEpisodes(
-                onPrevious = {
-                    touch()
-                    pages.getOrNull(index - 1)?.let(fsActions.onPageSelected)
-                },
-                onNext = {
-                    touch()
-                    pages.getOrNull(index + 1)?.let(fsActions.onPageSelected)
-                },
-                hasPrevious = index > 0,
-                hasNext = index >= 0 && index < pages.lastIndex,
-            ),
-        )
-    }
-
-}
-
-
 private fun inlineChromeActions(
     playback: com.aritxonly.bdfun.core.application.PlaybackController,
     observed: PlayerObservedStateHolder,
     actions: VideoPlayerActions,
     fsActions: FullscreenActions,
     ui: VideoPlayerUiStateHolder,
+    fullscreen: Boolean,
 ): InlineChromeActions {
     val playing by observed.playing
     val onBackClick = actions.navigation.onBackClick
@@ -162,6 +114,11 @@ private fun inlineChromeActions(
             // 不用再进「更多」里单独开一次「后台听视频」。
             fsActions.onBackgroundPlayChanged(true)
             fsAudioOnly = true
+            // 听视频是整页界面：半屏进入时一并进全屏，退出时再回到详情页。
+            if (!fullscreen) {
+                ui.listenFromInline.value = true
+                onToggleFullscreen()
+            }
         },
         onCast = { touch(); fsActions.onCast() },
         onMore = { touch(); halfMoreOpen = true },

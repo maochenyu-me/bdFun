@@ -57,6 +57,7 @@ data class FullscreenPlayerInfo(
     val subtitles get() = media.subtitles
     val selectedSubtitle get() = media.selectedSubtitle
     val subtitleCues get() = media.subtitleCues
+    val secondaryCues get() = media.secondaryCues
     val danmakuItems get() = media.danmakuItems
     /** 全屏评论面板用的稿件身份：评论 oid 与标题都从这里取。 */
     val comments get() = media.comments
@@ -105,6 +106,8 @@ data class FullscreenMediaInfo(
     val subtitles: List<SubtitleTrack>,
     val selectedSubtitle: SubtitleTrack?,
     val subtitleCues: List<SubtitleCue>,
+    /** 听视频双语用的副字幕时间轴；没有副轨时为空。 */
+    val secondaryCues: List<SubtitleCue> = emptyList(),
     val danmakuItems: List<DanmakuItem> = emptyList(),
     val comments: FullscreenCommentIdentity,
 )
@@ -186,6 +189,7 @@ class FullscreenActions(
     val onSpeedSelected get() = playback.onSpeedSelected
     val onPageSelected get() = navigation.onPageSelected
     val onSubtitleSelected get() = playback.onSubtitleSelected
+    val onSecondarySubtitleSelected get() = playback.onSecondarySubtitleSelected
     val onSendDanmaku get() = social.onSendDanmaku
     val onToggleDanmaku get() = playback.onToggleDanmaku
     val onAddWatchLater get() = social.onAddWatchLater
@@ -232,6 +236,8 @@ data class FullscreenTransportActions(
     val onCacheSelected: (Quality) -> Unit,
     val onSpeedSelected: (Float) -> Unit,
     val onSubtitleSelected: (SubtitleTrack?) -> Unit,
+    /** 听视频双语：选副字幕轨，不影响主字幕。 */
+    val onSecondarySubtitleSelected: (SubtitleTrack?) -> Unit = {},
     val onToggleDanmaku: () -> Unit,
     val onSeekRelative: (Long) -> Unit,
 )

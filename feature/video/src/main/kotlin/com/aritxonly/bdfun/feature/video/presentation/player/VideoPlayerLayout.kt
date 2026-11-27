@@ -14,6 +14,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.zIndex
+import com.aritxonly.bdfun.feature.video.presentation.listen.PlayerListenVideo
 import androidx.compose.ui.platform.LocalContext
 import com.aritxonly.bdfun.core.domain.usesPortraitChrome
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
@@ -82,12 +84,20 @@ fun VideoPlayerLayout(
         PlayerSubtitleLayer(fullscreenInfo, fullscreen, ui, positionMs)
 
         PlayerInlineControls(playback, observed, presentation, actions, fsActions, ui, ports)
-        PlayerInlineAudio(playback, observed, presentation, fsActions, ui, ports)
 
-        PlayerDanmakuInputOverlay(fullscreen, danmaku, ui, ports.danmakuComposer)
+        // 听视频是整页界面：盖住画面、弹幕和所有视频控件，只留这一层。
+        val audioOnlyNow by ui.fsAudioOnly
+        if (audioOnlyNow) {
+            ListenVideoLayer(
+                media, presentation, ui, fsActions, ports, playing, positionMs, durationMs, bufferedMs,
+                onToggleFullscreen,
+            )
+        }
+
+        PlayerDanmakuInputOverlay(fullscreen, danmaku, ui, ports.danmaku.composer)
 
         ports.inlineMore()
-        if (!presentation.pictureInPicture) ports.danmakuOverlays(this, danmakuVisible)
+        if (!presentation.pictureInPicture) ports.danmaku.overlays(this, danmakuVisible)
     }
 }
 
@@ -120,4 +130,32 @@ private fun BindPlayerOverlayBackHandling(ui: VideoPlayerUiStateHolder, fullscre
         }
     }
 
+}
+
+/** 听视频整页 + 返回键处理：返回键先退听视频，再退全屏，和左上角按钮语义一致。 */
+@Composable
+private fun ListenVideoLayer(
+    media: VideoMediaInput,
+    presentation: VideoPlayerPresentation,
+    ui: VideoPlayerUiStateHolder,
+    fsActions: FullscreenActions,
+    ports: PlayerRenderPorts,
+    playing: Boolean,
+    positionMs: Long,
+    durationMs: Long,
+    bufferedMs: Long,
+    onToggleFullscreen: () -> Unit,
+) {
+    PlayerListenVideo(
+        media, presentation, ui, fsActions, playing, positionMs, durationMs, bufferedMs, ports,
+        onExitFullscreen = onToggleFullscreen,
+        modifier = Modifier.fillMaxSize().zIndex(30f),
+    )
+    BackHandler(enabled = true) {
+        fsActions.onAudioOnlyChanged(false)
+        if (ui.listenFromInline.value) {
+            ui.listenFromInline.value = false
+            onToggleFullscreen()
+        }
+    }
 }

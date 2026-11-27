@@ -44,6 +44,7 @@ class Media3PlaybackController(
     private val recoveryScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var retryJob: Job? = null
     private var mediaKey: String? = null
+    private var listenVolume = 1f
     private val observer = object : Player.Listener {
         override fun onRenderedFirstFrame() { listeners.forEach { it.onRenderedFirstFrame() } }
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -109,8 +110,15 @@ class Media3PlaybackController(
         val data = DefaultDataSource.Factory(appContext, http)
         val video: MediaSource = ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(source.videoUrl))
         val audioUrl = source.audioUrl
-        val media = if (audioUrl.isNullOrBlank()) video else MergingMediaSource(video,
-            ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(audioUrl)))
+        // 听视频只挂音轨：视频流不再进播放列表，也就不会被下载和解码。
+        // 渐进流没有独立音轨时仍退回 video，否则会静音。
+        val media = when {
+            source.audioOnly && !audioUrl.isNullOrBlank() ->
+                ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(audioUrl))
+            audioUrl.isNullOrBlank() -> video
+            else -> MergingMediaSource(video,
+                ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(audioUrl)))
+        }
         mutableState.value = mutableState.value.copy(error = null)
         // 起始位置随媒体源一次提交，避免 prepare 后再 seek 短暂发布零进度。
         mediaKey = continued.mediaKey
@@ -156,8 +164,13 @@ class Media3PlaybackController(
             refresh()
         }
     }
-    override fun acknowledgeEnd() { mutableState.value = mutableState.value.copy(ended = false) }
-    override fun addListener(listener: PlaybackController.Listener) { listeners.addIfAbsent(listener) }
+
+    override val volume: Float get() = listenVolume
+    override fun setVolume(volume: Float) {
+        listenVolume = volume.coerceIn(0f, 1f)
+        if (!released) player.volume = listenVolume
+    }
+    override fun acknowledgeEnd() { mutableState.value = mutableState.value.copy(ended = false) }    override fun addListener(listener: PlaybackController.Listener) { listeners.addIfAbsent(listener) }
     override fun removeListener(listener: PlaybackController.Listener) { listeners.remove(listener) }
     override fun release() {
         // 后台退出入口可能从清理执行器调用，Media3 仍须在 applicationLooper 释放。

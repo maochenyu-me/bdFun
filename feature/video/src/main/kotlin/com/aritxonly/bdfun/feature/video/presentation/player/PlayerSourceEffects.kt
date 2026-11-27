@@ -81,6 +81,8 @@ fun BindPlayerSource(
             resumePositionMs = if (resumePositionMs > 0L) resumePositionMs else localResume, autoPlay = autoPlay(), speed = speed,
             // DASH 的音视频是分开的；投屏给电视一个文件地址，优先用能带声音的 durl。
             castUrl = info?.fallbackUrl?.takeIf { it.isNotBlank() },
+            // 听视频只挂音轨，避免继续下载视频数据
+            audioOnly = audioOnly,
         ))
     }
 

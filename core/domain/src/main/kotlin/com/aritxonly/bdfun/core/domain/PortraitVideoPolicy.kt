@@ -15,7 +15,14 @@ fun isPortraitVideo(width: Int, height: Int): Boolean =
         width.toFloat() / height.toFloat() <= PortraitAspectLimit
 
 /** 全屏时要请求的物理朝向；竖屏视频留在竖屏，其余沿用可旋转横屏。 */
-enum class FullscreenOrientation { Locked, SensorPortrait, SensorLandscape }
+enum class FullscreenOrientation { Locked, SensorPortrait, SensorLandscape, FullSensor }
+
+/**
+ * 听视频要跟随设备方向（竖持上图下文、横持左右分栏），所以走 FULL_SENSOR；
+ * 锁定时仍然只认锁定，避免听视频里出现「锁了还转」的矛盾。
+ */
+fun listenVideoOrientation(orientationLocked: Boolean): FullscreenOrientation =
+    if (orientationLocked) FullscreenOrientation.Locked else FullscreenOrientation.FullSensor
 
 fun fullscreenOrientation(portraitVideo: Boolean, orientationLocked: Boolean): FullscreenOrientation =
     when {
