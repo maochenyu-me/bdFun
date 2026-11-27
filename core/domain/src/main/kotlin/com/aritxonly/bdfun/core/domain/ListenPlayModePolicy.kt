@@ -47,3 +47,34 @@ fun toggleShuffle(loopMode: Int, shuffleOn: Boolean): Pair<Int, Boolean> =
 
 fun playModeAfterModeToggle(loopMode: Int, shuffleOn: Boolean): Pair<Int, Boolean> =
     nextPlayMode(loopMode) to false
+
+/**
+ * 播放模式的一个可选项。随机与循环互斥，所以四档并列放在一张表里：
+ * 前三档只改 loopMode，随机独占一档并把 loopMode 收回顺序。
+ */
+data class PlayModeOption(
+    val loopMode: Int,
+    val shuffle: Boolean,
+    val label: String,
+    val detail: String,
+)
+
+/** 面板里直接遍历的顺序；[currentPlayMode] 靠这张表判定选中项。 */
+val playModeOptions: List<PlayModeOption> = listOf(
+    PlayModeOption(loopMode = 0, shuffle = false, label = "顺序播放", detail = "播完即停"),
+    PlayModeOption(loopMode = 1, shuffle = false, label = "单曲循环", detail = "单集反复播放"),
+    PlayModeOption(loopMode = 2, shuffle = false, label = "列表循环", detail = "播完从头再来"),
+    PlayModeOption(loopMode = 0, shuffle = true, label = "随机播放", detail = "列表内随机跳转"),
+)
+
+/** 当前生效的档位；loopMode 出现意料外的值时回落成顺序播放，不抛异常。 */
+fun currentPlayMode(loopMode: Int, shuffleOn: Boolean): PlayModeOption =
+    if (shuffleOn) {
+        playModeOptions.last()
+    } else {
+        playModeOptions.firstOrNull { it.loopMode == loopMode && !it.shuffle } ?: playModeOptions.first()
+    }
+
+/** 菜单右侧小字：随机开着时不能还写「顺序播放」。 */
+fun playModeValueLabel(loopMode: Int, shuffleOn: Boolean): String =
+    currentPlayMode(loopMode, shuffleOn).label

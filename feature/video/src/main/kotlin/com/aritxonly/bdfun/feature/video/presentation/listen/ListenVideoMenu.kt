@@ -1,6 +1,6 @@
 package com.aritxonly.bdfun.feature.video.presentation.listen
 
-import com.aritxonly.bdfun.core.domain.playModeLabel
+import com.aritxonly.bdfun.core.domain.playModeValueLabel
 
 /**
  * 听视频「更多」面板的条目。只登记真正可用的项：
@@ -77,7 +77,7 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
 /** 菜单里的当前值：没值就不显示右侧小字，避免出现「未知」「--」。 */
 fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = when (entry) {
     ListenMenuEntry.SPEED -> if (state.speed == 1f) "1.0x" else trimSpeedValue(state.speed)
-    ListenMenuEntry.PLAY_MODE -> playModeLabel(state.loopMode)
+    ListenMenuEntry.PLAY_MODE -> playModeValueLabel(state.loopMode, state.shuffle)
     ListenMenuEntry.SLEEP_TIMER -> state.sleepTimerLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.AB_LOOP -> state.abLoopLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.AUDIO_QUALITY -> state.audioLabel.takeIf { it.isNotBlank() }
@@ -92,6 +92,8 @@ data class ListenMenuState(
     val speed: Float = 1f,
     val translationOn: Boolean = false,
     val loopMode: Int = 0,
+    /** 随机开着时 loopMode 被收回顺序，两者要一起看才说得清当前模式。 */
+    val shuffle: Boolean = false,
     val sleepTimerLabel: String = "",
     val abLoopLabel: String = "",
     /** 当前音轨档位；听视频里选的是 dash.audio，不是画质。 */

@@ -168,6 +168,7 @@ private fun ListenVideoSheets(
             onEntry = { entry -> actions.onMenuEntry(entry); ui.moreSheet = false },
             sleepAtMs = playback.sleepAtMs,
             onSleepAtChanged = actions.onSleepAtChanged,
+            onPlayModePicked = actions.onPlayModeSelected,
         )
     }
     if (ui.queueSheet) {

@@ -69,4 +69,38 @@ class ListenPlayModePolicyTest {
         assertEquals(1, mode)
         assertFalse(shuffle)
     }
+
+    @Test fun optionsCoverLoopModesAndShuffle() {
+        assertEquals(listOf("顺序播放", "单曲循环", "列表循环", "随机播放"), playModeOptions.map { it.label })
+        assertEquals(0, playModeOptions.first().loopMode)
+        assertTrue(playModeOptions.last().shuffle)
+    }
+
+    @Test fun currentModeReadsLoopMode() {
+        assertEquals("顺序播放", currentPlayMode(0, shuffleOn = false).label)
+        assertEquals("单曲循环", currentPlayMode(1, shuffleOn = false).label)
+        assertEquals("列表循环", currentPlayMode(2, shuffleOn = false).label)
+    }
+
+    @Test fun shuffleWinsOverLoopMode() {
+        // 随机开着时 loopMode 被收回 0，选中项必须是随机而不是顺序，否则面板上两个勾。
+        assertEquals("随机播放", currentPlayMode(0, shuffleOn = true).label)
+        assertEquals("随机播放", playModeValueLabel(0, shuffleOn = true))
+    }
+
+    @Test fun unknownLoopModeFallsBackToSequential() {
+        assertEquals("顺序播放", currentPlayMode(-1, shuffleOn = false).label)
+        assertEquals("顺序播放", playModeValueLabel(9, shuffleOn = false))
+    }
+
+    @Test fun exactlyOneOptionIsSelected() {
+        // loopMode 0 同时出现在「顺序」与「随机」两档，靠 shuffle 区分；任何状态下只能命中一项。
+        for (mode in -1..3) {
+            for (shuffle in listOf(false, true)) {
+                val current = currentPlayMode(mode, shuffle)
+                assertTrue(playModeOptions.contains(current))
+                assertEquals(1, playModeOptions.count { it.shuffle == shuffle && it.label == current.label })
+            }
+        }
+    }
 }

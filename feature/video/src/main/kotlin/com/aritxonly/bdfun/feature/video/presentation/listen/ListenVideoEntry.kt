@@ -16,9 +16,7 @@ import com.aritxonly.bdfun.ui.VideoMediaInput
 import com.aritxonly.bdfun.ui.VideoPlayerPresentation
 import com.aritxonly.bdfun.ui.VideoPlayerUiStateHolder
 import com.aritxonly.bdfun.core.domain.audioQualityLabelFor
-import com.aritxonly.bdfun.core.domain.playModeAfterModeToggle
 import com.aritxonly.bdfun.core.domain.selectableAudioQualities
-import com.aritxonly.bdfun.core.domain.toggleShuffle
 import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.ui.fullscreenPlaybackProjection
 
@@ -228,13 +226,8 @@ private fun listenActions(
                 ListenMenuEntry.COLLECTION -> ui.fsPanel.value = FullscreenPanel.Episodes
                 ListenMenuEntry.AUDIO_QUALITY -> state.audioQualitySheet = true
                 ListenMenuEntry.SPEED -> ui.fsPanel.value = FullscreenPanel.Speed
-                // 面板里的「播放模式」和底部按钮同一套语义：切模式时关掉随机。
-                ListenMenuEntry.PLAY_MODE -> {
-                    val (mode, shuffle) = playModeAfterModeToggle(ui.fsLoopMode.value, ui.fsShuffle.value)
-                    ui.fsLoopMode.value = mode
-                    ui.fsShuffle.value = shuffle
-                    fsActions.onLoopModeChanged(mode)
-                }
+                // 面板里的「播放模式」就地展开四档，由 sheet 内部回调，不再在这里盲切一档。
+                ListenMenuEntry.PLAY_MODE -> Unit
                 // 定时关闭由面板内联展开，不跳回视频播放器那套「更多」。
                 ListenMenuEntry.SLEEP_TIMER -> Unit
                 ListenMenuEntry.AB_LOOP -> state.abLoop = state.abLoop.mark(positionMs)
@@ -256,14 +249,8 @@ private fun listenActions(
         onVolumeChange = { listen.setVolume(it) },
         onTranslationToggle = { on -> state.translationOn = on },
         onSleepAtChanged = fsActions.onSleepAtChanged,
-        onShuffleToggle = {
-            val (mode, shuffle) = toggleShuffle(ui.fsLoopMode.value, ui.fsShuffle.value)
-            ui.fsLoopMode.value = mode
-            ui.fsShuffle.value = shuffle
-            fsActions.onLoopModeChanged(mode)
-        },
-        onPlayModeToggle = {
-            val (mode, shuffle) = playModeAfterModeToggle(ui.fsLoopMode.value, ui.fsShuffle.value)
+        // 底部按钮与面板选档共用这一个入口：一次写入完整档位，避免随机与循环各写一半。
+        onPlayModeSelected = { mode, shuffle ->
             ui.fsLoopMode.value = mode
             ui.fsShuffle.value = shuffle
             fsActions.onLoopModeChanged(mode)

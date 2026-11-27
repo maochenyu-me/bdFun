@@ -192,7 +192,10 @@ internal fun ListenVideoDock(
                     modifier = Modifier.size(19.dp),
                 )
             },
-        ) { actions.onShuffleToggle() }
+        ) {
+            val (mode, shuffle) = playback.toggledShuffle()
+            actions.onPlayModeSelected(mode, shuffle)
+        }
         ListenDockIcon(
             icon = null,
             label = dockPlayModeLabel(playback.loopMode),
@@ -204,7 +207,10 @@ internal fun ListenVideoDock(
                     modifier = Modifier.size(19.dp),
                 )
             },
-        ) { actions.onPlayModeToggle() }
+        ) {
+            val (mode, shuffle) = playback.nextPlayMode()
+            actions.onPlayModeSelected(mode, shuffle)
+        }
         ListenDockIcon(icon = MiuixIcons.Playlist, label = "列表") { onOpenQueue() }
         ListenDockIcon(icon = MiuixIcons.Tune, label = "设置") { ui.moreSheet = true }
     }

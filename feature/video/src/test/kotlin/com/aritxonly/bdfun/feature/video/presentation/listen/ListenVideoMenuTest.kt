@@ -62,6 +62,12 @@ class ListenVideoMenuTest {
         assertEquals("列表循环", listenMenuValue(ListenMenuEntry.PLAY_MODE, ListenMenuState(loopMode = 2)))
     }
 
+    @Test fun shuffleShowsAsItsOwnMode() {
+        // 随机开着时 loopMode 被收回 0，菜单不能还写「顺序播放」。
+        val state = ListenMenuState(loopMode = 0, shuffle = true)
+        assertEquals("随机播放", listenMenuValue(ListenMenuEntry.PLAY_MODE, state))
+    }
+
     @Test fun translationRowOnlyShownWithLyrics() {
         assertFalse(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.TRANSLATION))
         assertTrue(visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true)).contains(ListenMenuEntry.TRANSLATION))

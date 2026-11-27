@@ -31,8 +31,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aritxonly.bdfun.core.domain.AutoAudioQualityId
+import com.aritxonly.bdfun.core.domain.PlayModeOption
 import com.aritxonly.bdfun.core.domain.audioQualityDetail
 import com.aritxonly.bdfun.core.domain.audioQualityLabel
+import com.aritxonly.bdfun.core.domain.currentPlayMode
+import com.aritxonly.bdfun.core.domain.playModeOptions
 import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.VideoPage
 import com.aritxonly.teak.common.modal.TeakActionSheet
@@ -48,9 +51,11 @@ internal fun ListenVideoMoreSheet(
     onEntry: (ListenMenuEntry) -> Unit,
     sleepAtMs: Long = 0L,
     onSleepAtChanged: (Long) -> Unit = {},
+    onPlayModePicked: (loopMode: Int, shuffle: Boolean) -> Unit = { _, _ -> },
 ) {
     val entries = visibleListenMenuEntries(capabilities)
-    var sleepExpanded by remember { mutableStateOf(false) }
+    // 定时关闭与播放模式都在面板里就地展开，点一下只是展开选项，不会直接改值再收起面板。
+    var expanded by remember { mutableStateOf<ListenMenuEntry?>(null) }
     TeakActionSheet(visible = visible, onDismiss = onDismiss, title = "更多") {
         Column(
             modifier = Modifier
@@ -64,14 +69,64 @@ internal fun ListenVideoMoreSheet(
                     value = listenMenuValue(entry, state),
                     accent = accent,
                     onClick = {
-                        // 定时关闭就地展开分钟选项，不再跳回视频播放器那套「更多」面板。
-                        if (entry == ListenMenuEntry.SLEEP_TIMER) sleepExpanded = !sleepExpanded
-                        else onEntry(entry)
+                        when (entry) {
+                            ListenMenuEntry.SLEEP_TIMER, ListenMenuEntry.PLAY_MODE ->
+                                expanded = if (expanded == entry) null else entry
+                            else -> onEntry(entry)
+                        }
                     },
                 )
-                if (entry == ListenMenuEntry.SLEEP_TIMER && sleepExpanded) {
-                    SleepMinutesRow(sleepAtMs, accent, onSleepAtChanged)
+                when {
+                    entry == ListenMenuEntry.SLEEP_TIMER && expanded == entry ->
+                        SleepMinutesRow(sleepAtMs, accent, onSleepAtChanged)
+                    entry == ListenMenuEntry.PLAY_MODE && expanded == entry ->
+                        PlayModeOptions(state.loopMode, state.shuffle, accent) { option ->
+                            onPlayModePicked(option.loopMode, option.shuffle)
+                            onDismiss()
+                        }
+                    else -> Unit
                 }
+            }
+        }
+    }
+}
+
+/** 播放模式四档：随机独占一档，选中即生效。 */
+@Composable
+private fun PlayModeOptions(
+    loopMode: Int,
+    shuffle: Boolean,
+    accent: Color,
+    onPick: (PlayModeOption) -> Unit,
+) {
+    val current = currentPlayMode(loopMode, shuffle)
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        playModeOptions.forEach { option ->
+            val selected = option == current
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White.copy(alpha = if (selected) 0.10f else 0f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { onPick(option) }
+                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = option.label,
+                    color = if (selected) accent else Color.White.copy(alpha = 0.82f),
+                    fontSize = 13.sp,
+                    fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = option.detail,
+                    color = Color.White.copy(alpha = 0.42f),
+                    fontSize = 11.sp,
+                )
             }
         }
     }

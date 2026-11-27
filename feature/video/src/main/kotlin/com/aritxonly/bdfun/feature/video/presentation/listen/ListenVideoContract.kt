@@ -3,6 +3,8 @@ package com.aritxonly.bdfun.feature.video.presentation.listen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.aritxonly.bdfun.core.domain.AutoAudioQualityId
+import com.aritxonly.bdfun.core.domain.playModeAfterModeToggle
+import com.aritxonly.bdfun.core.domain.toggleShuffle
 import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.VideoPage
 
@@ -42,6 +44,7 @@ data class ListenVideoInfo(
         ListenMenuState(
             speed = playback.speed,
             loopMode = playback.loopMode,
+            shuffle = playback.shuffle,
             sleepTimerLabel = playback.sleepTimerLabel,
             abLoopLabel = ui.abLoop.label(),
             translationOn = ui.translationOn,
@@ -78,13 +81,20 @@ class ListenVideoActions(
     val onVolumeChange: (Float) -> Unit = {},
     val onTranslationToggle: (Boolean) -> Unit = {},
     val onSleepAtChanged: (Long) -> Unit = {},
-    /** 随机播放开关；与播放模式互斥。 */
-    val onShuffleToggle: () -> Unit = {},
-    /** 顺序 → 单曲 → 列表 循环切换。 */
-    val onPlayModeToggle: () -> Unit = {},
+    /**
+     * 设置完整的一档播放模式（循环档位 + 随机开关）。
+     * 底部两个按钮与「更多」面板里的选择都落到这里，避免出现两套各改一半的入口。
+     */
+    val onPlayModeSelected: (loopMode: Int, shuffle: Boolean) -> Unit = { _, _ -> },
     /** 换音轨：0 = 自动，其余为 dash.audio 的 id。 */
     val onAudioQualitySelected: (Int) -> Unit = {},
 )
+
+/** 底部按钮：随机是独立开关，与循环档位互斥。 */
+fun ListenVideoPlayback.toggledShuffle(): Pair<Int, Boolean> = toggleShuffle(loopMode, shuffle)
+
+/** 底部按钮：顺序 → 单曲 → 列表 循环，切档时关掉随机。 */
+fun ListenVideoPlayback.nextPlayMode(): Pair<Int, Boolean> = playModeAfterModeToggle(loopMode, shuffle)
 
 /** 播放控件用到的像素图标资源由 app 侧提供（与全屏播放器同一套）。 */
 data class ListenVideoIcons(
