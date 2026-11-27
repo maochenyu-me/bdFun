@@ -15,8 +15,11 @@ import com.aritxonly.bdfun.ui.PlayerRenderPorts
 import com.aritxonly.bdfun.ui.VideoMediaInput
 import com.aritxonly.bdfun.ui.VideoPlayerPresentation
 import com.aritxonly.bdfun.ui.VideoPlayerUiStateHolder
+import com.aritxonly.bdfun.core.domain.audioQualityLabelFor
 import com.aritxonly.bdfun.core.domain.playModeAfterModeToggle
+import com.aritxonly.bdfun.core.domain.selectableAudioQualities
 import com.aritxonly.bdfun.core.domain.toggleShuffle
+import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.ui.fullscreenPlaybackProjection
 
 /**
@@ -54,6 +57,7 @@ internal fun PlayerListenVideo(
     AutoPickSubtitles(info, fsActions)
 
     val sleepAt = ui.fsSleepAt.value
+    val (audios, audioLabel) = listenAudioTracks(media, ui.fsAudioQualityId.value)
     val playback = ListenVideoPlayback(
         playing = playing,
         positionMs = positionMs,
@@ -74,7 +78,7 @@ internal fun PlayerListenVideo(
         canShare = true,
         canPip = true,
         canChangeOrientation = activity != null,
-        hasQualities = info.media.qualityLabel.isNotBlank(),
+        hasAudioQualities = audios.size > 1,
         loggedIn = info.loggedIn,
     )
 
@@ -86,7 +90,9 @@ internal fun PlayerListenVideo(
         currentCid = info.currentCid,
         lyrics = lyrics,
         secondaryLyrics = secondary,
-        qualityLabel = info.qualityLabel,
+        audioLabel = audioLabel,
+        audios = audios,
+        selectedAudioId = ui.fsAudioQualityId.value,
         favorited = info.favorited,
         capabilities = capabilities,
     )
@@ -161,8 +167,13 @@ private fun toggleActivityOrientation(activity: android.app.Activity) {
     }
 }
 
-/** 定时关闭文案：没开就不显示右侧小字。 */
-private fun sleepTimerLabel(sleepAtMs: Long): String {
+/** 当前稿件的可选音轨与菜单文案；换稿件后原档位不存在时文案回落成「自动」。 */
+private fun listenAudioTracks(media: VideoMediaInput, selectedId: Int): Pair<List<AudioQuality>, String> {
+    val audios = selectableAudioQualities(media.info?.audios.orEmpty())
+    return audios to audioQualityLabelFor(audios, selectedId)
+}
+
+/** 定时关闭文案：没开就不显示右侧小字。 */private fun sleepTimerLabel(sleepAtMs: Long): String {
     val now = System.currentTimeMillis()
     if (sleepAtMs <= now) return ""
     val minutes = ((sleepAtMs - now + 59_999L) / 60_000L).toInt()
@@ -210,13 +221,12 @@ private fun listenActions(
         onBack = { exitListen(ui, fsActions, onExitFullscreen) },
         onPlayPause = fsActions.onPlayPause,
         onSeek = fsActions.onSeek,
-        onSeekRelative = fsActions.onSeekRelative,
         onSelectPage = { cid -> info.pages.firstOrNull { it.cid == cid }?.let(fsActions.onPageSelected) },
         onMenuEntry = { entry ->
             when (entry) {
                 ListenMenuEntry.VIDEO_MODE -> exitListen(ui, fsActions, onExitFullscreen)
                 ListenMenuEntry.COLLECTION -> ui.fsPanel.value = FullscreenPanel.Episodes
-                ListenMenuEntry.AUDIO_QUALITY -> ui.fsPanel.value = FullscreenPanel.Quality
+                ListenMenuEntry.AUDIO_QUALITY -> state.audioQualitySheet = true
                 ListenMenuEntry.SPEED -> ui.fsPanel.value = FullscreenPanel.Speed
                 // 面板里的「播放模式」和底部按钮同一套语义：切模式时关掉随机。
                 ListenMenuEntry.PLAY_MODE -> {
@@ -258,6 +268,8 @@ private fun listenActions(
             ui.fsShuffle.value = shuffle
             fsActions.onLoopModeChanged(mode)
         },
+        // 只改音轨档位；实际重起播由 PlayerSourceEffects 按 audioQualityId 触发。
+        onAudioQualitySelected = { id -> ui.fsAudioQualityId.value = id },
 )
 
 private fun exitListen(

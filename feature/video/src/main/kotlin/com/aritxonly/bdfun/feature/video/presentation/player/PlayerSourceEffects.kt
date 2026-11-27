@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import com.aritxonly.bdfun.core.application.PlaybackController
 import com.aritxonly.bdfun.core.application.PlaybackSource
+import com.aritxonly.bdfun.core.domain.resolveAudioQuality
 import com.aritxonly.bdfun.core.domain.resolvePlaybackSourceUrls
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
 import androidx.compose.ui.platform.LocalContext
@@ -26,11 +27,15 @@ fun BindPlayerSource(
     val usingFallback by ui.usingFallback
     val usingOriginal by ui.usingOriginal
     val audioOnly by ui.fsAudioOnly
+    val audioQualityId by ui.fsAudioQualityId
     val speed by ui.speed
     val mediaKey = "$bvid:${presentation.fullscreenInfo.currentCid}"
-    // audioOnly 进 key：退出听视频时要按当时的档位重新起播（听视频期间被跳过的档位切换会在这里补上）。
-    LaunchedEffect(mediaKey, info, quality, usingFallback, usingOriginal, audioOnly) {
-        val source = resolvePlaybackSourceUrls(quality, info, usingOriginal, usingFallback) ?: run {
+    // audioOnly 与音轨 id 都进 key：进出听视频、换音轨都要按新地址重起，否则画面或声音不对。
+    LaunchedEffect(mediaKey, info, quality, usingFallback, usingOriginal, audioOnly, audioQualityId) {
+        val selectedAudio = if (audioOnly) resolveAudioQuality(info?.audios.orEmpty(), audioQualityId) else null
+        val source = resolvePlaybackSourceUrls(
+            quality, info, usingOriginal, usingFallback, selectedAudio,
+        ) ?: run {
             log(
                 "PLAYER",
                 "no-source bvid=$bvid q=${quality?.id} hasInfo=${info != null} " +
@@ -53,13 +58,15 @@ fun BindPlayerSource(
         val previousKey = ui.preparedMediaKey.value
         // 听视频没有画面，只有声音：DASH 的音轨与档位无关，而半屏压 720P、全屏回用户档位会让档位
         // 每一转都变一次。音轨没变就不该重新起播，否则每切一次横竖屏都要黑一下、缓冲一下。
-        // 退出听视频要看画面了，这时才按当前档位重新起播。
-        val unchanged = previousKey == mediaKey && if (audioOnly) {
-            ui.preparedAudioUrl.value == audioUrl &&
-                (audioUrl != null || ui.preparedVideoUrl.value == url)
-        } else {
-            ui.preparedVideoUrl.value == url && ui.preparedAudioUrl.value == audioUrl
-        }
+        // 但进出听视频必须换源（只挂音轨 ↔ 重挂视频流），否则退出后画面全黑。
+        val unchanged = previousKey == mediaKey &&
+            ui.preparedAudioOnly.value == audioOnly &&
+            if (audioOnly) {
+                ui.preparedAudioUrl.value == audioUrl &&
+                    (audioUrl != null || ui.preparedVideoUrl.value == url)
+            } else {
+                ui.preparedVideoUrl.value == url && ui.preparedAudioUrl.value == audioUrl
+            }
         if (unchanged) {
             log("PLAYER", "source-keep bvid=$bvid q=${quality?.id} audioOnly=$audioOnly")
             return@LaunchedEffect
@@ -75,6 +82,7 @@ fun BindPlayerSource(
         ui.preparedMediaKey.value = mediaKey
         ui.preparedVideoUrl.value = url
         ui.preparedAudioUrl.value = audioUrl
+        ui.preparedAudioOnly.value = audioOnly
         playback.prepare(PlaybackSource(
             videoUrl = url, audioUrl = audioUrl, mediaKey = mediaKey,
             headers = mapOf("Referer" to "https://www.bilibili.com/video/$bvid/"), userAgent = playback.userAgent,

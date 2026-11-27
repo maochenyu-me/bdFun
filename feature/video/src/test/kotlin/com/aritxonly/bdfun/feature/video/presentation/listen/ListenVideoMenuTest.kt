@@ -26,7 +26,7 @@ class ListenVideoMenuTest {
         val entries = visibleListenMenuEntries(
             ListenMenuCapabilities(
                 hasPages = true, hasLyrics = true, canFavorite = true, canShare = true,
-                canPip = true, canChangeOrientation = true, hasQualities = true, loggedIn = true,
+                canPip = true, canChangeOrientation = true, hasAudioQualities = true, loggedIn = true,
             ),
         )
         assertEquals(ListenMenuEntry.entries.toSet(), entries.toSet())

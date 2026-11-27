@@ -22,9 +22,10 @@ class ListenVideoUiStateHolder {
     /** 音量 0..1；播放器默认就是 1，界面初始位置必须跟它一致。 */
     var volume by mutableFloatStateOf(1f)
 
-    /** 更多 / 队列面板。 */
+    /** 更多 / 队列 / 音质面板。 */
     var moreSheet by mutableStateOf(false)
     var queueSheet by mutableStateOf(false)
+    var audioQualitySheet by mutableStateOf(false)
 
     /** A-B 循环状态。 */
     var abLoop by mutableStateOf(AbLoop())

@@ -42,7 +42,8 @@ data class ListenMenuCapabilities(
     val canShare: Boolean = false,
     val canPip: Boolean = false,
     val canChangeOrientation: Boolean = false,
-    val hasQualities: Boolean = false,
+    /** 有多档 DASH 音轨可选；只有一条音轨时不显示「选择音质」。 */
+    val hasAudioQualities: Boolean = false,
     val loggedIn: Boolean = false,
 )
 
@@ -57,7 +58,7 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
         if (c.hasPages) add(ListenMenuEntry.COLLECTION)
         if (c.canChangeOrientation) add(ListenMenuEntry.ORIENTATION)
         if (c.canPip) add(ListenMenuEntry.PIP)
-        if (c.hasQualities) add(ListenMenuEntry.AUDIO_QUALITY)
+        if (c.hasAudioQualities) add(ListenMenuEntry.AUDIO_QUALITY)
         add(ListenMenuEntry.SPEED)
         add(ListenMenuEntry.PLAY_MODE)
         add(ListenMenuEntry.SLEEP_TIMER)
@@ -79,7 +80,7 @@ fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = w
     ListenMenuEntry.PLAY_MODE -> playModeLabel(state.loopMode)
     ListenMenuEntry.SLEEP_TIMER -> state.sleepTimerLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.AB_LOOP -> state.abLoopLabel.takeIf { it.isNotBlank() }
-    ListenMenuEntry.AUDIO_QUALITY -> state.qualityLabel.takeIf { it.isNotBlank() }
+    ListenMenuEntry.AUDIO_QUALITY -> state.audioLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.FAVORITE -> if (state.favorited) "已收藏" else null
     ListenMenuEntry.TRANSLATION -> if (state.translationOn) "已开启" else "未开启"
     ListenMenuEntry.BACKGROUND_PLAY -> if (state.backgroundPlay) "已开启" else "未开启"
@@ -93,7 +94,8 @@ data class ListenMenuState(
     val loopMode: Int = 0,
     val sleepTimerLabel: String = "",
     val abLoopLabel: String = "",
-    val qualityLabel: String = "",
+    /** 当前音轨档位；听视频里选的是 dash.audio，不是画质。 */
+    val audioLabel: String = "",
     val favorited: Boolean = false,
     val backgroundPlay: Boolean = false,
     val orientationLabel: String = "横屏",

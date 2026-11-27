@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.core.domain
 
+import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.PlayInfo
 import com.aritxonly.bdfun.core.model.video.Quality
 import org.junit.Assert.*
@@ -30,8 +31,7 @@ class PlaybackSourcePolicyTest {
         assertEquals(PlaybackSourceUrls("", "audio"), resolvePlaybackSourceUrls(quality(video = ""), info(), false, false))
         assertEquals(PlaybackSourceUrls("", null), resolvePlaybackSourceUrls(null, info().copy(fallbackUrl = ""), false, true))
     }
-    @Test fun recoveryAttemptsOriginalThenFallbackThenFailure() {
-        assertEquals(PlaybackRecoveryAction.RetryOriginal, selectPlaybackRecovery(quality(), info(), false, false))
+    @Test fun recoveryAttemptsOriginalThenFallbackThenFailure() {        assertEquals(PlaybackRecoveryAction.RetryOriginal, selectPlaybackRecovery(quality(), info(), false, false))
         assertEquals(PlaybackRecoveryAction.RetryFallback, selectPlaybackRecovery(quality(), info(), true, false))
         assertEquals(PlaybackRecoveryAction.Fail, selectPlaybackRecovery(quality(), info(), true, true))
     }
@@ -40,5 +40,16 @@ class PlaybackSourcePolicyTest {
         val onlyFallback = info().copy(rawAudioUrl = " ")
         assertEquals(PlaybackRecoveryAction.RetryFallback, selectPlaybackRecovery(null, onlyFallback, false, false))
         assertEquals(PlaybackRecoveryAction.Fail, selectPlaybackRecovery(quality(raw = " "), onlyFallback.copy(fallbackUrl = " "), false, false))
+    }
+
+    @Test fun selectedAudioOverridesDefaultTrackAndStaysSilentOnFallback() {
+        val selected = AudioQuality(30216, 64_000, "mp4a.40.2", "a-64", "raw-a-64")
+        assertEquals(PlaybackSourceUrls("cdn", "a-64"), resolvePlaybackSourceUrls(quality(), info(), false, false, selected))
+        assertEquals(PlaybackSourceUrls("raw-video", "raw-a-64"), resolvePlaybackSourceUrls(quality(), info(), true, false, selected))
+        assertEquals(
+            PlaybackSourceUrls("raw-video", "a-64"),
+            resolvePlaybackSourceUrls(quality(), info(), true, false, selected.copy(rawUrl = " ")),
+        )
+        assertEquals(PlaybackSourceUrls("fallback", null), resolvePlaybackSourceUrls(quality(), info(), true, true, selected))
     }
 }

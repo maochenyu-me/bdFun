@@ -5,11 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,9 +33,12 @@ internal fun QualityPanel(
             Text("暂无可用画质", color = Color.White.copy(alpha = 0.5f), fontSize = 15.sp)
         }
         Column(
-            modifier = Modifier.fillMaxSize(),
-            // 选项均分剩余高度，但每行自身保持固定高度：选中框不会跟着间距一起长高。
-            verticalArrangement = Arrangement.SpaceEvenly,
+            // 之前 SpaceEvenly 把档位摊满整块 82% 高的面板，档位少时行距被拉到一百多 dp。
+            // 改成固定行高 + 顶部排列 + 可滚动：档位多也不会挤出去，少也不散架。
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             AutomaticQualityRow(playback.autoQuality, actions, onClose, accentColor, Modifier.height(OptionRowHeight))
             playback.qualities

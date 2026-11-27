@@ -30,6 +30,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aritxonly.bdfun.core.domain.AutoAudioQualityId
+import com.aritxonly.bdfun.core.domain.audioQualityDetail
+import com.aritxonly.bdfun.core.domain.audioQualityLabel
+import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.VideoPage
 import com.aritxonly.teak.common.modal.TeakActionSheet
 
@@ -180,6 +184,91 @@ internal fun ListenVideoQueueSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 音质档位：听视频只出声音，这里列的是 dash.audio（64K / 132K / 192K / 杜比 / 无损），
+ * 和 dash.video 的画质是两回事，选完立刻换音轨重起播。
+ */
+@Composable
+internal fun ListenAudioQualitySheet(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    audios: List<AudioQuality>,
+    selectedId: Int,
+    accent: Color,
+    onSelect: (Int) -> Unit,
+) {
+    TeakActionSheet(visible = visible, onDismiss = onDismiss, title = "音质") {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 460.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            AudioQualityRow(
+                label = "自动",
+                detail = "跟随音源",
+                selected = selectedId == AutoAudioQualityId,
+                accent = accent,
+                onClick = {
+                    onSelect(AutoAudioQualityId)
+                    onDismiss()
+                },
+            )
+            audios.forEach { quality ->
+                AudioQualityRow(
+                    label = audioQualityLabel(quality),
+                    detail = audioQualityDetail(quality),
+                    selected = quality.id == selectedId,
+                    accent = accent,
+                    onClick = {
+                        onSelect(quality.id)
+                        onDismiss()
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AudioQualityRow(
+    label: String,
+    detail: String,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            color = if (selected) accent else Color.White.copy(alpha = 0.88f),
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            modifier = Modifier.weight(1f),
+        )
+        if (detail.isNotBlank()) {
+            Text(
+                text = detail,
+                color = Color.White.copy(alpha = 0.45f),
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

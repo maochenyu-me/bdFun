@@ -1,6 +1,7 @@
 package com.aritxonly.bdfun.ui
 
 import com.aritxonly.bdfun.core.application.ForegroundMediaSession
+import com.aritxonly.bdfun.core.domain.AutoAudioQualityId
 import com.aritxonly.bdfun.feature.video.presentation.VideoOutput
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +35,8 @@ class VideoPlayerUiStateHolder(
     val fsLoopMode = mutableIntStateOf(initialLoopMode.coerceIn(0, 2))
     /** 随机播放：与循环模式互斥，开启时播完从列表里随机挑下一项。 */
     val fsShuffle = mutableStateOf(false)
+    /** 听视频音轨：0 = 自动（B 站默认音轨），其余是 dash.audio 的 id。 */
+    val fsAudioQualityId = mutableIntStateOf(AutoAudioQualityId)
     val fsMirror = mutableStateOf(false)
     val fsResizeMode = mutableIntStateOf(0)
     val fsColorAssist = mutableIntStateOf(0)
@@ -60,6 +63,8 @@ class VideoPlayerUiStateHolder(
     val preparedVideoUrl = mutableStateOf<String?>(null)
     /** 上一次起播用的音轨地址：听视频里档位来回换不影响音轨，靠它判断能不能不重新起播。 */
     val preparedAudioUrl = mutableStateOf<String?>(null)
+    /** 上一次起播是不是纯音频：进出听视频必须换源，否则退出后只剩音轨、画面全黑。 */
+    val preparedAudioOnly = mutableStateOf(false)
     val renderedMediaKey = mutableStateOf<String?>(null)
     val interactionTick = mutableIntStateOf(0)
     val volumeTip = mutableStateOf<Float?>(null)

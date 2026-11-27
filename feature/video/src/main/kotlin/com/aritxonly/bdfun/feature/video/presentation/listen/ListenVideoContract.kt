@@ -2,6 +2,8 @@ package com.aritxonly.bdfun.feature.video.presentation.listen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.aritxonly.bdfun.core.domain.AutoAudioQualityId
+import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.VideoPage
 
 /** 听视频页面需要的内容。全部由 app 侧从现有详情页状态投影出来，模块内不查网络。 */
@@ -13,7 +15,11 @@ data class ListenVideoInfo(
     val currentCid: Long,
     val lyrics: Lyrics,
     val secondaryLyrics: Lyrics = Lyrics.Empty,
-    val qualityLabel: String = "",
+    /** 菜单右侧显示的当前音轨，如「192K」「自动」。 */
+    val audioLabel: String = "",
+    /** 可选音轨（已按档位排好序，自动档单独在面板里给）。 */
+    val audios: List<AudioQuality> = emptyList(),
+    val selectedAudioId: Int = AutoAudioQualityId,
     val favorited: Boolean = false,
     val capabilities: ListenMenuCapabilities = ListenMenuCapabilities(),
 ) {
@@ -39,7 +45,7 @@ data class ListenVideoInfo(
             sleepTimerLabel = playback.sleepTimerLabel,
             abLoopLabel = ui.abLoop.label(),
             translationOn = ui.translationOn,
-            qualityLabel = qualityLabel,
+            audioLabel = audioLabel,
             favorited = favorited,
             backgroundPlay = playback.backgroundPlay,
             orientationLabel = orientationLabel,
@@ -66,7 +72,6 @@ class ListenVideoActions(
     val onBack: () -> Unit,
     val onPlayPause: () -> Unit,
     val onSeek: (Long) -> Unit,
-    val onSeekRelative: (Long) -> Unit,
     val onSelectPage: (Long) -> Unit,
     val onMenuEntry: (ListenMenuEntry) -> Unit = {},
     val onImportLyrics: () -> Unit = {},
@@ -77,6 +82,8 @@ class ListenVideoActions(
     val onShuffleToggle: () -> Unit = {},
     /** 顺序 → 单曲 → 列表 循环切换。 */
     val onPlayModeToggle: () -> Unit = {},
+    /** 换音轨：0 = 自动，其余为 dash.audio 的 id。 */
+    val onAudioQualitySelected: (Int) -> Unit = {},
 )
 
 /** 播放控件用到的像素图标资源由 app 侧提供（与全屏播放器同一套）。 */

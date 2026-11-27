@@ -2,6 +2,7 @@ package com.aritxonly.bdfun.infra.bili.mapper
 
 import com.aritxonly.bdfun.core.domain.choosePlaybackAudio
 import com.aritxonly.bdfun.core.domain.choosePlaybackVideo
+import com.aritxonly.bdfun.core.model.video.AudioQuality
 import com.aritxonly.bdfun.core.model.video.PlayInfo
 import com.aritxonly.bdfun.core.model.video.Quality
 import com.aritxonly.bdfun.infra.bili.biliQualityLabel as qualityLabel
@@ -36,6 +37,14 @@ internal fun mapPlayInfo(
 ): PlayInfo {
     val selectedAudio = choosePlaybackAudio(dto.audios, { it.id }, { it.bandwidth })
     val audio = selectedAudio?.let { rewrite(it.url, it.backups) to it.url }
+    // 音轨全部留给听视频选：默认那条仍由 audioUrl 表达，这里补上其余档位。
+    val audios = dto.audios.mapNotNull { rep ->
+        if (rep.url.isBlank()) return@mapNotNull null
+        AudioQuality(
+            id = rep.id, bandwidth = rep.bandwidth, codec = rep.codec,
+            url = rewrite(rep.url, rep.backups), rawUrl = rep.url,
+        )
+    }
     val qualities = mutableListOf<Quality>()
     dto.videos.groupBy { it.id }.forEach { (id, reps) ->
         val rep = choosePlaybackVideo(reps, codecPreference, { it.codec }, { it.bandwidth }) ?: return@forEach
@@ -55,6 +64,7 @@ internal fun mapPlayInfo(
         rawFallbackUrl = fallback.takeIf { it.isNotBlank() },
         durationMs = dto.durationMs.takeIf { it > 0 } ?: (durationSec * 1000L),
         acceptQuality = dto.acceptQuality,
+        audios = audios,
     )
 }
 

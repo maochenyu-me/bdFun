@@ -32,7 +32,7 @@ ListenVideoScreen（整页，接管屏幕）
 │   └── 横排（宽 > 高 × 1.15）
 │       └── 封面卡 + 右侧信息列（标题/UP/进度/时间/传输/次级按钮）
 ├── 底部胶囊：封面 / 歌词
-└── 浮层：更多面板、队列面板、选集/音质/倍速/收藏/评论（复用现有面板）
+└── 浮层：更多面板、队列面板、音质面板（自绘）、选集/倍速/收藏/评论（复用现有面板）
 ```
 
 ## 3. 分层与文件
@@ -61,7 +61,11 @@ ListenVideoScreen（整页，接管屏幕）
 3. **切流**：`PlaybackSource` 增加 `audioOnly`；`Media3PlaybackController` 在该标记下只构建音频 `MediaSource`。
 4. **音量**：`PlaybackController` 增加 `setVolume(Float)`，Media3 落到 `player.volume`。
 5. **歌词**：直接读 `FullscreenPlayerInfo.subtitleCues`（已加载）作为主歌词；副字幕轨由 app 额外加载后传入。
-6. **面板**：选集 / 音质 / 倍速 / 收藏 / 评论复用现有 `FullscreenPanelHost`。
+6. **面板**：选集 / 倍速 / 收藏 / 评论复用现有 `FullscreenPanelHost`；**音质不走它**——
+   听视频只出声音，这里选的是 `dash.audio` 档位（64K / 132K / 192K / 杜比 / Hi-Res），
+   与 `dash.video` 的画质无关，面板由听视频自己画（`ListenAudioQualitySheet`）。
+   选中档位落在 `fsAudioQualityId`，`PlayerSourceEffects` 按它换 `audioUrl` 重起播，
+   位置由 `continuePlaybackSource` 保留（mediaKey 不变），不会跳回开头。
 
 ## 5. 删除与替换
 
@@ -72,8 +76,8 @@ ListenVideoScreen（整页，接管屏幕）
 
 ## 6. 更多菜单：移植与搁置清单
 
-**本次接入（有基础设施）**：返回视频、选集/合集、音质、倍速、播放模式、定时关闭、A-B 循环、双语翻译、
-收藏、分享、画中画、切换横竖屏、字幕/歌词设置、歌词搜索（本地）、后台播放开关。
+**本次接入（有基础设施）**：返回视频、选集/合集、音质（真实音轨档位）、倍速、播放模式、定时关闭、
+A-B 循环、双语翻译、收藏、分享、画中画、切换横竖屏、字幕/歌词设置、歌词搜索（本地）、后台播放开关。
 
 底部四个次级按钮对齐 BiliPai 的次级传输区：**随机**（独立开关，开启即把循环收回顺序）、
 **播放模式**（顺序 → 单曲 → 列表 循环，点击必关随机）、**播放队列**、**更多设置**。

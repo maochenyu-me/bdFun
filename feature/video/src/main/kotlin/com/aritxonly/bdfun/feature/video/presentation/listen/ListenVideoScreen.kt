@@ -140,7 +140,6 @@ fun ListenVideoScreen(
         orientationLabel = orientationSwitchLabel(),
     )
 }
-
 /** 菜单里只标「点了会转成什么」，不能写死横屏。 */
 @Composable
 private fun orientationSwitchLabel(): String =
@@ -179,6 +178,16 @@ private fun ListenVideoSheets(
             currentCid = info.currentCid,
             accent = Color(palette.accent),
             onSelect = { actions.onSelectPage(it); ui.queueSheet = false },
+        )
+    }
+    if (ui.audioQualitySheet) {
+        ListenAudioQualitySheet(
+            visible = true,
+            onDismiss = { ui.audioQualitySheet = false },
+            audios = info.audios,
+            selectedId = info.selectedAudioId,
+            accent = Color(palette.accent),
+            onSelect = actions.onAudioQualitySelected,
         )
     }
 }
