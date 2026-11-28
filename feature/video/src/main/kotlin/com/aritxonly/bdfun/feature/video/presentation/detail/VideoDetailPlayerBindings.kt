@@ -13,7 +13,8 @@ class VideoDetailPlayerActionBindings(
     private val metadataController: VideoMetadataStateHolder, private val events: VideoScreenEvents,
 ) {
     private var playing by ui.playing
-    private var fullscreen by ui.fullscreen
+    // 全屏按钮写「意图」：朝向请求要立刻发出去，呈现由窗口朝向决定。
+    private var fullscreen by ui.fullscreenIntent
     fun create(): VideoPlayerActions = VideoPlayerActions(
     transport = VideoTransportActions(
         onPlayStateChanged = { playing = it },

@@ -50,6 +50,11 @@ fun VideoDetailEntry(
     val videoAspectRatio = quality?.let { q ->
         if (q.width > 0 && q.height > 0) q.width.toFloat() / q.height.toFloat() else null
     }
+    // 竖屏视频全屏仍是竖屏窗口，没有转屏可等。这里按真实宽高比判定，
+    // 不用 pages 上的 portraitVideo：那个字段没有写入点，一直是 false。
+    val portraitVideo = com.aritxonly.bdfun.core.domain.isPortraitVideo(
+        quality?.width ?: 0, quality?.height ?: 0,
+    )
     val inlineLayout = rememberVideoInlineLayout(selection.bvid, playing, pager.currentPage,
         presentation.paneLayout, presentation.immersiveStatusBar, presentation.statusBarTop, ports.collapse,
         videoAspectRatio, presentation.commentSheetOpen)
@@ -57,7 +62,9 @@ fun VideoDetailEntry(
     val actions = rememberVideoDetailActions(isLoggedIn, request, holders, scope, events.onBack, ports.actionHost)
     val content = VideoScreenContent(request.video, detail, selection, interaction, metadata, quality, isLoggedIn())
     BindVideoDetailEffects(request, content, holders, actions, pager, ports.load, ports.effects, presentation.autoRotate,
-        presentation.fullscreen, presentation.pictureInPicture)
+        // 传「意图」而不是呈现值：这条通道也承担「面板收起后回到播放器」的命令，
+        // 呈现值在转屏间隙还没翻，读它会把刚点下的展开当成没发生。
+        presentation.fullscreenIntent, presentation.pictureInPicture, portraitVideo)
     ports.slots.layout(VideoDetailLayoutContent(request, presentation, events, pager, inlineLayout,
         holders, content, actions, scope))
     ports.slots.sheets(holders.ui, interaction, actions)

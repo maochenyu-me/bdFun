@@ -24,6 +24,14 @@ data class VideoScreenPresentation(
     val autoRotate: Boolean = true,
     /** 当前是否全屏：半屏播放把清晰度压到 720P，全屏后恢复。 */
     val fullscreen: Boolean = false,
+    /**
+     * 用户点了展开（点击瞬间为真）。
+     *
+     * 与 [fullscreen] 分开：横屏视频从竖屏点展开时，系统转屏要几百毫秒，
+     * 这期间窗口还是竖的，立刻按全屏布局会闪一帧「竖屏窗口、视频缩在中间」。
+     * 这条通道同时承担「面板收起后回到播放器」的命令，所以它必须立即成立。
+     */
+    val fullscreenIntent: Boolean = fullscreen,
     /** 竖屏评论以底部面板展开：播放器要再压一截，把画面让给评论列表。 */
     val commentSheetOpen: Boolean = false,
 )

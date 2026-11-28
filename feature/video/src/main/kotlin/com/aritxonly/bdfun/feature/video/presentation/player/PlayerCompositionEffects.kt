@@ -42,7 +42,8 @@ fun BindPlayerPresentationSetup(
 ) {
     val bvid = media.bvid
     val fullscreenInfo = presentation.fullscreenInfo
-    val fullscreen = presentation.fullscreen
+    // 朝向按「意图」请求：点击那一刻就该发出，等呈现值会白白晚几百毫秒。
+    val fullscreen = presentation.fullscreenIntent
     // 全屏新 UI 的本地状态：二级面板、听视频、镜像、循环、画面尺寸、定时关闭等
     BindPlayerOrientation(
         fullscreen,

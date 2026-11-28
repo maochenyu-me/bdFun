@@ -51,7 +51,7 @@ internal fun VideoActivityBody(
         contentBackdrop = contentBackdrop,
         // 竖屏评论面板收起（箭头或侧滑）后回到播放器全屏，而不是停在简介/评论页。
         onCommentsDismissed = {
-            if (portraitComments) PlayerUiState.fullscreen = true
+            if (portraitComments) PlayerUiState.fullscreenIntent = true
         },
         detail = {
         VideoScreen(
@@ -73,6 +73,8 @@ internal fun VideoActivityBody(
                 immersiveStatusBar = settings.videoImmersiveStatusBar,
                 // 半屏播放限制到 720P，全屏恢复原档位。
                 fullscreen = pageFullscreen,
+                // 意图立即成立：朝向请求、清晰度回档、面板收起回播放器都按它走。
+                fullscreenIntent = PlayerUiState.fullscreenIntent,
                 // 从 Activity 根部读到的状态栏高度，避免页面内部读成 0。
                 statusBarTop = statusBarDp,
                 commentSheetOpen = portraitComments && comments != null,
@@ -86,7 +88,7 @@ internal fun VideoActivityBody(
                 // 面板展开时点画面：先收面板，再回全屏播放（对齐参考实现里点小窗进播放）。
                 onDismissComments = {
                     comments = null
-                    if (portraitComments) PlayerUiState.fullscreen = true
+                    if (portraitComments) PlayerUiState.fullscreenIntent = true
                 },
                 // Tab 条在覆盖层，通过这个单向通道拿到详情里的 stat.reply。
                 onCommentCount = { ui.commentCount.value = it },

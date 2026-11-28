@@ -13,6 +13,12 @@ data class VideoPlayerPresentation(
     val resumePositionMs: Long, val immersiveStatusBar: Boolean, val pictureInPicture: Boolean,
     /** 竖屏视频：全屏留在竖屏、换竖屏骨架，画中画用 9:16。 */
     val portraitVideo: Boolean = false,
+    /**
+     * 用户点了展开：朝向请求与系统栏要立刻按它走，不能等转屏落地。
+     *
+     * [fullscreen] 是呈现值，横屏视频从竖屏点展开时要等窗口真的横过来才翻。
+     */
+    val fullscreenIntent: Boolean = fullscreen,
 )
 class VideoTransportActions(
     val onPlayStateChanged: (Boolean) -> Unit, val onPageSelected: (VideoPage) -> Unit,

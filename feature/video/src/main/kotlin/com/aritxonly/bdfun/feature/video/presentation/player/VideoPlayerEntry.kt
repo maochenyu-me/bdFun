@@ -45,8 +45,9 @@ fun VideoPlayerEntry(
     val playing by observed.playing
     BindPlayerHotDanmaku(playback, danmakuVisible, ui)
     BindPlayerDanmakuClock(playback, playing, danmakuVisible, ui)
-    BindPlayerSystemBars(presentation.fullscreen, presentation.immersiveStatusBar, presentation.portraitVideo)
-    BindPlayerHdrWindow(media.quality, presentation.fullscreen)
+    // 系统栏与 HDR 跟随「意图」：点展开就藏状态栏，不必等窗口转过去。
+    BindPlayerSystemBars(presentation.fullscreenIntent, presentation.immersiveStatusBar, presentation.portraitVideo)
+    BindPlayerHdrWindow(media.quality, presentation.fullscreenIntent)
     VideoPlayerLayout(playback, observed, media, presentation, actions, ui, danmakuVisible, latencyMs, sponsor, modifier,
         ports.render(playback, media, presentation, actions, ui))
 }

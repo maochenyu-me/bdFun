@@ -76,7 +76,8 @@ private fun BindPlayerBackgroundBridge(
 ) {
     val context = LocalContext.current
     val fullscreenInfo = presentation.fullscreenInfo
-    val fullscreen = presentation.fullscreen
+    // 后台播放交接按「意图」：点展开就当已进全屏，不必等转屏落地。
+    val fullscreen = presentation.fullscreenIntent
     val onPageSelected = actions.transport.onPageSelected
     val speed by ui.speed
     var boostSpeed by ui.boostSpeed

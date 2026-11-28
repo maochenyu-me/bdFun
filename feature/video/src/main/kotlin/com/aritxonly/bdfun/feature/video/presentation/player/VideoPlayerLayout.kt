@@ -171,9 +171,10 @@ private fun ListenVideoLayer(
         modifier = Modifier.fillMaxSize().zIndex(30f),
     )
     // 听视频接管整屏：任何来源（换稿件、旧状态残留）把播放器收回半屏时，都顶回全屏。
-    val fullscreen = presentation.fullscreen
-    LaunchedEffect(fullscreen) {
-        if (!fullscreen) onToggleFullscreen()
+    // 读意图而不是呈现值：转屏间隙呈现值还没翻，读它会把刚进的听视频反手推回半屏。
+    val fullscreenIntent = presentation.fullscreenIntent
+    LaunchedEffect(fullscreenIntent) {
+        if (!fullscreenIntent) onToggleFullscreen()
     }
     BackHandler(enabled = true) {
         // 配置面板（音质/倍速/字幕…）开在听视频页之上，返回键先收面板。

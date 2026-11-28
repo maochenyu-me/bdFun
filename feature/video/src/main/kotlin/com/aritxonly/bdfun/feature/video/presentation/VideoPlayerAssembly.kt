@@ -14,7 +14,13 @@ data class VideoPlayerContent(
     val danmaku: List<DanmakuItem>, val selection: VideoPlaybackSelection,
     val interaction: VideoInteractionState, val metadata: VideoMetadataState, val loggedIn: Boolean,
 )
-data class VideoPlayerFlags(val fullscreen: Boolean, val immersiveStatusBar: Boolean, val pictureInPicture: Boolean)
+data class VideoPlayerFlags(
+    val fullscreen: Boolean,
+    val immersiveStatusBar: Boolean,
+    val pictureInPicture: Boolean,
+    /** 用户点了展开：朝向与系统栏立刻生效，不必等转屏。 */
+    val fullscreenIntent: Boolean = fullscreen,
+)
 data class VideoPlayerAssembly(val media: VideoMediaInput, val presentation: VideoPlayerPresentation)
 
 /** 将应用状态投影为现有播放器入参，不改变封面/标题回退与自动清晰度文案。 */
@@ -30,6 +36,7 @@ fun assembleVideoPlayer(content: VideoPlayerContent, flags: VideoPlayerFlags): V
         resumePositionMs = content.selection.resumePositionMs, immersiveStatusBar = flags.immersiveStatusBar,
         pictureInPicture = flags.pictureInPicture,
         portraitVideo = isPortraitVideo(content.quality?.width ?: 0, content.quality?.height ?: 0),
+        fullscreenIntent = flags.fullscreenIntent,
     ))
 }
 

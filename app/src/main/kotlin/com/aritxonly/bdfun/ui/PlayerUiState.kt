@@ -169,6 +169,19 @@ internal class VideoPagePresentationState(
                 fullscreen = value,
             ),
         ) }
+    /**
+     * 用户点了展开：立即生效，驱动朝向请求与系统栏。
+     *
+     * 与 [fullscreen] 分开的理由见 `videoFullscreenPresented`：横屏视频从竖屏点展开时，
+     * 系统转屏要几百毫秒，这段时间窗口还是竖的，立刻按全屏布局会闪一帧竖屏铺满。
+     */
+    var fullscreenIntent: Boolean
+        get() = snapshot.fullscreenIntent
+        set(value) = update { it.copy(
+            player = it.player.copy(
+                fullscreenIntent = value,
+            ),
+        ) }
     override var controlsVisible: Boolean
         get() = snapshot.controlsVisible
         set(value) = update { it.copy(

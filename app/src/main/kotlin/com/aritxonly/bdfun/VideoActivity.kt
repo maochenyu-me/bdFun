@@ -67,7 +67,8 @@ class VideoActivity : OneTakeExitActivity() {
         }
         // 回前台重新读一次系统方向锁（用户可能刚在快捷开关里改过）；之后交给 ContentObserver。
         orientation.refreshRotationLock()
-        if (!PlayerUiState.fullscreen && !orientation.autoLandscapePending) applyIdleOrientation()
+        // 读「意图」而不是呈现值：转屏间隙呈现值还没翻，读它会把刚请求的横屏锁回竖屏。
+        if (!PlayerUiState.fullscreenIntent && !orientation.autoLandscapePending) applyIdleOrientation()
         if (orientation.autoRotateAllowed()) orientation.start() else orientation.stop()
     }
 
@@ -178,12 +179,13 @@ class VideoActivity : OneTakeExitActivity() {
      */
     private fun bindOrientationRestore() {
         lifecycleScope.launch {
-            var wasFullscreen = pageState.pageFlow.value.fullscreen
+            // 看意图：退出全屏时意图立即翻 false，不必等呈现值那一帧。
+            var wasFullscreen = pageState.pageFlow.value.fullscreenIntent
             pageState.pageFlow.collect { state ->
-                if (wasFullscreen && !state.fullscreen) {
+                if (wasFullscreen && !state.fullscreenIntent) {
                     applyIdleOrientation()
                 }
-                wasFullscreen = state.fullscreen
+                wasFullscreen = state.fullscreenIntent
             }
         }
     }
@@ -192,7 +194,8 @@ class VideoActivity : OneTakeExitActivity() {
         super.onConfigurationChanged(newConfig)
         // 刚为「转屏进全屏」请求的横屏：Compose 侧会在这一帧把 fullscreen 置上，
         // 不能在这里又用 idle 竖屏把它锁回去（否则转过去立刻弹回，看起来就是"转不动"）。
-        if (!PlayerUiState.fullscreen && !orientation.autoLandscapePending) applyIdleOrientation()
+        // 读意图而不是呈现值：呈现值要等这次配置变更落地后才翻，此刻必然还是 false。
+        if (!PlayerUiState.fullscreenIntent && !orientation.autoLandscapePending) applyIdleOrientation()
         if (BuildConfig.DEBUG) {
             android.util.Log.d(
                 "ROTDBG",

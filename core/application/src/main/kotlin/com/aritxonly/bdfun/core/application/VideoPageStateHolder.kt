@@ -30,6 +30,8 @@ data class VideoPageState(
     val consumedSeekRequest get() = requests.consumedSeekRequest
     val commentThreadVisible get() = reply.commentThreadVisible
     val fullscreen get() = player.fullscreen
+    /** 用户点了展开：立即为真，驱动朝向请求；[fullscreen] 要等窗口转过去才为真。 */
+    val fullscreenIntent get() = player.fullscreenIntent
     val portraitVideo get() = player.portraitVideo
     val controlsVisible get() = player.controlsVisible
     val orientationLocked get() = player.orientationLocked
@@ -65,6 +67,11 @@ data class VideoPagePlayerState(
     val playerBottomPx: Float = 0f,
     val danmakuProgressMs: Long = 0L,
     val fullscreen: Boolean = false,
+    /**
+     * 用户的全屏意图：点击展开那一刻就是 true（驱动朝向请求、系统栏、清晰度）。
+     * 呈现用的 [fullscreen] 要等窗口真的到目标朝向才翻，避免转屏间隙闪一帧竖屏铺满。
+     */
+    val fullscreenIntent: Boolean = false,
     /** 当前视频是否竖屏：Activity 的传感器转屏要据此让路。 */
     val portraitVideo: Boolean = false,
     val controlsVisible: Boolean = false,

@@ -14,12 +14,15 @@ fun BindVideoDetailEffects(
     load: VideoDetailLoadPorts, ports: VideoDetailEffectPorts, autoRotate: Boolean,
     /** Activity 侧看到的独占全屏状态；竖屏评论面板收起后会要求它变 true。 */
     requestedFullscreen: Boolean = false, pictureInPicture: Boolean = false,
+    /** 当前视频是竖屏：全屏仍留在竖屏窗口，不必等转屏。 */
+    portraitVideo: Boolean = false,
 ) {
     val detail = content.read.detail
     val currentCid = content.selection.cid
     val controllers = holders.controllers
     val ui = holders.ui
-    var fullscreen by ui.fullscreen
+    // 返回键按「意图」判断：转屏那几百毫秒里呈现值还没翻，读它会让返回直接退出视频页。
+    var fullscreen by ui.fullscreenIntent
     BindVideoAuthor(detail, content.loggedIn, holders.metadata, controllers.interaction, ui, holders.description)
     LaunchedEffect(content.interaction) {
         val current = content.interaction
@@ -45,6 +48,9 @@ fun BindVideoDetailEffects(
     BindVideoFullscreenState(
         ui, ports.publishFullscreen, autoRotate, requestedFullscreen, pictureInPicture,
         listenMode = ports.listenMode(),
+        // 竖屏视频全屏仍是竖屏窗口，没有转屏可等，按意图立即铺满。
+        portraitVideo = portraitVideo,
+        publishIntent = ports.publishFullscreenIntent,
     )
     BindBackgroundVideoMetadata(request.video, detail, currentCid, content.quality, ports)
     ReconcileVideoPager(pager)

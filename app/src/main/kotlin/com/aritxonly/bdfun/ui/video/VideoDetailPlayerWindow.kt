@@ -33,7 +33,9 @@ internal fun androidx.compose.foundation.layout.BoxScope.VideoDetailPlayerWindow
         val playerAssembly = assembleVideoPlayer(
             VideoPlayerContent(video, detail, playInfo, activeQuality, danmaku, selectionState,
                 interactionState, metadataState, content.loggedIn),
-            VideoPlayerFlags(fullscreen, immersiveStatusBar, pictureInPicture),
+            VideoPlayerFlags(fullscreen, immersiveStatusBar, pictureInPicture,
+                // 朝向与系统栏立刻按意图走；画面铺多大仍看呈现值。
+                fullscreenIntent = presentation.fullscreenIntent),
         )
         VideoPlayer(
             media = playerAssembly.media,
