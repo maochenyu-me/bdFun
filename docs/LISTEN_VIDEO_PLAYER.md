@@ -13,7 +13,7 @@
 | 屏幕方向 | 跟随设备方向：竖持走竖排（上图下文），横持走左右分栏 |
 | 背景配色 | 从封面取样主色，压暗成三段渐变（顶 → 中 → 底） |
 | 歌词来源 | B 站字幕（含 AI 字幕）为主；支持导入本地 `.lrc`；在线歌词源只留接口，暂不实现 |
-| 歌词交互 | 点击歌词跳转、偏移调整、双语副字幕、当前行 KTV 逐字扫亮（按字点亮，另有「普通」样式） |
+| 歌词交互 | 点击歌词跳转、偏移调整、双语副字幕；当前行可选「KTV 逐字」（按字点亮）或「普通」（整行高亮，不扫亮） |
 | 无字幕 | 歌词页显示空态 + 导入 lrc 入口；胶囊仍可切 |
 | 音频流 | 听视频切到 DASH 纯音频流，不再拉视频数据 |
 | 封面样式 | 只做圆角卡片，不做旋转唱片与频谱律动 |
@@ -49,8 +49,8 @@ ListenVideoScreen（整页，接管屏幕）
 | `listen/ListenVideoScreen.kt` | 整页容器：背景、顶栏、Pager、胶囊 |
 | `listen/ListenVideoCoverPage.kt` | 封面页（竖排/横排两种摆放） |
 | `listen/ListenVideoLyricsPage.kt` | 歌词页 |
-| `listen/ListenLyricsLine.kt` | 一行歌词的绘制：KTV 逐字叠亮（按字边界裁剪）与普通裁剪两种样式 |
-| `listen/ListenLyricsClock.kt` | 逐字扫亮用的帧时钟：锚点外推位置，采样只用来发现 seek／卡顿 |
+| `listen/ListenLyricsLine.kt` | 一行歌词的绘制：KTV 逐字叠亮（按字边界裁剪）与普通（整行高亮）两种样式 |
+| `listen/ListenLyricsClock.kt` | 逐字扫亮用的帧时钟：锚点跟采样、每帧线性外推，输出单调不回退，只有采样跳变才当 seek |
 | `listen/ListenVideoTransport.kt` | 进度条、传输键、音量条、底部次级按钮（随机 / 播放模式 / 队列 / 设置） |
 | `listen/ListenVideoSheets.kt` | 更多面板（含定时分钟内联）与播放队列 |
 

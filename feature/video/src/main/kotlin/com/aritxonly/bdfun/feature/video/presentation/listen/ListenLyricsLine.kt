@@ -3,10 +3,7 @@ package com.aritxonly.bdfun.feature.video.presentation.listen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
@@ -22,7 +19,7 @@ import com.aritxonly.bdfun.core.domain.karaokeInactiveAlpha
 import com.aritxonly.bdfun.core.domain.karaokeLineProgress
 import com.aritxonly.bdfun.core.domain.karaokeLitGlyphCount
 
-/** 一行歌词的绘制：按样式分派到 KTV 逐字或普通裁剪。 */
+/** 一行歌词的绘制：按样式分派到 KTV 逐字扫亮或普通整行高亮。 */
 @Composable
 internal fun LyricLineText(
     text: String,
@@ -39,7 +36,7 @@ internal fun LyricLineText(
         ListenLyricsStyle.KARAOKE ->
             KaraokeLineText(text, fromMs, toMs, current, distance, fontSize, weight, positionNow)
         ListenLyricsStyle.PLAIN ->
-            PlainLineText(text, fromMs, toMs, current, fontSize, weight, positionNow)
+            PlainLineText(text, current, distance, fontSize, weight)
     }
 }
 
@@ -83,37 +80,27 @@ private fun KaraokeLineText(
     )
 }
 
-/** 普通样式：当前行按行内进度擦一条亮色，不做逐字。 */
+/**
+ * 普通样式：当前行整行亮，其余行按距离变暗，跟进度无关。
+ *
+ * 这里刻意不做任何裁剪叠亮——以前用「按像素擦一条亮色」，汉字等宽，擦过去的观感
+ * 和逐字扫亮几乎一样，切样式等于没切。普通歌词本来就该是"整句一起亮"。
+ */
 @Composable
 private fun PlainLineText(
     text: String,
-    fromMs: Long,
-    toMs: Long,
     current: Boolean,
+    distance: Int,
     fontSize: TextUnit,
     weight: FontWeight,
-    positionNow: () -> Long,
 ) {
-    var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
     Text(
         text = text,
-        color = Color.White.copy(alpha = if (current) 0.42f else 0.34f),
+        color = Color.White.copy(alpha = if (current) 1f else karaokeInactiveAlpha(distance)),
         fontSize = fontSize,
         fontWeight = weight,
         textAlign = TextAlign.Center,
-        onTextLayout = { layout = it },
-        modifier = Modifier
-            .fillMaxWidth()
-            .drawWithContent {
-                drawContent()
-                if (!current) return@drawWithContent
-                val progress = karaokeLineProgress(positionNow(), fromMs, toMs)
-                if (progress <= 0f) return@drawWithContent
-                val measured = layout ?: return@drawWithContent
-                clipRect(right = size.width * progress) {
-                    drawText(measured, color = Color.White)
-                }
-            },
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
