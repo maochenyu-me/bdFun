@@ -70,6 +70,8 @@ data class ListenVideoPlayback(
     val sleepTimerLabel: String = "",
     /** 定时关闭的目标时间戳；0 表示未开启。 */
     val sleepAtMs: Long = 0L,
+    /** 正在缓冲：位置不推进，逐字扫亮要停在原处等声音回来。 */
+    val buffering: Boolean = false,
 )
 
 /** 听视频页面的动作。全部落到详情页已有的播放器动作上。 */

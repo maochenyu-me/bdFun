@@ -13,32 +13,39 @@ import com.aritxonly.bdfun.core.domain.LyricClock
 /**
  * 逐字扫亮用的界面时钟。
  *
- * 播放器每秒才发布一次位置，直接拿它当扫亮进度，一句歌词只会亮两三下。
- * 这里按帧把时间补上：位置一律由锚点线性外推，采样只用来发现 seek／卡顿，
- * 不做「追一下、退一点」的修正——那种修正正是扫亮在原地抽搐的原因。
- * 循环只依赖「是否在播」这个离散状态，每秒的采样通过 [rememberUpdatedState] 读最新值，
- * 不会把循环反复重启。
+ * 播放器每秒才发布一次位置，直接拿它刷进度是一秒一跳。这里按帧把时间补上：
+ * 每帧走上这一帧的真实时长，采样只用来校正偏差（小偏差逐帧收敛，大偏差才当 seek）。
+ * 循环只依赖「是否在播 / 是否在缓冲」两个离散状态，每秒的采样通过
+ * [rememberUpdatedState] 读最新值，不会把循环反复重启。
+ *
+ * 缓冲时循环直接退出：播放器没在推进，歌词就该停在原处等声音回来。
  */
 @Composable
 internal fun rememberSmoothLyricPosition(
     sampledMs: Long,
     playing: Boolean,
+    buffering: Boolean,
     speed: Float,
 ): () -> Long {
     var position by remember { mutableLongStateOf(sampledMs) }
     val latestSample by rememberUpdatedState(sampledMs)
-    val latestPlaying by rememberUpdatedState(playing)
     val latestSpeed by rememberUpdatedState(speed)
-    LaunchedEffect(playing) {
-        if (!playing) {
-            position = latestSample
-            return@LaunchedEffect
-        }
-        var clock = LyricClock.of(latestSample)
+
+    // 暂停时直接对到采样：拖完进度条要立刻看到歌词跟过去。
+    LaunchedEffect(sampledMs, playing) {
+        if (!playing) position = sampledMs
+    }
+    // 播放中每帧补齐时间；缓冲时让位，保持当前位置不动。
+    LaunchedEffect(playing, buffering) {
+        if (!playing || buffering) return@LaunchedEffect
+        var clock = LyricClock.of(position, latestSample)
+        var lastFrameNs = 0L
         while (true) {
             val frameNs = withFrameNanos { it }
-            clock = clock.advance(latestSample, frameNs, latestPlaying, latestSpeed)
-            position = clock.positionAt(frameNs, latestSpeed)
+            val deltaMs = if (lastFrameNs == 0L) 0L else (frameNs - lastFrameNs) / 1_000_000L
+            lastFrameNs = frameNs
+            clock = clock.step(latestSample, deltaMs, latestSpeed)
+            position = clock.displayMs
         }
     }
     return { position }

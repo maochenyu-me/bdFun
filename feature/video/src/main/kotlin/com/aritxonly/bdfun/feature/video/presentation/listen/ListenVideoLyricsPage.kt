@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aritxonly.bdfun.ui.formatPlayTime
@@ -44,13 +45,10 @@ import top.yukonga.miuix.kmp.icon.extended.Search
 
 /**
  * 歌词页：整屏歌词 + 顶部工具条 + 底部细进度与传输键。
- * 当前行按行内时间做填充高亮；点某行跳到该行开头，长按进入偏移微调。
- */
-/**
- * 歌词页外壳：内容 + 校准浮层。
  *
- * 校准条单独放在 Box 里浮着，不进内容 Column：展开/收起都不会把传输键和歌词区顶一下，
- * 退出校准时也不会弹回来——这就是「不影响别的 UI」。
+ * 校准条浮在**歌词区内部**的下沿，而不是页面底部：歌词区下沿就是进度条上沿，两者
+ * 至少隔开一个内边距，点校准按钮不会再误触到进度条。它也不进内容 Column，
+ * 展开/收起都不改变歌词区与传输键的尺寸。
  */
 @Composable
 internal fun ListenVideoLyricsPage(
@@ -64,20 +62,7 @@ internal fun ListenVideoLyricsPage(
     onOpenMore: () -> Unit,
     onOpenQueue: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        LyricsPageBody(info, playback, actions, ui, palette, lyrics, icons, onOpenMore, onOpenQueue)
-        if (ui.lyricsCalibrating) {
-            LyricsCalibrateBar(
-                offsetMs = ui.lyricsOffsetMs,
-                accent = Color(palette.accent),
-                onOffset = { ui.lyricsOffsetMs = it },
-                onDone = { ui.lyricsCalibrating = false },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 96.dp),
-            )
-        }
-    }
+    LyricsPageBody(info, playback, actions, ui, palette, lyrics, icons, onOpenMore, onOpenQueue)
 }
 
 @Composable
@@ -135,26 +120,67 @@ private fun LyricsPageBody(
                 onSwitchToCover = { ui.pageIndex = 0 },
             )
         } else {
-            // 播放器的位置每秒才来一次，逐字扫亮要按帧补齐，否则一句只亮两三下。
-            val positionNow = rememberSmoothLyricPosition(
-                sampledMs = playback.positionMs,
-                playing = playback.playing,
-                speed = playback.speed,
-            )
-            ListenLyricsList(
+            LyricsSection(
+                playback = playback,
+                actions = actions,
+                ui = ui,
+                palette = palette,
                 lyrics = lyrics,
-                positionNow = positionNow,
-                translationOn = ui.translationOn,
-                style = ui.lyricsStyle,
                 modifier = Modifier.weight(1f),
-                onSeek = actions.onSeek,
-                onLongPress = { ui.lyricsCalibrating = true },
             )
         }
 
         ListenVideoProgress(playback, actions, modifier = Modifier.padding(horizontal = 22.dp))
         Spacer(Modifier.height(4.dp))
         ListenVideoTransport(playback, info, actions, icons.play, icons.next, size = 50.dp)
+    }
+}
+
+/**
+ * 歌词区：歌词列表 + 校准浮层。
+ *
+ * 校准条挂在这个 Box 的下沿，正好在歌词区里面、进度条上沿之外，
+ * 既不会和进度条抢触摸，也不占据内容 Column 的高度。
+ */
+@Composable
+private fun LyricsSection(
+    playback: ListenVideoPlayback,
+    actions: ListenVideoActions,
+    ui: ListenVideoUiStateHolder,
+    palette: ListenVideoPalette,
+    lyrics: Lyrics,
+    modifier: Modifier = Modifier,
+) {
+    // 播放器的位置每秒才来一次，逐字扫亮要按帧补齐，否则一句只亮两三下。
+    val positionNow = rememberSmoothLyricPosition(
+        sampledMs = playback.positionMs,
+        playing = playback.playing,
+        buffering = playback.buffering,
+        speed = playback.speed,
+    )
+    Box(modifier = modifier.fillMaxWidth()) {
+        ListenLyricsList(
+            lyrics = lyrics,
+            positionNow = positionNow,
+            translationOn = ui.translationOn,
+            style = ui.lyricsStyle,
+            modifier = Modifier.fillMaxSize(),
+            // 校准条占了底部一条，给歌词列表留出同样的空间，免得挡住当前行。
+            bottomPadding = if (ui.lyricsCalibrating) 72.dp else 40.dp,
+            onSeek = actions.onSeek,
+            onLongPress = { ui.lyricsCalibrating = true },
+        )
+        if (ui.lyricsCalibrating) {
+            LyricsCalibrateBar(
+                offsetMs = ui.lyricsOffsetMs,
+                accent = Color(palette.accent),
+                onOffset = { ui.lyricsOffsetMs = it },
+                onDone = { ui.lyricsCalibrating = false },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp),
+            )
+        }
     }
 }
 
@@ -165,6 +191,7 @@ private fun ListenLyricsList(
     translationOn: Boolean,
     style: ListenLyricsStyle,
     modifier: Modifier = Modifier,
+    bottomPadding: Dp = 40.dp,
     onSeek: (Long) -> Unit,
     onLongPress: () -> Unit,
 ) {
@@ -181,7 +208,7 @@ private fun ListenLyricsList(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 30.dp, vertical = 40.dp),
+        contentPadding = PaddingValues(start = 30.dp, end = 30.dp, top = 40.dp, bottom = bottomPadding),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         itemsIndexed(lyrics.lines) { i, line ->

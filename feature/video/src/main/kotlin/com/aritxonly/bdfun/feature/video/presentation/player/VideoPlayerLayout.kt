@@ -96,7 +96,7 @@ fun VideoPlayerLayout(
         if (audioOnly) {
             ListenVideoLayer(
                 media, presentation, ui, fsActions, ports, playing, positionMs, durationMs, bufferedMs,
-                onToggleFullscreen,
+                observed.buffering.value, onToggleFullscreen,
             )
         }
 
@@ -161,10 +161,12 @@ private fun ListenVideoLayer(
     positionMs: Long,
     durationMs: Long,
     bufferedMs: Long,
+    buffering: Boolean,
     onToggleFullscreen: () -> Unit,
 ) {
     PlayerListenVideo(
         media, presentation, ui, fsActions, playing, positionMs, durationMs, bufferedMs, ports,
+        buffering = buffering,
         onExitFullscreen = onToggleFullscreen,
         modifier = Modifier.fillMaxSize().zIndex(30f),
     )

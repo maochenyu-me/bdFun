@@ -6,11 +6,14 @@ import org.junit.Test
 
 class KaraokeLyricsPolicyTest {
 
-    /** 秒 → 帧时间的纳秒。 */
-    private fun sec(value: Double) = (value * 1_000_000_000.0).toLong()
+    /** 一帧 120Hz 的间隔。 */
+    private val frame = 8L
 
-    private fun startClock(ms: Long = 5_000) =
-        LyricClock.of(ms).advance(ms, sec(1.0), playing = true, speed = 1f)
+    private fun startClock(ms: Long = 5_000, sampled: Long = 5_000) =
+        LyricClock.of(ms, sampled)
+
+    private fun LyricClock.run(frames: Int, sampled: Long, deltaMs: Long = 8L, speed: Float = 1f) =
+        (1..frames).fold(this) { acc, _ -> acc.step(sampled, deltaMs, speed) }
 
     @Test fun lineProgressFollowsPositionInsideTheLine() {
         assertEquals(0f, karaokeLineProgress(1_000, 1_000, 3_000), 0.0001f)
@@ -37,88 +40,88 @@ class KaraokeLyricsPolicyTest {
         assertEquals(0f, karaokeLitGlyphCount(0.5f, 0), 0.0001f)
     }
 
-    @Test fun clockExtrapolatesBetweenSamples() {
-        val clock = startClock()
-        assertEquals(5_000, clock.positionAt(sec(1.0), 1f))
-        // 下一次采样还没来，过了 16ms 也要往前走 16ms。
-        assertEquals(5_016, clock.positionAt(sec(1.016), 1f))
-        // 一个采样周期后正好到采样点，外推上限不会把它截住。
-        assertEquals(6_000, clock.positionAt(sec(2.0), 1f))
-    }
-
-    @Test fun clockHonoursPlaybackSpeed() {
-        val clock = startClock()
-        assertEquals(5_200, clock.positionAt(sec(1.1), 2f))
-    }
-
-    @Test fun clockKeepsRunningWhenSampleLagsBehindPrediction() {
-        val clock = startClock()
-        // 采样只有 5 560，比预测落后 440ms：位置不许往回跳，原地等真实播放追上来。
-        val next = clock.advance(5_560, sec(2.0), playing = true, speed = 1f)
-        assertEquals(6_000, next.positionAt(sec(2.0), 1f))
-        assertEquals(6_000, next.positionAt(sec(2.016), 1f))
-        // 下一秒采样追上来，继续按采样的增量往前走。
-        val later = next.advance(6_560, sec(3.0), playing = true, speed = 1f)
-        assertEquals(6_560, later.positionAt(sec(3.0), 1f))
-    }
-
-    @Test fun clockIsMonotonicAcrossJitteredSamples() {
+    /** 采样还没来的那些帧，位置必须一帧一帧往前走，而不是整秒不动。 */
+    @Test fun clockAdvancesOneFrameAtATime() {
         var clock = startClock()
-        var last = clock.positionAt(sec(1.0), 1f)
-        var sampled = 5_000L
-        for (frame in 1..600) {
-            val frameNs = sec(1.0 + frame / 60.0)
-            if (frame % 60 == 0) {
-                // 每秒一次采样，采样本身带 ±60ms 抖动。
-                sampled = 5_000L + frame * 16L + if ((frame / 60) % 2 == 0) 60L else -60L
-                clock = clock.advance(sampled, frameNs, playing = true, speed = 1f)
-            }
-            val now = clock.positionAt(frameNs, 1f)
-            assertTrue("frame $frame: $now < $last", now >= last)
-            last = now
+        var last = clock.displayMs
+        repeat(20) {
+            clock = clock.step(5_000, frame, 1f)
+            assertEquals(last + frame, clock.displayMs)
+            last = clock.displayMs
         }
+        assertEquals(5_000 + 20 * frame, clock.displayMs)
     }
 
-    @Test fun clockStopsRunningAheadWhileSampleStalls() {
+    /** 采样超前时单帧最多推进「一帧 + 追赶上限」，一帧永远亮不过半个字。 */
+    @Test fun clockNeverJumpsMoreThanOneFramePlusCatchUpStep() {
+        val clock = startClock().step(6_000, frame, 1f)
+        val step = clock.displayMs - 5_000
+        assertTrue("单帧推进了 $step ms", step <= frame + LyricCatchUpStepLimitMs)
+        assertTrue("采样超前时应该多补一点", step > frame)
+    }
+
+    /** 采样超前 1 秒，靠每帧补一点在几十帧内追上，而不是当帧跳过去。 */
+    @Test fun clockCatchesUpGraduallyAfterSampleJumpsAhead() {
         var clock = startClock()
-        // 缓冲 8 秒：采样一直是 5 000，每帧推进时时钟也不能自己往前跑。
-        for (second in 1..8) {
-            clock = clock.advance(5_000, sec(1.0 + second), playing = true, speed = 1f)
-            assertEquals(5_000, clock.positionAt(sec(1.0 + second), 1f))
+        var previous = clock.displayMs
+        var maxStep = 0L
+        repeat(40) {
+            clock = clock.step(6_000, frame, 1f)
+            maxStep = maxOf(maxStep, clock.displayMs - previous)
+            previous = clock.displayMs
         }
+        assertTrue("单帧最大推进 $maxStep ms", maxStep <= frame + LyricCatchUpStepLimitMs)
+        assertTrue("40 帧后还差 ${6_000 - clock.displayMs} ms", clock.displayMs >= 5_900)
     }
 
+    /** 采样整段不动（缓冲）：位置停在原处，不会自己一路跑到前面再往回跳。 */
+    @Test fun clockFreezesWhenSampleStalls() {
+        var clock = startClock()
+        clock = clock.run(300, sampled = 5_000, deltaMs = 16)
+        val frozen = clock.displayMs
+        assertTrue("缓冲期间不该超前太多：${frozen - 5_000}", frozen - 5_000 <= LyricStallHoldMs + 100)
+        clock = clock.run(300, sampled = 5_000, deltaMs = 16)
+        assertEquals(frozen, clock.displayMs)
+    }
+
+    /** 缓冲结束后从冻结处继续，不会突然跳一大段。 */
     @Test fun clockResumesAfterStall() {
-        var clock = startClock()
-        clock = clock.advance(5_000, sec(4.0), playing = true, speed = 1f)
-        assertEquals(5_000, clock.positionAt(sec(4.0), 1f))
-        // 采样恢复推进：从冻结处继续走，不会突然跳一大段。
-        val resumed = clock.advance(5_050, sec(4.016), playing = true, speed = 1f)
-        assertEquals(5_050, resumed.positionAt(sec(4.016), 1f))
-        assertEquals(5_066, resumed.positionAt(sec(4.032), 1f))
+        var clock = startClock().run(300, sampled = 5_000, deltaMs = 16)
+        val frozen = clock.displayMs
+        val resumed = clock.step(frozen + 16, 16, 1f)
+        assertTrue(resumed.displayMs - frozen <= frame + LyricCatchUpStepLimitMs)
     }
 
     @Test fun clockJumpsOnForwardSeek() {
-        val clock = startClock()
-        val next = clock.advance(90_000, sec(2.0), playing = true, speed = 1f)
-        assertEquals(90_000, next.positionAt(sec(2.0), 1f))
+        val clock = startClock().step(90_000, frame, 1f)
+        assertEquals(90_000, clock.displayMs)
     }
 
     @Test fun clockJumpsBackOnBackwardSeek() {
-        val clock = startClock()
-        val next = clock.advance(2_000, sec(2.0), playing = true, speed = 1f)
-        assertEquals(2_000, next.positionAt(sec(2.0), 1f))
+        val clock = startClock().step(2_000, frame, 1f)
+        assertEquals(2_000, clock.displayMs)
     }
 
-    @Test fun clockFreezesWhilePaused() {
-        val clock = startClock()
-        val next = clock.advance(5_400, sec(9.0), playing = false, speed = 1f)
-        assertEquals(5_400, next.positionAt(sec(9.0), 1f))
+    /** 采样比预测落后一点点（发布延迟）：继续按帧走，不倒退。 */
+    @Test fun clockKeepsMovingWhenSampleLagsSlightly() {
+        val clock = startClock(ms = 5_200, sampled = 5_000).step(5_000, frame, 1f)
+        assertTrue(clock.displayMs >= 5_200)
+    }
+
+    @Test fun clockHonoursPlaybackSpeed() {
+        val clock = startClock().step(5_000, 100L, 2f)
+        assertEquals(5_200, clock.displayMs)
     }
 
     @Test fun clockFallsBackToNormalSpeedOnBadInput() {
-        val clock = startClock()
-        assertEquals(5_010, clock.positionAt(sec(1.01), 0f))
+        val clock = startClock().step(5_000, 100L, 0f)
+        assertEquals(5_100, clock.displayMs)
+    }
+
+    /** 掉帧 / 切后台回来：直接对到采样，不做插值。 */
+    @Test fun clockSnapsAfterLongFrameGap() {
+        val clock = startClock().step(7_500, 3_000L, 1f)
+        assertEquals(7_500, clock.displayMs)
     }
 
     @Test fun inactiveLinesFadeWithDistance() {

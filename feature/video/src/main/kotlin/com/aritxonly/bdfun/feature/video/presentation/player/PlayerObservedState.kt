@@ -6,12 +6,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import com.aritxonly.bdfun.core.application.PlaybackController
+import com.aritxonly.bdfun.core.application.PlaybackPhase
 import com.aritxonly.bdfun.core.application.PlaybackSnapshot
 
 /** 共享只读投影；事件闭包持有 State 委托，读取的是触发时的播放器状态。 */
 class PlayerObservedStateHolder(snapshot: State<PlaybackSnapshot>) {
     val playing = derivedStateOf { snapshot.value.playing }
     val ended = derivedStateOf { snapshot.value.ended }
+    /** 缓冲/未就绪：位置不会推进，依赖时间的插值要停下等它。 */
+    val buffering = derivedStateOf {
+        snapshot.value.phase == PlaybackPhase.Buffering || snapshot.value.phase == PlaybackPhase.Idle
+    }
     val positionMs = derivedStateOf { snapshot.value.positionMs }
     val bufferedMs = derivedStateOf { snapshot.value.bufferedMs }
     val durationMs = derivedStateOf { snapshot.value.durationMs }

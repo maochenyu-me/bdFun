@@ -1,78 +1,69 @@
 package com.aritxonly.bdfun.core.domain
 
+import kotlin.math.roundToLong
+
 /** 未唱到的字保留的亮度系数，和 BiliPai 的默认值一致。 */
 const val KaraokeDimAlphaFactor = 0.36f
 
-/**
- * 一次采样最多往前外推这么长的播放时间。
- *
- * 采样间隔约 1 秒，外推超过这个量说明播放器不再推进（缓冲/卡住），
- * 时钟就此收住，等真实位置追上来，而不是自己一路跑到前头再往回跳。
- */
-const val LyricClockMaxLeadMs = 1_100L
+/** 采样与逐帧预测的偏差超过这个量，判定为 seek（拖进度条、换集、循环重播），位置直接跟采样。 */
+const val LyricSeekThresholdMs = 1_500L
 
-/** 采样明显倒退（拖回前面、循环重播）：允许位置跟着回去。 */
-const val LyricClockSeekBackMs = 800L
+/** 单帧最多补多少毫秒的偏差：保证一帧的推进远小于一个字，不会一下亮过好几个字。 */
+const val LyricCatchUpStepLimitMs = 28L
 
-/** 采样明显前跳（拖到后面）：允许位置跟着过去。 */
-const val LyricClockSeekAheadMs = 2_500L
+/** 每帧把剩余偏差的 1/4 补上，几帧内平滑收敛到采样，而不是当帧跳到位。 */
+const val LyricCatchUpDivisor = 4L
+
+/** 采样一直不更新超过这个时长，说明播放器没在推进（缓冲），位置原地冻住等声音回来。 */
+const val LyricStallHoldMs = 1_200L
+
+/** 帧间隔超过这个值（掉帧、切后台回来）就不插值了，直接对到采样。 */
+const val LyricFrameGapLimitMs = 1_500L
 
 /**
  * 逐字扫亮用的界面时钟。
  *
- * 播放器每秒才发布一次位置，直接拿它刷进度是一秒一跳，所以每帧按播放速度线性外推。
- * 关键约束是**输出只增不减**：采样比预测落后时（缓冲、播放器延迟、调度抖动）
- * 位置原地等着真实播放追上来，绝不回退；只有采样本身明显跳变才算 seek，才允许跳。
- * 旧实现靠"锚点永不移动 + 偏差超阈值就重设"来校正，1Hz 采样下几乎每秒都会越界，
- * 于是每秒回退一小段，看起来就是高光在原地抽搐。
+ * 播放器每秒才发布一次位置，直接拿它刷进度是一秒一跳。这里每帧把这一帧真实走过的播放
+ * 时间加上去（[step]），采样只用来校正：偏差小就每帧补一点慢慢收敛，偏差大到像 seek 才
+ * 直接跟过去。
+ *
+ * 跟上一版的差别在于**单帧位移有上限**。上一版要求输出单调、锚点只在采样时移动，结果
+ * 同一秒内的每一帧都被压回采样值，位置整秒不动、下一秒再跳一千毫秒——就是「卡顿、好几个
+ * 词一起亮」。现在正常播放时每帧只走一帧的时间，采样超前时最多再补
+ * [LyricCatchUpStepLimitMs]，一帧永远推进不了半个字。
  */
 data class LyricClock(
-    val anchorMs: Long,
-    val anchorFrameNs: Long,
-    val emittedMs: Long,
+    val displayMs: Long,
     val lastSampleMs: Long,
+    val msWithoutSample: Long = 0L,
 ) {
-    /** 锚点位置 + 到这一帧为止走过的播放时间；不超过已发布位置，也不超过外推上限。 */
-    fun positionAt(frameNs: Long, speed: Float): Long {
-        if (anchorFrameNs <= 0L) return emittedMs
-        val rate = playbackRate(speed)
-        val leadMs = (frameNs - anchorFrameNs).coerceAtLeast(0L) / 1_000_000f * rate
-        val capped = leadMs.coerceAtMost(LyricClockMaxLeadMs * rate)
-        return maxOf(emittedMs, anchorMs + capped.toLong())
-    }
-
     /**
-     * 用新采样推进时钟：
-     * - 暂停 → 停在采样值；
-     * - 采样没变（缓冲/卡住）→ 锚点压到采样上，输出原地不动；
-     * - 采样跳变（seek、循环重播）→ 直接跟过去；
-     * - 正常推进 → 锚点跟采样走，输出取「预测」与「采样」的较大者，永不回退。
+     * 走一帧。[frameDeltaMs] 是这一帧与上一帧的真实间隔，[sampledMs] 是播放器最近一次
+     * 发布的位置。返回值里的 [displayMs] 就是这一帧该显示的位置。
      */
-    fun advance(
-        sampledMs: Long,
-        frameNs: Long,
-        playing: Boolean,
-        speed: Float,
-    ): LyricClock {
+    fun step(sampledMs: Long, frameDeltaMs: Long, speed: Float): LyricClock {
+        if (frameDeltaMs > LyricFrameGapLimitMs) return LyricClock(sampledMs, sampledMs)
         val rate = playbackRate(speed)
-        if (!playing) return LyricClock(sampledMs, frameNs, sampledMs, sampledMs)
-        if (anchorFrameNs <= 0L) return LyricClock(sampledMs, frameNs, sampledMs, sampledMs)
-        val delta = sampledMs - lastSampleMs
-        if (delta == 0L) {
-            // 播放器没推进：把锚点压到采样上，输出停在已发布位置，不再自己往前跑。
-            return LyricClock(sampledMs, frameNs, emittedMs, sampledMs)
+        val dt = frameDeltaMs.coerceAtLeast(0L)
+        val fresh = sampledMs != lastSampleMs
+        val withoutSample = if (fresh) 0L else msWithoutSample + dt
+        // 采样停了：播放器没在推进，位置停在原处等声音回来，别自己跑到前面去。
+        if (!fresh && withoutSample >= LyricStallHoldMs) {
+            return LyricClock(displayMs, sampledMs, withoutSample)
         }
-        val elapsedPlayMs = (frameNs - anchorFrameNs).coerceAtLeast(0L) / 1_000_000f * rate
-        val seekBack = delta < -(LyricClockSeekBackMs * rate)
-        val seekAhead = delta > elapsedPlayMs + LyricClockSeekAheadMs * rate
-        if (seekBack || seekAhead) return LyricClock(sampledMs, frameNs, sampledMs, sampledMs)
-        val emitted = maxOf(positionAt(frameNs, speed), sampledMs)
-        return LyricClock(sampledMs, frameNs, emitted, sampledMs)
+        val predicted = displayMs + (dt * rate).roundToLong()
+        val drift = sampledMs - predicted
+        val next = when {
+            drift > LyricSeekThresholdMs || drift < -LyricSeekThresholdMs -> sampledMs
+            drift <= 0L -> predicted
+            else -> predicted + minOf(drift / LyricCatchUpDivisor, LyricCatchUpStepLimitMs)
+        }
+        return LyricClock(next, sampledMs, withoutSample)
     }
 
     companion object {
-        /** 起始锚点：位置取首帧采样，帧时间为 0 表示下一帧再正式落地。 */
-        fun of(sampledMs: Long): LyricClock = LyricClock(sampledMs, 0L, sampledMs, sampledMs)
+        /** 起手位置取当前已显示的位置，采样留作第一次校正的参照。 */
+        fun of(displayMs: Long, sampledMs: Long): LyricClock = LyricClock(displayMs, sampledMs, 0L)
     }
 }
 

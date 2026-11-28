@@ -37,6 +37,7 @@ internal fun PlayerListenVideo(
     durationMs: Long,
     bufferedMs: Long,
     ports: PlayerRenderPorts,
+    buffering: Boolean = false,
     onExitFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -66,6 +67,7 @@ internal fun PlayerListenVideo(
         backgroundPlay = listen.backgroundPlay(),
         sleepTimerLabel = sleepTimerLabel(sleepAt),
         sleepAtMs = sleepAt,
+        buffering = buffering,
     )
 
     val capabilities = listenCapabilities(info, lyrics, state, activity, audios)
