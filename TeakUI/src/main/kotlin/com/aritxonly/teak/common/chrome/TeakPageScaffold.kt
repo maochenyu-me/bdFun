@@ -139,12 +139,12 @@ object TeakChromeDefaults {
     /** 小标题相对顶栏视觉中心再上移的距离。 */
     val SmallTitleLift: Dp = 3.dp
 
-    /** 顶栏背景渐变模糊参数。参数参考 HyperIsland，代码为 Teak 实现；记录见 docs/CREDITS.md。 */
-    const val BarBlurRadius = 16f
-    const val BarTintAlpha = 0.66f
-    const val BarBlurStartFraction = 0.62f
+    /** 渐进顶栏使用 Deadliner 的顶部模糊和表面染色参数。 */
+    const val BarBlurRadius = 8f
+    const val BarTintAlpha = 0.94f
+    const val BarBlurStartFraction = 0.60f
     const val BarBlurEndFraction = 1f
-    const val BarBlurCurve = 1.25f
+    const val BarBlurCurve = 1f
 
     val BackButtonSize: Dp = 40.dp
 
@@ -152,7 +152,7 @@ object TeakChromeDefaults {
     val RaisedBottomBarExtra: Dp = 16.dp
 }
 
-private val TeakBarProgressiveBlur = ProgressiveBlur.Top.copy(
+internal val TeakBarProgressiveBlur = ProgressiveBlur.Top.copy(
     startFraction = TeakChromeDefaults.BarBlurStartFraction,
     endFraction = TeakChromeDefaults.BarBlurEndFraction,
     curve = TeakChromeDefaults.BarBlurCurve,
@@ -160,6 +160,8 @@ private val TeakBarProgressiveBlur = ProgressiveBlur.Top.copy(
 
 /** 搜索页顶栏从下方抬进画面的距离：搜索结果面板本身就是从下往上，顶栏跟着同一条方向。 */
 private val SearchedChromeRise = 14.dp
+
+private const val ClassicBarBlurRadius = 16f
 
 /**
  * 顶栏渐变模糊：顶栏底部清晰 -> 顶部完全模糊，底部用页面底色染色，
@@ -170,9 +172,15 @@ fun Modifier.teakProgressiveBarBlur(
     color: Color = MiuixTheme.colorScheme.background,
     tintAlpha: Float = TeakChromeDefaults.BarTintAlpha,
     blurRadius: Float = TeakChromeDefaults.BarBlurRadius,
+    /**
+     * 显式指定采样源：页面内自建的 backdrop（如动态 UP 页把它自己的列表录进去，
+     * 让悬浮头像栏能采样下面的卡片）必须从这里传进来。
+     * 不传时用页面外壳的 [LocalTeakBackdrop]，行为和原来一致。
+     */
+    backdropOverride: top.yukonga.miuix.kmp.blur.LayerBackdrop? = null,
 ): Modifier {
     if (LocalProgressiveTopBarMaterialHosted.current) return this
-    val backdrop = LocalTeakBackdrop.current
+    val backdrop = backdropOverride ?: LocalTeakBackdrop.current
     val material = LocalTeakMaterialSpec.current
     val blurColors = BlurDefaults.blurColors(
         blendColors = listOf(BlendColorEntry(color = color.copy(alpha = tintAlpha))),
@@ -209,7 +217,7 @@ fun Modifier.teakClassicBarGlass(): Modifier {
         textureBlur(
             backdrop = backdrop,
             shape = RectangleShape,
-            blurRadius = TeakChromeDefaults.BarBlurRadius,
+            blurRadius = ClassicBarBlurRadius,
             noiseCoefficient = 0f,
             colors = blurColors,
         )
@@ -407,7 +415,7 @@ private fun TeakLargeTitleForeground(
     state: TeakLargeTitleAnchorState,
     pageState: TeakPageScrollState,
     topInset: Dp,
-    underlayLiftPx: Float,
+    underlayProgress: Float,
     underlayAlpha: Float,
     underlayBlurProgress: Float,
 ) {
@@ -417,9 +425,18 @@ private fun TeakLargeTitleForeground(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
-                val motion = state.searchUnderlayProgress.floatValue
-                val lift = TeakSearchTransitionDefaults.ContentLift.toPx() * motion
-                translationY = -currentScrollOffsetPx(pageState) - underlayLiftPx - lift
+                // 大标题不跟着内容上移：一镜到底期间它留在原位，只向自己的中心收缩并淡出。
+                // 内容层照旧上移 106dp（[TeakSearchTransitionDefaults.ContentLift]），
+                // 标题若也跟着抬走，看起来就像"标题被顶出去了"，而不是这次转场的主体。
+                val motion = maxOf(
+                    underlayProgress,
+                    state.searchUnderlayProgress.floatValue,
+                ).coerceIn(0f, 1f)
+                translationY = -currentScrollOffsetPx(pageState)
+                val shrink = 1f - TeakSearchTransitionDefaults.LargeTitleShrink * motion
+                scaleX = shrink
+                scaleY = shrink
+                transformOrigin = TransformOrigin(0.5f, 0.5f)
                 alpha = underlayAlpha * state.searchUnderlayAlpha.floatValue
                 val blurProgress = maxOf(
                     underlayBlurProgress,
@@ -605,7 +622,7 @@ fun TeakPageScaffold(
                                         state = largeTitleState,
                                         pageState = pageState,
                                         topInset = largeTitleTopInset,
-                                        underlayLiftPx = underlayLiftPx,
+                                        underlayProgress = underlayProgress,
                                         underlayAlpha = underlayAlpha,
                                         underlayBlurProgress = underlayBlurProgress,
                                     )
