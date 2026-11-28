@@ -139,7 +139,7 @@ class Media3PlaybackController(
         if (released) return
         if (source.videoTarget?.upgradeInBackground == true && source.mediaKey != null &&
             source.mediaKey == mediaKey && lastSource != null) {
-            videoHandoff.stage(source, dataSource(source))
+            videoHandoff.stage(source, dataSource(appContext, source))
             return
         }
         videoHandoff.showPrimary(source.videoTarget)
@@ -185,9 +185,9 @@ class Media3PlaybackController(
         lastSource = source
         val continued = continuePlaybackSource(mediaKey, source, refresh())
         buffering.begin(source.mediaKey ?: source.videoUrl)
-        val data = dataSource(source)
+        val data = dataSource(appContext, source)
         val dash = source.dash
-        val media = (dash?.let { createDashMediaSource(it, data) }) ?: createProgressiveMediaSource(source, data)
+        val media = (dash?.let { createDashMediaSource(appContext, it, data) }) ?: createProgressiveMediaSource(source, data)
         mutableState.value = mutableState.value.copy(error = null)
         // 璧峰浣嶇疆闅忓獟浣撴簮涓€娆℃彁浜わ紝閬垮厤 prepare 鍚庡啀 seek 鐭殏鍙戝竷闆惰繘搴︺€?
         mediaKey = continued.mediaKey
@@ -210,14 +210,6 @@ class Media3PlaybackController(
         player.playbackParameters = PlaybackParameters(continued.speed.coerceAtLeast(0.1f), 1f)
         refresh()
     }
-
-    private fun dataSource(source: PlaybackSource): DefaultDataSource.Factory {
-        val http = DefaultHttpDataSource.Factory()
-            .setConnectTimeoutMs(15_000).setReadTimeoutMs(30_000)
-            .setUserAgent(source.userAgent).setDefaultRequestProperties(source.headers)
-        return DefaultDataSource.Factory(appContext, http)
-    }
-
     fun attachVideoOutput(output: Media3VideoHandoffOutput) {
         if (!released) videoHandoff.attach(output)
     }
@@ -228,37 +220,6 @@ class Media3PlaybackController(
         if (!released) videoHandoff.setEnabled(enabled)
     }
 
-    private fun createProgressiveMediaSource(source: PlaybackSource, data: DefaultDataSource.Factory): MediaSource {
-        val video: MediaSource = ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(source.videoUrl))
-        val audioUrl = source.audioUrl
-        // 听视频只挂音轨：视频流不再进播放列表，也就不会被下载和解码。
-        // 渐进流没有独立音轨时仍退回 video，否则会静音。
-        if (source.audioOnly && !audioUrl.isNullOrBlank()) {
-            return ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(audioUrl))
-        }
-        return if (audioUrl.isNullOrBlank()) video else MergingMediaSource(video,
-            ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(audioUrl)))
-    }
-
-    /**
-     * 鎶?MPD 鍐欐垚 cache 鏂囦欢鍐嶄氦缁?DashMediaSource锛欱 绔欐病鏈夌幇鎴?manifest 鍦板潃锛?
-     * 鍙兘鑷繁鎷笺€傛枃浠舵寜鍐呭 hash 澶嶇敤锛屽悓涓€瑙嗛鏃嬭浆/鍒囨。涓嶄細閲嶅鍐欑洏銆?
-     */
-    private fun createDashMediaSource(dash: PlaybackDashSource, data: DefaultDataSource.Factory): MediaSource? {
-        val file = runCatching {
-            val dir = File(appContext.cacheDir, "dash_manifests").apply { mkdirs() }
-            val target = File(dir, "dash_${dash.manifest.playbackSignature()}.mpd")
-            if (!target.exists() || target.length() == 0L) target.writeText(dash.manifest)
-            target
-        }.getOrNull() ?: return null
-        return DashMediaSource.Factory(data).createMediaSource(
-            MediaItem.Builder()
-                .setUri(android.net.Uri.fromFile(file))
-                .setMimeType(MimeTypes.APPLICATION_MPD)
-                .build(),
-        )
-    }
-    /** 棣栧抚鍓嶆妸鍙€夊垎杈ㄧ巼鍘嬪埌鐩爣妗ｄ綅锛氬惁鍒?ExoPlayer 鍙兘鍏堟寜鏈€楂樼爜鐜囪捣鎾啀琚?override 鍒囦笅鏉ャ€?*/
     private fun constrainInitialVideo(dash: PlaybackDashSource) {
         val track = dash.videoTracks.firstOrNull { it.id == dash.videoQualityId } ?: return
         if (track.width <= 0 || track.height <= 0) return

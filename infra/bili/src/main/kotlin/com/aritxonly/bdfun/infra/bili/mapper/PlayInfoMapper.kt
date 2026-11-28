@@ -46,14 +46,6 @@ internal fun mapPlayInfo(
 ): PlayInfo {
     val selectedAudio = choosePlaybackAudio(dto.audios, { it.id }, { it.bandwidth })
     val audio = selectedAudio?.let { rewrite(it.url, it.backups) to it.url }
-    // 音轨全部留给听视频选：默认那条仍由 audioUrl 表达，这里补上其余档位。
-    val audios = dto.audios.mapNotNull { rep ->
-        if (rep.url.isBlank()) return@mapNotNull null
-        AudioQuality(
-            id = rep.id, bandwidth = rep.bandwidth, codec = rep.codec,
-            url = rewrite(rep.url, rep.backups), rawUrl = rep.url,
-        )
-    }
     val qualities = mutableListOf<Quality>()
     dto.videos.groupBy { it.id }.forEach { (id, reps) ->
         val rep = choosePlaybackVideo(reps, codecPreference, { it.codec }, { it.bandwidth }) ?: return@forEach
@@ -64,6 +56,19 @@ internal fun mapPlayInfo(
             frameRate = rep.frameRate, codec = rep.codec,
             videoUrl = rewrite(baseUrl, rep.backups), rawVideoUrl = baseUrl,
             bandwidth = rep.bandwidth, initRange = rep.initRange, indexRange = rep.indexRange,
+        )
+    }
+    // 音轨全部留给听视频选：默认那条复用上面的 rewrite（不重复改写、顺序也不变），
+    // 其余档位在这里补；放在视频循环之后，避免搅乱 rewrite 的调用次序。
+    // 顺序稳定：默认音轨与视频的 rewrite 次序保持原样，其余音轨追加在最后。
+    val extraAudioUrls = mutableMapOf<Int, String>()
+    val audios = dto.audios.mapNotNull { rep ->
+        if (rep.url.isBlank()) return@mapNotNull null
+        val rewritten = if (rep === selectedAudio) audio?.first.orEmpty()
+            else extraAudioUrls.getOrPut(rep.id) { rewrite(rep.url, rep.backups) }
+        AudioQuality(
+            id = rep.id, bandwidth = rep.bandwidth, codec = rep.codec,
+            url = rewritten, rawUrl = rep.url,
         )
     }
     val fallback = dto.fallback

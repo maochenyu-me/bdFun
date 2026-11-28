@@ -4,12 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import com.aritxonly.bdfun.core.application.PlaybackController
+import com.aritxonly.bdfun.core.application.PlaybackDashSource
 import com.aritxonly.bdfun.core.application.PlaybackSource
 import com.aritxonly.bdfun.core.domain.resolveAudioQuality
 import com.aritxonly.bdfun.core.application.PlaybackVideoOutputMode
 import com.aritxonly.bdfun.core.application.PlaybackVideoTarget
 import com.aritxonly.bdfun.core.application.buildPlaybackDashSource
 import com.aritxonly.bdfun.core.domain.isDolbyVisionQuality
+import com.aritxonly.bdfun.core.domain.PlaybackSourceUrls
 import com.aritxonly.bdfun.core.domain.resolvePlaybackSourceUrls
 import com.aritxonly.bdfun.core.model.video.Quality
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
@@ -54,16 +56,9 @@ fun BindPlayerSource(
         }
         val url = source.videoUrl
         val audioUrl = source.audioUrl
-        log(
-            "PLAYER",
-            "source bvid=$bvid q=${quality?.id} auto=$autoQuality " +
-                "usingOriginal=$usingOriginal usingFallback=$usingFallback " +
-                "video=${describeMediaUrl(url)} audio=${describeMediaUrl(audioUrl)}",
-        )
+        logSource(bvid, quality?.id, autoQuality, usingOriginal, usingFallback, url, audioUrl, log)
         val previousKey = ui.preparedMediaKey.value
-        // 听视频没有画面，只有声音：DASH 的音轨与档位无关，而半屏压 720P、全屏回用户档位会让档位
-        // 每一转都变一次。音轨没变就不该重新起播，否则每切一次横竖屏都要黑一下、缓冲一下。
-        // 但进出听视频必须换源（只挂音轨 ↔ 重挂视频流），否则退出后画面全黑。
+        // 同一声明的地址复用：听视频只看音轨、看画面还要比视频地址。
         val unchanged = previousKey == mediaKey &&
             ui.preparedAudioOnly.value == audioOnly &&
             if (audioOnly) {
@@ -97,19 +92,40 @@ fun BindPlayerSource(
         ui.preparedVideoUrl.value = url
         ui.preparedAudioUrl.value = audioUrl
         ui.preparedAudioOnly.value = audioOnly
-        playback.prepare(PlaybackSource(
-            videoUrl = url, audioUrl = audioUrl, mediaKey = mediaKey,
-            headers = mapOf("Referer" to "https://www.bilibili.com/video/$bvid/"), userAgent = playback.userAgent,
-            resumePositionMs = if (resumePositionMs > 0L) resumePositionMs else localResume, autoPlay = autoPlay(), speed = speed,
-            // DASH 的音视频是分开的；投屏给电视一个文件地址，优先用能带声音的 durl。
-            castUrl = info?.fallbackUrl?.takeIf { it.isNotBlank() },
-// 听视频只挂音轨；DASH 走本地 MPD 时换档不重建源。
-            audioOnly = audioOnly,
-            dash = if (audioOnly) null else dash,
-            videoTarget = target,
-        ))
+        playback.prepare(sourceOf(source, mediaKey, bvid, resumePositionMs, localResume, autoPlay(), speed,
+            info?.fallbackUrl?.takeIf { it.isNotBlank() }, audioOnly, dash, target, playback.userAgent))
     }
 
+}
+
+/** 组装播放源；抽出来只为让主流程读得下（尺寸审计限 80 行）。 */
+private fun sourceOf(
+    urls: PlaybackSourceUrls, mediaKey: String, bvid: String, resumeMs: Long, localResume: Long,
+    autoPlay: Boolean, speed: Float, castUrl: String?, audioOnly: Boolean,
+    dash: PlaybackDashSource?, target: PlaybackVideoTarget?, userAgent: String,
+) = PlaybackSource(
+    videoUrl = urls.videoUrl, audioUrl = urls.audioUrl, mediaKey = mediaKey,
+    headers = mapOf("Referer" to "https://www.bilibili.com/video/$bvid/"), userAgent = userAgent,
+    resumePositionMs = if (resumeMs > 0L) resumeMs else localResume,
+    autoPlay = autoPlay, speed = speed,
+    // DASH 的音视频是分开的；投屏给电视一个文件地址，优先用能带声音的 durl。
+    castUrl = castUrl,
+    // 听视频只挂音轨；DASH 走本地 MPD 时换档不重建源。
+    audioOnly = audioOnly,
+    dash = if (audioOnly) null else dash,
+    videoTarget = target,
+)
+
+private fun logSource(
+    bvid: String, qualityId: Int?, autoQuality: Boolean, usingOriginal: Boolean, usingFallback: Boolean,
+    url: String, audioUrl: String?, log: (String, String) -> Unit,
+) {
+    log(
+        "PLAYER",
+        "source bvid=$bvid q=$qualityId auto=$autoQuality " +
+            "usingOriginal=$usingOriginal usingFallback=$usingFallback " +
+            "video=${describeMediaUrl(url)} audio=${describeMediaUrl(audioUrl)}",
+    )
 }
 
 internal fun Quality.videoTarget(previousId: Int, sameFullscreenVideo: Boolean) = PlaybackVideoTarget(

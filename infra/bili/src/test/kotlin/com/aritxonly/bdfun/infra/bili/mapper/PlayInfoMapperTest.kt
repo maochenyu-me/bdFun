@@ -61,10 +61,18 @@ class PlayInfoMapperTest {
         assertEquals(selected.map { it.url }, info.qualities.map { it.rawVideoUrl })
         assertEquals(selected.map { "mapped:${it.url}" }, info.qualities.map { it.videoUrl })
         val audio = dto.audios.single { it.id == 30280 }
-        assertEquals(listOf(audio) + selected, calls.map { call ->
+        // 前两段保持原次序（选中音轨、选中视频）；其余音轨在本分支补进 audios 时追加在最后。
+        val head = calls.take(1 + selected.size)
+        assertEquals(listOf(audio) + selected, head.map { call ->
             (dto.audios + dto.videos).single { it.url == call.first }
         })
-        assertEquals((listOf(audio) + selected).map { it.backups }, calls.map { it.second })
+        assertEquals((listOf(audio) + selected).map { it.backups }, head.map { it.second })
+        // 追加部分只可能是其余音轨，且每个 id 只改写一次。
+        val tailReps = calls.drop(head.size).map { call ->
+            dto.audios.single { it.url == call.first }
+        }
+        assertEquals(dto.audios.map { it.id }.filterNot { it == audio.id }, tailReps.map { it.id })
+        assertEquals(tailReps.distinct().size, tailReps.size)
     }
 
     @Test fun missingFieldsKeepEmptyListsNullUrlsAndLegacyDurationFallback() {
