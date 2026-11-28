@@ -29,17 +29,15 @@ fun androidx.compose.foundation.layout.BoxScope.VideoDetailPlayerViewport(
     presentation: VideoScreenPresentation, inlineLayout: VideoInlineLayout, viewport: VideoPlayerViewport,
     pageUi: VideoDetailUiStateHolder, publishBottom: (Float) -> Unit, content: @Composable () -> Unit,
 ) {
-    // 播放器窗口铺多大由 presentation.layoutFullscreen 决定（Activity 统一算出来的），
-    // 这样转向没落地时窗口保持原尺寸，不会先铺满再缩回。朝向请求用的是另一个即时值。
-    val layoutFullscreen = presentation.layoutFullscreen
+    val fullscreen by pageUi.fullscreen
     val pictureInPicture = presentation.pictureInPicture
-    val splitPanes = presentation.paneLayout.isSplit && !layoutFullscreen && !pictureInPicture
+    val splitPanes = presentation.paneLayout.isSplit && !fullscreen && !pictureInPicture
     val playerBlockHeight = inlineLayout.playerBlockHeight
     val playerDensity = LocalDensity.current
     androidx.compose.runtime.SideEffect {
         publishBottom(with(playerDensity) { playerBlockHeight.toPx() })
     }
-    Box(modifier = videoDetailViewportModifier(presentation, inlineLayout, viewport, layoutFullscreen, splitPanes)) {
+    Box(modifier = videoDetailViewportModifier(presentation, inlineLayout, viewport, fullscreen, splitPanes)) {
         content()
     }
 }

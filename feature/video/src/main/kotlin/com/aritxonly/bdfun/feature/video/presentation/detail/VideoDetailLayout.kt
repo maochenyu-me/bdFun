@@ -25,9 +25,7 @@ fun VideoDetailLayout(
     presentation: VideoScreenPresentation, inlineLayout: VideoInlineLayout,
     pageUi: VideoDetailUiStateHolder, loading: Boolean, slots: VideoDetailLayoutSlots,
 ) {
-    // 这里只决定"画多大"，所以用 layoutFullscreen：横屏视频从竖屏点展开、
-    // 窗口还没转过去的那一帧仍按半屏画，等窗口横过来再铺满，免得闪一下。
-    val layoutFullscreen = presentation.layoutFullscreen
+    val fullscreen by pageUi.fullscreen
     val playing by pageUi.playing
     val colors = MiuixTheme.colorScheme
     val pictureInPicture = presentation.pictureInPicture
@@ -35,7 +33,7 @@ fun VideoDetailLayout(
     val immersiveStatusBar = presentation.immersiveStatusBar
     val statusBarTop = presentation.statusBarTop
     val statusTop = statusBarTop
-    val splitPanes = paneLayout.isSplit && !layoutFullscreen && !pictureInPicture
+    val splitPanes = paneLayout.isSplit && !fullscreen && !pictureInPicture
     val playerBlockHeight = inlineLayout.playerBlockHeight
     val expandedPlayerHeight = inlineLayout.expandedPlayerHeight
     val collapsedPlayerHeight = inlineLayout.collapsedPlayerHeight
@@ -66,7 +64,7 @@ fun VideoDetailLayout(
 
         val viewport = resolveVideoPlayerViewport(VideoViewportInput(
             expandedPlayerHeight, collapsedPlayerHeight, animatedPlayerHeight, statusTop, immersiveStatusBar,
-            layoutFullscreen, pictureInPicture, splitPanes,
+            fullscreen, pictureInPicture, splitPanes,
         ))
         slots.player(this, viewport)
 
@@ -88,7 +86,7 @@ fun VideoDetailLayout(
         }
 
         VideoCollapseOverlay(
-            fullscreen = layoutFullscreen,
+            fullscreen = fullscreen,
             collapseProgress = viewport.collapseProgress,
             playerBlockHeight = playerBlockHeight,
             statusTop = statusTop,
