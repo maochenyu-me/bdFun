@@ -2,6 +2,7 @@ package com.aritxonly.bdfun.infra.playback
 
 import com.aritxonly.bdfun.core.application.BackgroundPlaybackPort
 import com.aritxonly.bdfun.core.domain.playbackIntentIsPlaying
+import com.aritxonly.bdfun.core.domain.playbackWakeIntervalMs
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,6 +14,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -51,6 +53,9 @@ abstract class PlaybackForegroundService : Service() {
     private var mediaSession: MediaSessionCompat? = null
     private var artUrl: String? = null
     private var artBitmap: Bitmap? = null
+
+    /** 息屏后通知不可见，签名轮询降频，避免亮着屏才需要的唤醒。 */
+    private val power by lazy { getSystemService(PowerManager::class.java) }
 
     /** 当前挂在前台服务上的通知 id：页面会话活着时复用它那条，否则用服务自己的。 */
     private var notificationId = NOTIFICATION_ID
@@ -116,7 +121,16 @@ abstract class PlaybackForegroundService : Service() {
                 var lastSignature: String? = null
                 while (isActive) {
                     lastSignature = tickNotification(lastSignature)
-                    delay(1000L)
+                    // 暂停时通知内容不会自己变（进度由系统按 PlaybackState 停住），没必要维持播放中的节奏；
+                    // 息屏后再由策略统一放宽一倍。恢复播放会走播放器回调立即刷新，不受这里影响。
+                    delay(
+                        playbackWakeIntervalMs(
+                            playing = playback.playing,
+                            screenInteractive = power?.isInteractive != false,
+                            activeIntervalMs = 1_000L,
+                            idleIntervalMs = 3_000L,
+                        ),
+                    )
                 }
             }
         }

@@ -2,12 +2,14 @@ package com.aritxonly.bdfun.infra.playback
 
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.aritxonly.bdfun.core.application.ForegroundPlaybackAttachment
 import com.aritxonly.bdfun.core.application.PlaybackController
 import com.aritxonly.bdfun.core.application.PlaybackSource
 import com.aritxonly.bdfun.core.domain.playbackIntentIsPlaying
+import com.aritxonly.bdfun.core.domain.playbackWakeIntervalMs
 import com.aritxonly.bdfun.core.model.video.VideoItemExtras
 import com.aritxonly.bdfun.core.model.video.VideoDetail
 import com.aritxonly.bdfun.core.model.video.VideoItem
@@ -135,6 +137,7 @@ open class AndroidBackgroundPlayback(
         detachedPlayer = exo
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         detachedScope = scope
+        val power = context.getSystemService(PowerManager::class.java)
         scope.launch {
             while (isActive) {
                 val playback = exo.refresh()
@@ -143,8 +146,16 @@ open class AndroidBackgroundPlayback(
                         "id=${System.identityHashCode(exo)} position=${playback.positionMs} " +
                             "playing=${playback.playing} speed=${playback.speed}")
                 }
-                // 暂停时不用每半秒唤醒主线程；播放中也一秒一次足够刷唱片/画中画。
-                delay(if (playback.playing) 1_000L else 5_000L)
+                // 亮屏：播放中一秒一次足够刷唱片/画中画，暂停时放宽；
+                // 息屏没有可见变化，由策略统一降频，省掉无意义的唤醒。
+                delay(
+                    playbackWakeIntervalMs(
+                        playing = playback.playing,
+                        screenInteractive = power?.isInteractive != false,
+                        activeIntervalMs = 1_000L,
+                        idleIntervalMs = 5_000L,
+                    ),
+                )
             }
         }
         startKeepAlive(context)

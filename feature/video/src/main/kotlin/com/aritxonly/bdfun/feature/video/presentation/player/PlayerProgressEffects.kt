@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.aritxonly.bdfun.core.application.PlaybackController
 import com.aritxonly.bdfun.core.application.PlaybackPhase
+import com.aritxonly.bdfun.core.domain.shouldReportPlaybackHistory
 import com.aritxonly.bdfun.feature.video.application.PlaybackTrackingStateHolder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -52,8 +53,14 @@ fun BindPlayerProgressTracking(
                     progress.save(key[0], key.getOrNull(1)?.toLongOrNull() ?: 0L, positionMs, durationMs)
                 }
             }
-            // 独立协程保持原 300ms 轮询节奏，节流与 busy 由纯状态容器处理。
-            historyScope.launch { trackingController.reportIfDue(page.aid, page.cid, tick, now) }
+            // 先在本地按同一策略判一次到期，没到期就不建协程：上报周期是 15 秒，
+            // 每秒无脑 launch 一次等于白掉 14 个协程；真正的节流与互斥仍由状态容器兜底。
+            val tracking = trackingController.state.value
+            if (!tracking.reporting &&
+                shouldReportPlaybackHistory(playing, ended, positionMs, now, tracking.lastReportedAtMs)
+            ) {
+                historyScope.launch { trackingController.reportIfDue(page.aid, page.cid, tick, now) }
+            }
             mediaSession?.onPlayerState(
                 playing = playing,
                 buffering = buffering,
