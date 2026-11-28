@@ -77,7 +77,6 @@ private fun fullscreenPlayerInfo(content: VideoPlayerContent): FullscreenPlayerI
                 aid = detail?.aid ?: 0L,
                 bvid = detail?.bvid ?: content.selection.bvid,
                 upMid = if (detail?.isPgc == true) 0L else detail?.ownerMid ?: 0L,
-                isPgc = detail?.isPgc == true,
             ),
         ),
     )
