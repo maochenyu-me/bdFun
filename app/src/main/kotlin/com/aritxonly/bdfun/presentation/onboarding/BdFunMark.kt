@@ -22,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -98,16 +100,18 @@ internal fun BdFunMark(
             }
         }
         // 前景图层四周自带约 16% 透明留白，放大 1.42 倍后图形正好落在 100dp 里。
-        OnboardingMarkImage(markSize, breath)
+        OnboardingMarkImage(markSize, breath, tint)
     }
 }
 
 @Composable
-private fun OnboardingMarkImage(markSize: Dp, breath: androidx.compose.runtime.State<Float>) {
+private fun OnboardingMarkImage(markSize: Dp, breath: androidx.compose.runtime.State<Float>, tint: Color) {
     Image(
-        painter = painterResource(R.drawable.ic_launcher_foreground),
+        painter = painterResource(R.drawable.ic_mark_mono),
         contentDescription = "bdFun",
         contentScale = ContentScale.Fit,
+        // 图是白色线稿，跟主题色上色，深浅模式都不用换图。
+        colorFilter = ColorFilter.tint(tint),
         modifier = Modifier
             .size(markSize * 1.42f)
             .graphicsLayer {

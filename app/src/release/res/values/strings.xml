@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- release 包（.fork 后缀）：桌面名与任务列表带后缀，和官方版同时安装时不至于点错。 -->
+    <string name="app_name">bdFun.fork</string>
+</resources>

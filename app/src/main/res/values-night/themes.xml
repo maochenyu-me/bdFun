@@ -4,6 +4,8 @@
     <style name="Theme.BdFun" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">#FF000000</item>
         <item name="android:windowSplashScreenBackground">#FF000000</item>
+        <!-- 与浅色主题同名的 drawable 在夜间解析到 drawable-night-nodpi 的白稿。 -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>

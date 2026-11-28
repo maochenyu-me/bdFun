@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -45,7 +47,7 @@ fun SplashWallpaper(uri: String, dark: Boolean = androidx.compose.foundation.isS
     if (alpha <= 0.01f && !visible) return
     // 开屏在 TeakTheme 之外组合，不能读 MiuixTheme（拿不到宿主深浅色），
     // 因此由 MainActivity 显式传入当前主题，避免深色模式仍闪白底。
-    val background = if (dark) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color(0xFFF3F3F3)
+    val background = if (dark) Color.Black else Color(0xFFF3F3F3)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -66,6 +68,8 @@ fun SplashWallpaper(uri: String, dark: Boolean = androidx.compose.foundation.isS
                 painter = painterResource(com.aritxonly.bdfun.R.drawable.bdfun_splash),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
+                // 图是白色剪影，按主题上色：浅色黑、深色白。
+                colorFilter = ColorFilter.tint(if (dark) Color.White else Color.Black),
                 modifier = Modifier
                     .fillMaxWidth(0.52f)
                     .aspectRatio(1536f / 1024f),

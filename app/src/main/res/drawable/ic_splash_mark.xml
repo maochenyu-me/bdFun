@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  系统开屏图标（Android 12+ windowSplashScreenAnimatedIcon）。
+  用矢量而不是位图：位图在开屏容器里会按像素当 dp 用，1080px 被当 1080dp 溢出裁边；
+  矢量按 108dp 等比 FIT，深浅色只换 splash_mark_ink 一个颜色。
+  字标留给应用内开屏（SplashWallpaper 的 bdFun 大字），这里只画电视轮廓。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M36.6,38.9 L70.8,38.9 A5.9,5.9 0 0 1 77.3,44.8 L77.3,59.2 A5.9,5.9 0 0 1 70.8,65.1 L36.6,65.1 A5.9,5.9 0 0 1 30.7,59.2 L30.7,44.8 A5.9,5.9 0 0 1 36.6,38.9 Z"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/splash_mark_ink"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3.4" />
+
+    <path
+        android:pathData="M40,38.5 L33.4,28.2"
+        android:strokeColor="@color/splash_mark_ink"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.4" />
+
+    <path
+        android:pathData="M68,38.5 L74.6,28.2"
+        android:strokeColor="@color/splash_mark_ink"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.4" />
+</vector>

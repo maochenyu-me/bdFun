@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- 系统开屏图标的线条色，深色模式在 values-night/colors.xml 里换成白色。 -->
+    <color name="splash_mark_ink">#0D0D0D</color>
 </resources>

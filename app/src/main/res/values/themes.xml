@@ -3,6 +3,8 @@
     <style name="Theme.BdFun" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">#FFF4F5F7</item>
         <item name="android:windowSplashScreenBackground">#FFF4F5F7</item>
+        <!-- 二改版开屏图：浅色底用黑稿，深色底由 drawable-night-nodpi 换成白稿。 -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
