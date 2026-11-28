@@ -22,6 +22,19 @@
   同一条链上的 `detectTapGestures` 再也收不到 down，于是放大后双击无法缩回、单击也无法关闭。
 - 处理：只在 `calculatePan()` 真的非零（确实在拖动）时消费。双击缩回、单击关闭恢复。
 
+### 3. 播放/后台播放期间的四类定时空转
+
+- 位置：`app/.../ui/SmartRefresh.kt`、`core/domain/.../RefreshRatePolicy.kt`、
+  `core/domain/.../PlaybackWakePolicy.kt`、`feature/video/.../PlayerProgressEffects.kt`、
+  `infra/playback/.../AndroidBackgroundPlayback.kt`、`infra/playback/.../PlaybackForegroundService.kt`
+- 原因：屏幕与主线程在"没有任何内容变化"时仍被定时唤醒——刷新率每 400ms 轮询一次、
+  触摸 boost 把播放中的帧率顶到屏幕上限、后台轮询与通知 tick 固定 1s（息屏也一样）、
+  播放历史上报每秒无脑建一个注定早退的协程。
+- 处理：刷新率改事件驱动 + 门槛到点补发；播放中关掉 touch boost 并封顶 60Hz；
+  唤醒间隔抽成纯函数 `playbackWakeIntervalMs`，息屏统一放宽一倍、通知 tick 暂停时放慢到 3s；
+  上报前先在本地判到期再建协程。
+- 详细方案、合并影响与回滚方式见 [`docs/PLAYBACK_PERFORMANCE.md`](PLAYBACK_PERFORMANCE.md)。
+
 ## 待办（按收益/风险排序）
 
 1. **`collectAsState()` 全量排查**（收益大、面广）：`:app` 里大量页面直接 `collectAsState()`，
