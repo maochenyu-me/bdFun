@@ -22,9 +22,11 @@ enum class ListenMenuEntry(val title: String) {
     PIP("画中画"),
     ORIENTATION("切换横竖屏"),
     SUBTITLE_SETTINGS("字幕 / 歌词设置"),
-    LYRICS_SEARCH("搜索歌词"),
+    // 实际行为是打开文件选择器读本地 .lrc，没有在线搜索，文案照实写。
+    LYRICS_SEARCH("导入本地歌词"),
     LYRICS_STYLE("歌词样式"),
     LYRICS_CALIBRATE("歌词校准"),
+    LYRICS_CLEAR("清除本地歌词"),
     BACKGROUND_PLAY("后台播放"),
     ;
 
@@ -48,6 +50,8 @@ data class ListenMenuCapabilities(
     /** 有多档 DASH 音轨可选；只有一条音轨时不显示「选择音质」。 */
     val hasAudioQualities: Boolean = false,
     val loggedIn: Boolean = false,
+    /** 当前挂的是本地导入的 lrc；有才给「清除」，否则没有回到 B 站字幕的出口。 */
+    val hasImportedLyrics: Boolean = false,
 )
 
 /**
@@ -70,10 +74,13 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
         if (c.canFavorite && c.loggedIn) add(ListenMenuEntry.FAVORITE)
         if (c.canShare) add(ListenMenuEntry.SHARE)
         add(ListenMenuEntry.BACKGROUND_PLAY)
+        // 导入本地 lrc 不依赖已有歌词——恰恰是没歌词、或自带歌词不对位时才用得上，
+        // 所以不受 hasLyrics 限制；样式、校准、字幕设置才有意义跟着歌词走。
+        add(ListenMenuEntry.LYRICS_SEARCH)
         if (c.hasLyrics) {
             add(ListenMenuEntry.LYRICS_STYLE)
             add(ListenMenuEntry.LYRICS_CALIBRATE)
-            add(ListenMenuEntry.LYRICS_SEARCH)
+            if (c.hasImportedLyrics) add(ListenMenuEntry.LYRICS_CLEAR)
             add(ListenMenuEntry.SUBTITLE_SETTINGS)
         }
     }

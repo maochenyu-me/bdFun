@@ -104,6 +104,29 @@ A-B 循环与双语翻译收进「更多」面板，避免底部一排按钮既�
 从 40dp 加到 72dp，当前行不会被压住。实现落在 `listen/ListenLyricsCalibrate.kt`，纯算术在
 `core:domain/LyricsCalibrationPolicy.kt`（有单测）。
 
+### 6.0 本地歌词的持久化
+
+导入的 lrc 与它的校准偏移**按 cid 落盘**（`core:domain/ListenLyricsStore.kt` 契约，
+`infra:storage/AndroidListenLyricsStore.kt` 实现）：原文写在 `filesDir/listen_lyrics/<cid>.lrc`，
+偏移与歌词样式写在 `listen_lyrics` 这份 SharedPreferences 里。换集、杀进程、重启都还能恢复。
+
+三个刻意的选择：
+
+- **存原文副本，不存 SAF uri。** 用户挪走文件或系统回收授权后 uri 就读不出来了，
+  表现出来就是「明明持久化了却打不开」。lrc 通常几 KB，留副本代价可以忽略；
+  最多保留 40 份，超了按最后修改时间删最旧（`trimLyricsFiles`，有单测）。
+- **按 cid 分文件。** 合集连播时下一集不能顶着上一集的歌词开口；偏移也跟着 cid 走，
+  不会串到别的集上。
+- **投递是一次性的。** 选完文件由 app 侧先落盘、再把解析结果写进 `ui.listenImportedLyrics`，
+  页面消费后立刻把这个值清空。否则下一集重建状态时会捡到上一集的歌词（偏移还被清零），
+  是「歌词在、但和声音对不上」的源头。
+
+`LYRICS_SEARCH`（导入歌词）不受 `hasLyrics` 限制：没歌词、或自带歌词不对位时才最需要它，
+藏在「先有歌词」后面等于没入口。
+
+持久化之后必须留退路：`LYRICS_CLEAR`（清除本地歌词）只在挂着导入的 lrc 时出现，点一下删掉
+盘上那份、偏移归零，歌词回落到 B 站字幕。没有它，误导入的 lrc 会赖在这一集上，连重启都甩不掉。
+
 ### 6.1 三处必须守住的边界
 
 | 边界 | 做法 |

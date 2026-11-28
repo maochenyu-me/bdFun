@@ -2,6 +2,7 @@ package com.aritxonly.bdfun.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.aritxonly.bdfun.core.domain.ListenLyricsStore
 import com.aritxonly.bdfun.feature.video.presentation.listen.ListenVideoIcons
 import com.aritxonly.bdfun.feature.video.presentation.listen.ListenVideoPalette
 
@@ -64,4 +65,6 @@ class ListenVideoPorts(
     val backgroundPlay: () -> Boolean = { false },
     /** 打开本地 .lrc 选择器并解析；结果写回 ui.listenImportedLyrics。 */
     val requestLyricsPicker: () -> Unit = {},
+    /** 本地导入歌词的持久化：按 cid 存原文与偏移；未装配时不落盘。 */
+    val lyricsStore: ListenLyricsStore = ListenLyricsStore.None,
 )

@@ -51,6 +51,9 @@ class ListenVideoUiStateHolder {
     /** 本地导入的歌词；null 表示没有，仍走 B 站字幕。 */
     var importedLyrics by mutableStateOf<Lyrics?>(null)
 
+    /** 请求清空本地歌词：置 true 后由持久化 effect 消费，连同盘上的那份一起删。 */
+    var clearImported by mutableStateOf(false)
+
     /** 一次性提示（导入成功、歌词缺失等）。 */
     var message by mutableStateOf<String?>(null)
 

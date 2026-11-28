@@ -82,6 +82,9 @@ context, playback, presentation.fullscreenInfo, actions, ui, presentation.portra
             },
         ),
         inlineMore = { PlayerInlineMore(playback, media, presentation, actions, fsActions, ui) },
-        listen = rememberListenVideoPorts(playback, presentation.fullscreenInfo.cover, ui, { settings.backgroundPlay }),
+        listen = rememberListenVideoPorts(
+            playback, presentation.fullscreenInfo.cover, presentation.fullscreenInfo.currentCid,
+            ui, { settings.backgroundPlay },
+        ),
     )
 }

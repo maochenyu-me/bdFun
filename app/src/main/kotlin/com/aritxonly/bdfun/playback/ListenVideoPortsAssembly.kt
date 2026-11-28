@@ -4,11 +4,14 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import com.aritxonly.bdfun.feature.video.presentation.VideoPlaybackPlatform
 import com.aritxonly.bdfun.feature.video.presentation.listen.ListenVideoIcons
 import com.aritxonly.bdfun.feature.video.presentation.listen.parseLrc
+import com.aritxonly.bdfun.infra.storage.AndroidListenLyricsStore
 import com.aritxonly.bdfun.ui.ListenVideoPorts
 import com.aritxonly.bdfun.ui.TeakIcon
 import com.aritxonly.bdfun.ui.VideoPlayerUiStateHolder
@@ -24,19 +27,28 @@ import kotlinx.coroutines.withContext
 internal fun rememberListenVideoPorts(
     playback: VideoPlaybackPlatform,
     cover: String,
+    cid: Long,
     ui: VideoPlayerUiStateHolder,
     backgroundPlay: () -> Boolean,
 ): ListenVideoPorts {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = rememberCoverPalette(cover)
-    // 本地 lrc：选完立刻解析进播放器状态，不落盘（换视频即失效）。
+    val store = remember { AndroidListenLyricsStore(context) }
+    // 选择器开着的时候用户可能换集，落盘要按当时那一集算，不能按发起时的。
+    val currentCid = rememberUpdatedState(cid)
+    // 本地 lrc：选完先落盘（下次进来能恢复），再把解析结果投递给页面。
     val lrcPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val text = withContext(Dispatchers.IO) { readText(context, uri) }
-            val parsed = text?.let(::parseLrc)
-            if (parsed != null && parsed.lines.isNotEmpty()) ui.listenImportedLyrics.value = parsed
+            if (text != null) {
+                val parsed = parseLrc(text)
+                if (parsed.lines.isNotEmpty()) {
+                    store.save(currentCid.value, text)
+                    ui.listenImportedLyrics.value = parsed
+                }
+            }
         }
     }
     return ListenVideoPorts(
@@ -45,6 +57,7 @@ internal fun rememberListenVideoPorts(
         requestLyricsPicker = { runCatching { lrcPicker.launch(arrayOf("*/*")) } },
         setVolume = { playback.setVolume(it) },
         backgroundPlay = backgroundPlay,
+        lyricsStore = store,
     )
 }
 

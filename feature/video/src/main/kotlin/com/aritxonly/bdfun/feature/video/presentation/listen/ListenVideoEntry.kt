@@ -3,7 +3,9 @@ package com.aritxonly.bdfun.feature.video.presentation.listen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -15,6 +17,7 @@ import com.aritxonly.bdfun.ui.PlayerRenderPorts
 import com.aritxonly.bdfun.ui.VideoMediaInput
 import com.aritxonly.bdfun.ui.VideoPlayerPresentation
 import com.aritxonly.bdfun.ui.VideoPlayerUiStateHolder
+import com.aritxonly.bdfun.core.domain.ListenLyricsStore
 import com.aritxonly.bdfun.core.domain.audioQualityLabelFor
 import com.aritxonly.bdfun.core.domain.selectableAudioQualities
 import com.aritxonly.bdfun.core.model.video.AudioQuality
@@ -49,7 +52,7 @@ internal fun PlayerListenVideo(
 
     val lyrics = remember(info.subtitleCues) { lyricsFromSubtitles(info.subtitleCues) }
     val secondary = remember(info.secondaryCues) { lyricsFromSubtitles(info.secondaryCues) }
-    syncImportedLyrics(ui, state)
+    ListenLyricsPersistence(ui, state, listen.lyricsStore, info.currentCid)
 
     // 进听视频但还没选过字幕：自动挑一条中文轨当歌词，再挑一条不同语言的当「译」。
     AutoPickSubtitles(info, fsActions)
@@ -88,7 +91,7 @@ internal fun PlayerListenVideo(
     )
 
     // A-B 循环：越过 B 点自动回到 A。只在真正越界时 seek 一次。
-    androidx.compose.runtime.LaunchedEffect(positionMs, state.abLoop) {
+    LaunchedEffect(positionMs, state.abLoop) {
         state.abLoop.seekBackTarget(positionMs)?.let(fsActions.onSeek)
     }
 
@@ -176,7 +179,7 @@ private fun AutoPickSubtitles(
     info: com.aritxonly.bdfun.ui.FullscreenPlayerInfo,
     fsActions: FullscreenActions,
 ) {
-    androidx.compose.runtime.LaunchedEffect(info.currentCid, info.subtitles) {
+    LaunchedEffect(info.currentCid, info.subtitles) {
         if (info.subtitleCues.isNotEmpty() || info.subtitles.isEmpty()) return@LaunchedEffect
         val primary = pickPrimarySubtitle(info.subtitles)
         if (primary != null) fsActions.onSubtitleSelected(primary)
@@ -196,12 +199,63 @@ internal fun pickSecondarySubtitle(
 ) = tracks.filter { it.id != primary?.id }
     .minByOrNull { if (it.label.contains("英", true) || it.label.contains("en", true)) 0 else 1 }
 
-/** 本地导入的歌词跨页保留在 ui 里，进页面时同步进来；换一份就把校准值清零。 */
-private fun syncImportedLyrics(ui: VideoPlayerUiStateHolder, state: ListenVideoUiStateHolder) {
-    val imported = ui.listenImportedLyrics.value
-    if (imported == null || imported === state.importedLyrics) return
-    state.importedLyrics = imported
-    state.lyricsOffsetMs = 0L
+/**
+ * 本地歌词的恢复与落盘。
+ *
+ * 先恢复、再消费投递、最后挂写盘，顺序不能换：恢复没跑完就写盘，
+ * 会把默认值（偏移 0、样式 KARAOKE）盖到已存的那份上。
+ */
+@Composable
+private fun ListenLyricsPersistence(
+    ui: VideoPlayerUiStateHolder,
+    state: ListenVideoUiStateHolder,
+    store: ListenLyricsStore,
+    cid: Long,
+) {
+    val restored = remember(cid) { mutableStateOf(false) }
+    LaunchedEffect(cid, store) {
+        val cached = store.read(cid)
+        if (cached != null) {
+            val parsed = parseLrc(cached.lrc)
+            if (parsed.lines.isNotEmpty()) {
+                state.importedLyrics = parsed
+                state.lyricsOffsetMs = cached.offsetMs
+            }
+        }
+        // 样式是全局偏好，跟换集无关，但每次进页面都读一次，免得重建后回到默认。
+        store.readStyle()?.let { name ->
+            ListenLyricsStyle.entries.firstOrNull { it.name == name }?.let { state.lyricsStyle = it }
+        }
+        restored.value = true
+    }
+
+    // 新导入的 lrc 是**一次性投递**：消费完就把 ui 上的值清掉。
+    // 不清的话换集时会捡到上一集的那份，歌词和声音对不上还是次要的，偏移还被清零了。
+    val delivered = ui.listenImportedLyrics.value
+    LaunchedEffect(delivered, cid) {
+        if (delivered == null) return@LaunchedEffect
+        state.importedLyrics = delivered
+        // 换了一份 lrc 就是另一条时间轴，旧校准值不能沿用。
+        state.lyricsOffsetMs = 0L
+        ui.listenImportedLyrics.value = null
+    }
+
+    LaunchedEffect(state.lyricsOffsetMs, restored.value) {
+        if (restored.value && state.importedLyrics != null) store.saveOffset(cid, state.lyricsOffsetMs)
+    }
+    LaunchedEffect(state.lyricsStyle, restored.value) {
+        if (restored.value) store.saveStyle(state.lyricsStyle.name)
+    }
+
+    // 清除是「菜单置标志 → 这里消费」：删盘、清状态，歌词回落到 B 站字幕。
+    // 持久化之后如果没这个出口，误导入的 lrc 会赖在这一集上，连重启都甩不掉。
+    LaunchedEffect(state.clearImported) {
+        if (!state.clearImported) return@LaunchedEffect
+        store.clear(cid)
+        state.importedLyrics = null
+        state.lyricsOffsetMs = 0L
+        state.clearImported = false
+    }
 }
 
 /** 「更多」面板的可用项，全部由内容与播放器能力推导。 */
@@ -220,6 +274,7 @@ private fun listenCapabilities(
     canChangeOrientation = activity != null,
     hasAudioQualities = audios.size > 1,
     loggedIn = info.loggedIn,
+    hasImportedLyrics = state.importedLyrics != null,
 )
 
 /** 听视频的动作映射：全部落到详情页已有的动作与面板上，不新增播放逻辑。 */
@@ -262,6 +317,8 @@ private fun listenActions(
                 ListenMenuEntry.LYRICS_STYLE -> Unit
                 // 校准由页面自己接管（要先切到歌词页），不会走到这里。
                 ListenMenuEntry.LYRICS_CALIBRATE -> Unit
+                // 清盘由持久化 effect 做，这里只置标志，避免在动作层开协程。
+                ListenMenuEntry.LYRICS_CLEAR -> state.clearImported = true
                 ListenMenuEntry.LYRICS_SEARCH -> listen.requestLyricsPicker()
                 ListenMenuEntry.BACKGROUND_PLAY ->
                     fsActions.onBackgroundPlayChanged(!listen.backgroundPlay())

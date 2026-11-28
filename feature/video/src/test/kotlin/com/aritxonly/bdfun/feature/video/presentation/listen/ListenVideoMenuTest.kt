@@ -13,8 +13,9 @@ class ListenVideoMenuTest {
         assertFalse(entries.contains(ListenMenuEntry.COLLECTION))
         assertFalse(entries.contains(ListenMenuEntry.FAVORITE))
         assertFalse(entries.contains(ListenMenuEntry.PIP))
-        assertFalse(entries.contains(ListenMenuEntry.LYRICS_SEARCH))
-        // 基础项永远在：返回视频、倍速、定时、A-B、后台播放
+        assertFalse(entries.contains(ListenMenuEntry.LYRICS_CALIBRATE))
+        assertFalse(entries.contains(ListenMenuEntry.LYRICS_CLEAR))
+        // 基础项永远在：返回视频、倍速、定时、A-B、后台播放、导入歌词
         assertTrue(entries.contains(ListenMenuEntry.VIDEO_MODE))
         assertTrue(entries.contains(ListenMenuEntry.SPEED))
         assertTrue(entries.contains(ListenMenuEntry.SLEEP_TIMER))
@@ -22,14 +23,32 @@ class ListenVideoMenuTest {
         assertTrue(entries.contains(ListenMenuEntry.BACKGROUND_PLAY))
     }
 
+    /** 导入歌词恰恰是「没有歌词」时才最需要，不能跟着 hasLyrics 一起藏起来。 */
+    @Test fun lyricsSearchIsAlwaysAvailable() {
+        assertTrue(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.LYRICS_SEARCH))
+    }
+
     @Test fun showsEntriesWhenCapabilitiesPresent() {
         val entries = visibleListenMenuEntries(
             ListenMenuCapabilities(
                 hasPages = true, hasLyrics = true, canFavorite = true, canShare = true,
                 canPip = true, canChangeOrientation = true, hasAudioQualities = true, loggedIn = true,
+                hasImportedLyrics = true,
             ),
         )
         assertEquals(ListenMenuEntry.entries.toSet(), entries.toSet())
+    }
+
+    /** 「清除本地歌词」只在确实挂着导入的 lrc 时出现，否则没有可清的东西。 */
+    @Test fun lyricsClearNeedsImportedLyrics() {
+        assertFalse(
+            visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true))
+                .contains(ListenMenuEntry.LYRICS_CLEAR),
+        )
+        assertTrue(
+            visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true, hasImportedLyrics = true))
+                .contains(ListenMenuEntry.LYRICS_CLEAR),
+        )
     }
 
     @Test fun favoriteRequiresLogin() {
