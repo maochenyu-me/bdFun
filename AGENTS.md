@@ -221,6 +221,7 @@ gradlew.bat :app:assembleDebug            # 最终必须过
 | `docs/DEADLINER_GLASS_SYNC.md` | 玻璃材质与 Deadliner 的同步约定 |
 | `docs/HYPERPILI_DYNAMIC_ALIGNMENT.md` | 动态页与上游实现的对齐说明 |
 | `docs/HYPERPILI_MESSAGE_ALIGNMENT.md` | 消息页与上游实现的对齐说明 |
+| `docs/PLAYBACK_PERFORMANCE.md` | 播放/后台播放的掉帧与能耗方案、合并影响、回滚表 |
 | `TeakUI/docs/PAGE_CHROME_SPEC.md` | 页面骨架规范 |
 | `TeakUI/docs/PROVENANCE.md` | 组件来源与许可 |
 | `README.md` | 面向用户的介绍与构建说明 |
