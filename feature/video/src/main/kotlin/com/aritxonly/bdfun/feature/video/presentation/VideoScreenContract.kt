@@ -24,6 +24,12 @@ data class VideoScreenPresentation(
     val autoRotate: Boolean = true,
     /** 当前是否全屏：半屏播放把清晰度压到 720P，全屏后恢复。 */
     val fullscreen: Boolean = false,
+    /**
+     * 布局要不要按「铺满」来画。通常等于 [fullscreen]；
+     * 横屏视频从竖屏点展开、窗口还没转过去的那几百毫秒里它是 false，
+     * 先维持原布局，等窗口真的横过来再铺满（朝向请求不受它影响）。
+     */
+    val layoutFullscreen: Boolean = fullscreen,
     /** 竖屏评论以底部面板展开：播放器要再压一截，把画面让给评论列表。 */
     val commentSheetOpen: Boolean = false,
 )

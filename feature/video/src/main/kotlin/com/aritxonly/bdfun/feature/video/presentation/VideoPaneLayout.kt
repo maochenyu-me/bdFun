@@ -27,6 +27,8 @@ data class VideoActivityLayout(
     val paneLayout: VideoPaneLayout, val statusBarTop: Dp,
     val fullscreen: Boolean, val pictureInPicture: Boolean,
     val overlayAlpha: Float, val playerTopInset: Dp,
+    /** 页面骨架按铺满画：转屏还没落地时可以是 false，但 [fullscreen] 仍为 true。 */
+    val layoutFullscreen: Boolean = fullscreen,
 ) {
-    val splitPanes get() = paneLayout.isSplit && !fullscreen
+    val splitPanes get() = paneLayout.isSplit && !layoutFullscreen
 }

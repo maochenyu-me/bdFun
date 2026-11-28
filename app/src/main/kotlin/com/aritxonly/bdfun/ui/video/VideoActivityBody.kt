@@ -73,6 +73,7 @@ internal fun VideoActivityBody(
                 immersiveStatusBar = settings.videoImmersiveStatusBar,
                 // 半屏播放限制到 720P，全屏恢复原档位。
                 fullscreen = pageFullscreen,
+                layoutFullscreen = layout.layoutFullscreen,
                 // 从 Activity 根部读到的状态栏高度，避免页面内部读成 0。
                 statusBarTop = statusBarDp,
                 commentSheetOpen = portraitComments && comments != null,

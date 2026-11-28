@@ -20,8 +20,12 @@ internal fun VideoActivityContent(
     val ui = remember { VideoActivityPageStateHolder(page.autoNextRequest) }
     BindVideoActivityQueue(video, ui, host, page.dependencies.queue, { page.autoNextRequest }, page.dependencies.log)
     val pipWindow = pipMode
+    // 用户点了展开就是全屏：朝向、清晰度、系统栏都立刻按全屏走，不能等。
     val fullscreen = page.playerUi.fullscreen || pipWindow
-    val alpha = rememberManualProgress(if (fullscreen) 0f else 1f, 200f)
+    // 但「画面铺满」要等窗口真的转过去。横屏视频从竖屏点展开时系统转屏要几百毫秒，
+    // 抢先在竖屏窗口里铺满会闪一帧「竖屏全屏、视频缩在中间」。
+    val layoutFullscreen = rememberLayoutFullscreen(requestedFullscreen = fullscreen, pictureInPicture = pipWindow)
+    val alpha = rememberManualProgress(if (layoutFullscreen) 0f else 1f, 200f)
     val commentRequest = remember { Triple(route?.commentRoot ?: 0L, route?.commentTarget ?: 0L, route?.seekMs ?: 0L) }
     val pager = androidx.compose.foundation.pager.rememberPagerState(
         initialPage = if (commentRequest.first > 0L) 1 else 0, pageCount = { 2 },
@@ -44,7 +48,7 @@ internal fun VideoActivityContent(
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val paneLayout = resolveVideoPaneLayout(maxWidth.value, maxHeight.value, smallestWidthDp)
-        val layout = VideoActivityLayout(paneLayout, statusBarDp, fullscreen, pipMode, alpha, playerTopInset)
+        val layout = VideoActivityLayout(paneLayout, statusBarDp, fullscreen, pipMode, alpha, playerTopInset, layoutFullscreen)
         androidx.compose.runtime.SideEffect { host.syncSystemBars(layout.splitPanes) }
         TeakActivityScaffold(
             settings = settings,
@@ -53,8 +57,8 @@ internal fun VideoActivityContent(
                 backRevealed = false,
                 showBackButton = false,
                 showTopBar = false,
-                // 全屏时评论页不可见，回到顶部控件也必须一起消失。
-                showScrollTop = !pipMode && !fullscreen,
+                // 铺满时评论页不可见，回到顶部控件也必须一起消失。
+                showScrollTop = !pipMode && !layoutFullscreen,
             ),
             disc = ActivityDiscOptions(
                 showBackgroundDisc = false,
