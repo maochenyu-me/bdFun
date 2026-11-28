@@ -182,7 +182,8 @@ class Media3PlaybackController(
         listenVolume = volume.coerceIn(0f, 1f)
         if (!released) player.volume = listenVolume
     }
-    override fun acknowledgeEnd() { mutableState.value = mutableState.value.copy(ended = false) }    override fun addListener(listener: PlaybackController.Listener) { listeners.addIfAbsent(listener) }
+    override fun acknowledgeEnd() { mutableState.value = mutableState.value.copy(ended = false) }
+    override fun addListener(listener: PlaybackController.Listener) { listeners.addIfAbsent(listener) }
     override fun removeListener(listener: PlaybackController.Listener) { listeners.remove(listener) }
     override fun release() {
         // 后台退出入口可能从清理执行器调用，Media3 仍须在 applicationLooper 释放。
