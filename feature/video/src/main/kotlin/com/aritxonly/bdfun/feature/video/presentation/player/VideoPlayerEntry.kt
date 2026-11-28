@@ -2,9 +2,11 @@ package com.aritxonly.bdfun.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.aritxonly.bdfun.core.application.PlaybackVideoOutputMode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -48,8 +50,18 @@ fun VideoPlayerEntry(
     // 系统栏与 HDR 跟「呈现值」：点展开的瞬间窗口还是竖的，这时候先藏状态栏会让整页内容
     // 上移一截（竖屏里就是明显的一下跳动），然后再转屏，看起来像闪了两下。
     // 等呈现值翻真时窗口已经到位，状态栏与横屏骨架同时落地，反而更稳。
-    BindPlayerSystemBars(presentation.fullscreen, presentation.immersiveStatusBar, presentation.portraitVideo)
-    BindPlayerHdrWindow(media.quality, presentation.fullscreen)
-    VideoPlayerLayout(playback, observed, media, presentation, actions, ui, danmakuVisible, latencyMs, sponsor, modifier,
-        ports.render(playback, media, presentation, actions, ui))
+    BindPlayerSystemBars(presentation.fullscreen, presentation.immersiveStatusBar, ui, observed.portraitVideo.value)
+    val outputTarget by playback.videoOutputTarget.collectAsState()
+    BindPlayerHdrWindow(outputTarget?.mode ?: PlaybackVideoOutputMode.Standard, presentation.fullscreen)
+    val visibleQualityId = outputTarget?.qualityId
+    val visiblePresentation = if (media.autoQuality || visibleQualityId == media.quality?.id) presentation else {
+        presentation.withQualityLabel(media.info?.qualities?.firstOrNull { it.id == visibleQualityId }?.label)
+    }
+    VideoPlayerLayout(playback, observed, media, visiblePresentation, actions, ui, danmakuVisible, latencyMs, sponsor, modifier,
+        ports.render(playback, media, visiblePresentation, actions, ui))
+}
+
+private fun VideoPlayerPresentation.withQualityLabel(label: String?): VideoPlayerPresentation {
+    if (label == null || label == fullscreenInfo.qualityLabel) return this
+    return copy(fullscreenInfo = fullscreenInfo.copy(media = fullscreenInfo.media.copy(qualityLabel = label)))
 }

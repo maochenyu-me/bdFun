@@ -4,6 +4,14 @@ import kotlinx.coroutines.flow.StateFlow
 
 enum class PlaybackPhase { Idle, Buffering, Ready, Ended }
 data class PlaybackFailure(val code: String, val message: String?)
+enum class PlaybackVideoOutputMode { Standard, Hdr, DolbyVision }
+
+data class PlaybackVideoTarget(
+    val qualityId: Int,
+    val mode: PlaybackVideoOutputMode,
+    val upgradeInBackground: Boolean = false,
+)
+
 data class PlaybackSnapshot(
     val playing: Boolean = false, val playWhenReady: Boolean = false,
     val phase: PlaybackPhase = PlaybackPhase.Idle, val ready: Boolean = false, val ended: Boolean = false,
@@ -19,11 +27,14 @@ data class PlaybackSource(
     val mediaKey: String? = null,
     /** 投屏优先用能带声音的渐进流（durl）；没有时才退回 [videoUrl]。 */
     val castUrl: String? = null,
-    /**
+/**
      * 只听声音：有独立音轨时不再挂视频源，省掉视频带宽与解码。
      * 没有音轨（渐进流）时仍然回退到 videoUrl 播放，否则会变成静音。
      */
     val audioOnly: Boolean = false,
+    /** 非 null 时用本地 MPD 播放：换档只改轨道选择，不重建播放源，音频不会断。 */
+    val dash: PlaybackDashSource? = null,
+    val videoTarget: PlaybackVideoTarget? = null,
 )
 
 /** 前台、后台和系统媒体控件共享传输控制，不暴露 Media3 或 Android 类型。 */
@@ -36,6 +47,12 @@ interface PlaybackController {
      */
     fun currentPositionMs(): Long = state.value.positionMs
     fun prepare(source: PlaybackSource)
+    /**
+     * 只换视频档位：当前已经是同一内容的 DASH 自适应源时，直接改轨道选择。
+     *
+     * @return true 表示已经在原位切换（播放位置/音频轨都没动）；false 表示调用方要按原方式重建播放源。
+     */
+    fun selectVideoQuality(qualityId: Int): Boolean = false
     fun play()
     fun pause()
     fun seekTo(positionMs: Long)

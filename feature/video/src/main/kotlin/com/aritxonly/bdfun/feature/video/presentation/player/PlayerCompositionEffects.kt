@@ -44,14 +44,9 @@ fun BindPlayerPresentationSetup(
     val fullscreenInfo = presentation.fullscreenInfo
     // 朝向按「意图」请求：点击那一刻就该发出，等呈现值会白白晚几百毫秒。
     val fullscreen = presentation.fullscreenIntent
-    // 全屏新 UI 的本地状态：二级面板、听视频、镜像、循环、画面尺寸、定时关闭等
-    BindPlayerOrientation(
-        fullscreen,
-        presentation.portraitVideo || portraitVideo,
-        ui,
-        ports.page,
-        audioOnly = ui.fsAudioOnly.value,
-    )
+    // 听视频要跟随设备方向，所以 audioOnly 仍由这里决定朝向；系统栏那边只负责交还。
+    BindPlayerOrientation(fullscreen, ui, ports.page, presentation.portraitVideo || portraitVideo,
+        audioOnly = ui.fsAudioOnly.value)
     var fsAutoPlayNext by ui.fsAutoPlayNext
     LaunchedEffect(fsAutoPlayNext) {
         ports.settings.autoPlayNextChanged(fsAutoPlayNext)

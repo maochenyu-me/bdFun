@@ -23,8 +23,11 @@ internal fun rememberPlayerRenderPorts(
     // 全屏 chrome 与互动弹幕共用同一份头像 slot，关注弹幕直接复用它。
     val fullscreenChrome = rememberFullscreenChromeAssembly()
     val fsActions = VideoFullscreenActionBindings(
-context, playback, presentation.fullscreenInfo, actions, ui, presentation.portraitVideo, page,
-        dolbyVision = { com.aritxonly.bdfun.core.domain.isDolbyVisionQuality(media.quality) },
+        // portraitVideo 保留：画中画要按 9:16 给竖屏视频，上游那版固定 16:9 会把它掰回横的。
+        context, playback, presentation.fullscreenInfo, actions, ui, presentation.portraitVideo, page,
+        dolbyVision = {
+            playback.videoOutputTarget.value?.mode == com.aritxonly.bdfun.core.application.PlaybackVideoOutputMode.DolbyVision
+        },
     ).create()
     // 全屏/半屏共用 onCast 写请求状态，这里统一挂一个投屏面板，避免复制第二份入口。
     val castUrl = CastRequestState.url

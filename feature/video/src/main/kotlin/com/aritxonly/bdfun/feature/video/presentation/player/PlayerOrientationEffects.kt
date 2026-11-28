@@ -16,9 +16,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun BindPlayerOrientation(
     fullscreen: Boolean,
-    portraitVideo: Boolean,
     ui: VideoPlayerUiStateHolder,
     page: PlayerPageHost,
+    portraitVideo: Boolean = false,
     audioOnly: Boolean = false,
 ) {
     val activity = LocalContext.current as? Activity
