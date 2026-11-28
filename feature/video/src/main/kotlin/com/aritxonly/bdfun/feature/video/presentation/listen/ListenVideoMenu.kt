@@ -1,5 +1,6 @@
 package com.aritxonly.bdfun.feature.video.presentation.listen
 
+import com.aritxonly.bdfun.core.domain.lyricsOffsetLabel
 import com.aritxonly.bdfun.core.domain.playModeValueLabel
 
 /**
@@ -23,6 +24,7 @@ enum class ListenMenuEntry(val title: String) {
     SUBTITLE_SETTINGS("字幕 / 歌词设置"),
     LYRICS_SEARCH("搜索歌词"),
     LYRICS_STYLE("歌词样式"),
+    LYRICS_CALIBRATE("歌词校准"),
     BACKGROUND_PLAY("后台播放"),
     ;
 
@@ -31,7 +33,7 @@ enum class ListenMenuEntry(val title: String) {
         val Playback = listOf(AUDIO_QUALITY, SPEED, PLAY_MODE, SLEEP_TIMER, AB_LOOP)
         val Navigation = listOf(VIDEO_MODE, COLLECTION, ORIENTATION, PIP)
         val Content = listOf(FAVORITE, SHARE, BACKGROUND_PLAY)
-        val Lyrics = listOf(LYRICS_SEARCH, SUBTITLE_SETTINGS)
+        val Lyrics = listOf(LYRICS_SEARCH, SUBTITLE_SETTINGS, LYRICS_STYLE, LYRICS_CALIBRATE)
     }
 }
 
@@ -70,6 +72,7 @@ fun visibleListenMenuEntries(capabilities: ListenMenuCapabilities): List<ListenM
         add(ListenMenuEntry.BACKGROUND_PLAY)
         if (c.hasLyrics) {
             add(ListenMenuEntry.LYRICS_STYLE)
+            add(ListenMenuEntry.LYRICS_CALIBRATE)
             add(ListenMenuEntry.LYRICS_SEARCH)
             add(ListenMenuEntry.SUBTITLE_SETTINGS)
         }
@@ -88,6 +91,8 @@ fun listenMenuValue(entry: ListenMenuEntry, state: ListenMenuState): String? = w
     ListenMenuEntry.BACKGROUND_PLAY -> if (state.backgroundPlay) "已开启" else "未开启"
     ListenMenuEntry.ORIENTATION -> state.orientationLabel.takeIf { it.isNotBlank() }
     ListenMenuEntry.LYRICS_STYLE -> state.lyricsStyle.label
+    ListenMenuEntry.LYRICS_CALIBRATE ->
+        if (state.lyricsOffsetMs == 0L) null else lyricsOffsetLabel(state.lyricsOffsetMs)
     else -> null
 }
 
@@ -105,6 +110,8 @@ data class ListenMenuState(
     val backgroundPlay: Boolean = false,
     val orientationLabel: String = "横屏",
     val lyricsStyle: ListenLyricsStyle = ListenLyricsStyle.KARAOKE,
+    /** 歌词校准偏移；非 0 时菜单右侧显示，让用户知道现在不是原时间轴。 */
+    val lyricsOffsetMs: Long = 0L,
 )
 
 /** 与视频播放器的 loopMode 取值一致：0 不循环、1 单集、2 列表。 */

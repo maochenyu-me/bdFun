@@ -32,7 +32,8 @@ ListenVideoScreen（整页，接管屏幕）
 │   └── 横排（宽 > 高 × 1.15）
 │       └── 封面卡 + 右侧信息列（标题/UP/进度/时间/传输/次级按钮）
 ├── 底部胶囊：封面 / 歌词
-└── 浮层：更多面板、队列面板、音质面板（自绘）、选集/倍速/收藏/评论（复用现有面板）
+├── 浮层：更多面板、队列面板、音质面板（自绘）、选集/倍速/收藏/评论（复用现有面板）
+│   └── 歌词校准条：只在歌词页、只在点「歌词校准」或长按当前行后浮出，不参与布局
 ```
 
 ## 3. 分层与文件
@@ -50,6 +51,7 @@ ListenVideoScreen（整页，接管屏幕）
 | `listen/ListenVideoCoverPage.kt` | 封面页（竖排/横排两种摆放） |
 | `listen/ListenVideoLyricsPage.kt` | 歌词页 |
 | `listen/ListenLyricsLine.kt` | 一行歌词的绘制：KTV 逐字叠亮（按字边界裁剪）与普通（整行高亮）两种样式 |
+| `listen/ListenLyricsCalibrate.kt` | 歌词校准浮层：±0.1/±0.5 步进、按住连发、点读数归零 |
 | `listen/ListenLyricsClock.kt` | 逐字扫亮用的帧时钟：锚点跟采样、每帧线性外推，输出单调不回退，只有采样跳变才当 seek |
 | `listen/ListenVideoTransport.kt` | 进度条、传输键、音量条、底部次级按钮（随机 / 播放模式 / 队列 / 设置） |
 | `listen/ListenVideoSheets.kt` | 更多面板（含定时分钟内联）与播放队列 |
@@ -90,6 +92,14 @@ A-B 循环与双语翻译收进「更多」面板，避免底部一排按钮既�
 选中哪档就写到哪档并收起面板，和音质、选集同一种交互。四档与选中判定由 `playModeOptions` /
 `currentPlayMode` 统一表达，底部两个按钮也落到同一个 `onPlayModeSelected(loopMode, shuffle)`，
 避免出现两套各改一半的入口。
+
+**歌词校准**（`ListenMenuEntry.LYRICS_CALIBRATE`）解决导入 lrc 与视频时间轴不一致：
+点条目先切到歌词页，再在底部浮出校准条——`−0.5s / −0.1s / 读数 / +0.1s / +0.5s`，
+点中间读数归零，步进按钮按住 400ms 后连发，偏差几秒也能几下拖到位。
+长按当前行歌词同样进入校准。偏移范围 ±60s，换一份 lrc 时自动归零。
+校准条是歌词页里的独立浮层（`Box` 的一层），不进内容 `Column`，所以展开/收起不会把
+歌词区和传输键顶动；实现落在 `listen/ListenLyricsCalibrate.kt`，纯算术在
+`core:domain/LyricsCalibrationPolicy.kt`（有单测）。
 
 ### 6.1 三处必须守住的边界
 

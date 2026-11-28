@@ -101,6 +101,26 @@ class ListenVideoMenuTest {
         )
     }
 
+    @Test fun lyricsCalibrateNeedsLyrics() {
+        assertFalse(visibleListenMenuEntries(ListenMenuCapabilities()).contains(ListenMenuEntry.LYRICS_CALIBRATE))
+        assertTrue(
+            visibleListenMenuEntries(ListenMenuCapabilities(hasLyrics = true))
+                .contains(ListenMenuEntry.LYRICS_CALIBRATE),
+        )
+    }
+
+    @Test fun lyricsCalibrateValueShowsOnlyWhenShifted() {
+        assertNull(listenMenuValue(ListenMenuEntry.LYRICS_CALIBRATE, ListenMenuState()))
+        assertEquals(
+            "+1.2s",
+            listenMenuValue(ListenMenuEntry.LYRICS_CALIBRATE, ListenMenuState(lyricsOffsetMs = 1_200L)),
+        )
+        assertEquals(
+            "-0.3s",
+            listenMenuValue(ListenMenuEntry.LYRICS_CALIBRATE, ListenMenuState(lyricsOffsetMs = -300L)),
+        )
+    }
+
     @Test fun speedValueTrimsTrailingZeros() {
         assertEquals("1.25x", trimSpeedValue(1.25f))
         assertEquals("1.5x", trimSpeedValue(1.5f))

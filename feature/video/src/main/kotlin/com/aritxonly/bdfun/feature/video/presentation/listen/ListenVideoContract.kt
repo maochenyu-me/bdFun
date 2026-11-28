@@ -53,6 +53,7 @@ data class ListenVideoInfo(
             backgroundPlay = playback.backgroundPlay,
             orientationLabel = orientationLabel,
             lyricsStyle = ui.lyricsStyle,
+            lyricsOffsetMs = ui.lyricsOffsetMs,
         )
 }
 

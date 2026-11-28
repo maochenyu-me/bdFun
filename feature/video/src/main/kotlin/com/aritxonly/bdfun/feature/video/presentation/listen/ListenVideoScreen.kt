@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -138,7 +141,20 @@ fun ListenVideoScreen(
         ui = ui,
         palette = palette,
         orientationLabel = orientationSwitchLabel(),
+        onLyricsCalibrate = { openLyricsCalibration(ui, scope, pagerState, pages) },
     )
+}
+
+/** 校准只能在歌词页看着改：先浮出校准条，再翻到歌词页。 */
+private fun openLyricsCalibration(
+    ui: ListenVideoUiStateHolder,
+    scope: CoroutineScope,
+    pagerState: PagerState,
+    pages: List<ListenPageSpec>,
+) {
+    ui.lyricsCalibrating = true
+    val target = pages.indexOfFirst { it.page == ListenPage.Lyrics }
+    if (target >= 0) scope.launch { pagerState.animateScrollToPage(target) }
 }
 /** 菜单里只标「点了会转成什么」，不能写死横屏。 */
 @Composable
@@ -157,6 +173,7 @@ private fun ListenVideoSheets(
     ui: ListenVideoUiStateHolder,
     palette: ListenVideoPalette,
     orientationLabel: String,
+    onLyricsCalibrate: () -> Unit,
 ) {
     if (ui.moreSheet) {
         ListenVideoMoreSheet(
@@ -165,7 +182,12 @@ private fun ListenVideoSheets(
             capabilities = info.capabilities,
             state = info.menuState(ui, playback, orientationLabel),
             accent = Color(palette.accent),
-            onEntry = { entry -> actions.onMenuEntry(entry); ui.moreSheet = false },
+            onEntry = { entry ->
+                ui.moreSheet = false
+                // 校准要在歌词页看着改，所以走专门的通道：先切页再浮出校准条。
+                if (entry == ListenMenuEntry.LYRICS_CALIBRATE) onLyricsCalibrate()
+                else actions.onMenuEntry(entry)
+            },
             sleepAtMs = playback.sleepAtMs,
             onSleepAtChanged = actions.onSleepAtChanged,
             onPlayModePicked = actions.onPlayModeSelected,

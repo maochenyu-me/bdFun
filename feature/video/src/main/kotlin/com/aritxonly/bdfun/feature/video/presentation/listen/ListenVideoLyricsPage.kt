@@ -24,9 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +46,12 @@ import top.yukonga.miuix.kmp.icon.extended.Search
  * 歌词页：整屏歌词 + 顶部工具条 + 底部细进度与传输键。
  * 当前行按行内时间做填充高亮；点某行跳到该行开头，长按进入偏移微调。
  */
+/**
+ * 歌词页外壳：内容 + 校准浮层。
+ *
+ * 校准条单独放在 Box 里浮着，不进内容 Column：展开/收起都不会把传输键和歌词区顶一下，
+ * 退出校准时也不会弹回来——这就是「不影响别的 UI」。
+ */
 @Composable
 internal fun ListenVideoLyricsPage(
     info: ListenVideoInfo,
@@ -60,8 +64,37 @@ internal fun ListenVideoLyricsPage(
     onOpenMore: () -> Unit,
     onOpenQueue: () -> Unit,
 ) {
-    var offsetEditing by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize().padding(top = 4.dp, bottom = 8.dp)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LyricsPageBody(info, playback, actions, ui, palette, lyrics, icons, onOpenMore, onOpenQueue)
+        if (ui.lyricsCalibrating) {
+            LyricsCalibrateBar(
+                offsetMs = ui.lyricsOffsetMs,
+                accent = Color(palette.accent),
+                onOffset = { ui.lyricsOffsetMs = it },
+                onDone = { ui.lyricsCalibrating = false },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 96.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LyricsPageBody(
+    info: ListenVideoInfo,
+    playback: ListenVideoPlayback,
+    actions: ListenVideoActions,
+    ui: ListenVideoUiStateHolder,
+    palette: ListenVideoPalette,
+    lyrics: Lyrics,
+    icons: ListenVideoIcons,
+    onOpenMore: () -> Unit,
+    onOpenQueue: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(top = 4.dp, bottom = 8.dp),
+    ) {
         ListenVideoTopBar(
             onBack = actions.onBack,
         ) {
@@ -115,15 +148,7 @@ internal fun ListenVideoLyricsPage(
                 style = ui.lyricsStyle,
                 modifier = Modifier.weight(1f),
                 onSeek = actions.onSeek,
-                onLongPress = { offsetEditing = true },
-            )
-        }
-
-        if (offsetEditing) {
-            ListenLyricsOffsetBar(
-                offsetMs = ui.lyricsOffsetMs,
-                onChange = { ui.lyricsOffsetMs = it },
-                onClose = { offsetEditing = false },
+                onLongPress = { ui.lyricsCalibrating = true },
             )
         }
 
@@ -240,63 +265,6 @@ private fun ListenPillButton(label: String, onClick: () -> Unit) {
     ) {
         Text(label, color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
     }
-}
-
-@Composable
-private fun ListenLyricsOffsetBar(offsetMs: Long, onChange: (Long) -> Unit, onClose: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 4.dp)
-            .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.35f))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text("偏移", color = Color.White.copy(alpha = 0.5f), fontSize = 11.sp)
-        ListenOffsetStep("-0.5", -500L, offsetMs, onChange)
-        ListenOffsetStep("-0.1", -100L, offsetMs, onChange)
-        Text(
-            text = if (offsetMs >= 0) "+%.1fs".format(offsetMs / 1000f) else "%.1fs".format(offsetMs / 1000f),
-            color = Color.White.copy(alpha = 0.85f),
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        ListenOffsetStep("+0.1", 100L, offsetMs, onChange)
-        ListenOffsetStep("+0.5", 500L, offsetMs, onChange)
-        Spacer(Modifier.weight(1f))
-        Text(
-            "完成",
-            color = Color.White.copy(alpha = 0.75f),
-            fontSize = 12.sp,
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClose,
-                )
-                .padding(horizontal = 10.dp, vertical = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun ListenOffsetStep(label: String, deltaMs: Long, currentMs: Long, onChange: (Long) -> Unit) {
-    Text(
-        text = label,
-        color = Color.White.copy(alpha = 0.7f),
-        fontSize = 11.sp,
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.1f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onChange((currentMs + deltaMs).coerceIn(-30_000L, 30_000L)) }
-            .padding(horizontal = 9.dp, vertical = 4.dp),
-    )
 }
 
 /** 歌词页也给一个格式化的当前时间，便于和视频侧对照。 */

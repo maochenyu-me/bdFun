@@ -28,6 +28,9 @@ class ListenVideoUiStateHolder {
     /** 歌词整体偏移（毫秒），用户手动校正用。 */
     var lyricsOffsetMs by mutableLongStateOf(0L)
 
+    /** 校准条是否展开：浮在歌词页底部，不参与布局，不会挤走传输键。 */
+    var lyricsCalibrating by mutableStateOf(false)
+
     /** 音量 0..1；播放器默认就是 1，界面初始位置必须跟它一致。 */
     var volume by mutableFloatStateOf(1f)
 

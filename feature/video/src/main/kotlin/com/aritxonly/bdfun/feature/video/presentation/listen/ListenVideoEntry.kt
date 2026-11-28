@@ -48,8 +48,7 @@ internal fun PlayerListenVideo(
 
     val lyrics = remember(info.subtitleCues) { lyricsFromSubtitles(info.subtitleCues) }
     val secondary = remember(info.secondaryCues) { lyricsFromSubtitles(info.secondaryCues) }
-    val imported = ui.listenImportedLyrics.value
-    if (imported != null && imported !== state.importedLyrics) state.importedLyrics = imported
+    syncImportedLyrics(ui, state)
 
     // 进听视频但还没选过字幕：自动挑一条中文轨当歌词，再挑一条不同语言的当「译」。
     AutoPickSubtitles(info, fsActions)
@@ -69,16 +68,7 @@ internal fun PlayerListenVideo(
         sleepAtMs = sleepAt,
     )
 
-    val capabilities = ListenMenuCapabilities(
-        hasPages = info.pages.size > 1,
-        hasLyrics = lyrics.lines.isNotEmpty() || state.importedLyrics != null,
-        canFavorite = info.loggedIn,
-        canShare = true,
-        canPip = true,
-        canChangeOrientation = activity != null,
-        hasAudioQualities = audios.size > 1,
-        loggedIn = info.loggedIn,
-    )
+    val capabilities = listenCapabilities(info, lyrics, state, activity, audios)
 
     val videoInfo = ListenVideoInfo(
         title = info.title,
@@ -204,6 +194,32 @@ internal fun pickSecondarySubtitle(
 ) = tracks.filter { it.id != primary?.id }
     .minByOrNull { if (it.label.contains("英", true) || it.label.contains("en", true)) 0 else 1 }
 
+/** 本地导入的歌词跨页保留在 ui 里，进页面时同步进来；换一份就把校准值清零。 */
+private fun syncImportedLyrics(ui: VideoPlayerUiStateHolder, state: ListenVideoUiStateHolder) {
+    val imported = ui.listenImportedLyrics.value
+    if (imported == null || imported === state.importedLyrics) return
+    state.importedLyrics = imported
+    state.lyricsOffsetMs = 0L
+}
+
+/** 「更多」面板的可用项，全部由内容与播放器能力推导。 */
+private fun listenCapabilities(
+    info: com.aritxonly.bdfun.ui.FullscreenPlayerInfo,
+    lyrics: Lyrics,
+    state: ListenVideoUiStateHolder,
+    activity: android.app.Activity?,
+    audios: List<AudioQuality>,
+): ListenMenuCapabilities = ListenMenuCapabilities(
+    hasPages = info.pages.size > 1,
+    hasLyrics = lyrics.lines.isNotEmpty() || state.importedLyrics != null,
+    canFavorite = info.loggedIn,
+    canShare = true,
+    canPip = true,
+    canChangeOrientation = activity != null,
+    hasAudioQualities = audios.size > 1,
+    loggedIn = info.loggedIn,
+)
+
 /** 听视频的动作映射：全部落到详情页已有的动作与面板上，不新增播放逻辑。 */
 private fun listenActions(
     ui: VideoPlayerUiStateHolder,
@@ -242,6 +258,8 @@ private fun listenActions(
                 ListenMenuEntry.SUBTITLE_SETTINGS -> ui.fsPanel.value = FullscreenPanel.Subtitles
                 // 歌词样式由面板里内联展开，选中即写 ui.lyricsStyle。
                 ListenMenuEntry.LYRICS_STYLE -> Unit
+                // 校准由页面自己接管（要先切到歌词页），不会走到这里。
+                ListenMenuEntry.LYRICS_CALIBRATE -> Unit
                 ListenMenuEntry.LYRICS_SEARCH -> listen.requestLyricsPicker()
                 ListenMenuEntry.BACKGROUND_PLAY ->
                     fsActions.onBackgroundPlayChanged(!listen.backgroundPlay())
