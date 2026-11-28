@@ -43,7 +43,7 @@ val keystoreProps = Properties().apply {
 val releaseStoreFile = providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull
 
 /**
- * 版本号跟随上游发版标签（tag v1.0.2 → 1.0.2），merge 上游后自动对齐，不用手改。
+ * 版本号跟随上游发版标签（tag v1.0.5 → 1.0.5），merge 上游后自动对齐，不用手改。
  * 只认 vX.Y.Z 正式版标签，preview 标签（vpreview-x.y）不参与，避免 versionCode 回退。
  * 需要临时指定时仍可用 -PreleaseVersion=... 覆盖；找不到 tag 时退回上游当前版本。
  */
@@ -54,7 +54,7 @@ val releaseVersion = providers.gradleProperty("releaseVersion").orElse(
                 workingDir(rootProject.projectDir)
                 commandLine("git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*.[0-9]*.[0-9]*")
             }.standardOutput.asText.get().trim().removePrefix("v")
-        }.getOrNull()?.takeIf { it.isNotBlank() } ?: "1.0.2"
+        }.getOrNull()?.takeIf { it.isNotBlank() } ?: "1.0.5"
     }
 ).get()
 val versionMatch = Regex("(?:preview-(0|[1-9][0-9]?)\\.(0|[1-9][0-9]?)|(0|[1-9][0-9]{0,2})\\.(0|[1-9][0-9]?)\\.(0|[1-9][0-9]?))").matchEntire(releaseVersion)
