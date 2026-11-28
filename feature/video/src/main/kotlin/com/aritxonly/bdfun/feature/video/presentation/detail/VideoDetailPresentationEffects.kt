@@ -28,11 +28,8 @@ fun BindVideoFullscreenState(
     /** 把意图同步给 Activity：Activity 侧据此请求朝向、切系统栏。 */
     publishIntent: (Boolean) -> Unit = {},
 ) {
-    var fullscreen by ui.fullscreen
     var coinSheet by ui.coinSheet
     var favSheet by ui.favSheet
-    // 独占全屏状态共享给 Activity；横屏分栏保留 tab / 回复栏。
-    LaunchedEffect(fullscreen) { publish(fullscreen) }
     // 意图也要同步出去：Activity 侧写它的时机（面板收起回播放器）先于呈现值落地。
     val intent = ui.fullscreenIntent.value
     LaunchedEffect(intent) { publishIntent(intent) }
@@ -48,7 +45,15 @@ fun BindVideoFullscreenState(
     }
     // 意图 → 呈现：窗口真的到目标朝向后才铺满，见 VideoFullscreenPresentation。
     val presented = VideoFullscreenPresentation(intent = intent, portraitVideo = portraitVideo)
-    LaunchedEffect(presented) { fullscreen = presented }
+    // 同一帧落地：写在这里（组合阶段）而不是 LaunchedEffect——后者在提交之后才跑，
+    // 转屏那一帧的布局已经按横屏算完、画面却还是半屏尺寸，下一帧才补正，
+    // 120Hz 下就是 8ms 的「闪一下」。组合阶段写属于 Compose 允许的反向写入，
+    // 会在本帧内重跑一次组合，中间那一帧不会被画出来。值相同不写，避免自我触发。
+    if (ui.fullscreen.value != presented) ui.fullscreen.value = presented
+    // 读一次委托：本帧后续逻辑（收弹层、publish）都用这个刚写定的值。
+    val fullscreen = ui.fullscreen.value
+    // 独占全屏状态共享给 Activity；横屏分栏保留 tab / 回复栏。
+    LaunchedEffect(fullscreen) { publish(fullscreen) }
     // 独占全屏时收回投币 / 收藏弹层。
     LaunchedEffect(fullscreen) {
         if (fullscreen) {

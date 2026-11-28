@@ -41,10 +41,13 @@ fun VideoDetailEntry(
     // 这个限制只在首次进入时生效：一旦进过全屏，回到半屏就保持全屏时选中的清晰度，
     // 否则每次退出全屏都会重新降到 720P（用户看到的是画面突然变糊）。
     var enteredFullscreen by remember(selection.bvid) { mutableStateOf(false) }
-    LaunchedEffect(presentation.fullscreen) {
-        if (presentation.fullscreen) enteredFullscreen = true
+    // 跟意图而不是呈现值：换源会重置播放器（黑一帧、重新缓冲）。
+    // 呈现值要等转屏落地，那时窗口已经横过来、画面铺满，换源的黑帧会格外显眼；
+    // 跟意图则在竖屏那 200~500ms 里就换好，转过去看到的已经是新档位。
+    LaunchedEffect(presentation.fullscreenIntent) {
+        if (presentation.fullscreenIntent) enteredFullscreen = true
     }
-    val quality = if (presentation.fullscreen || enteredFullscreen) selectedQuality
+    val quality = if (presentation.fullscreenIntent || enteredFullscreen) selectedQuality
         else com.aritxonly.bdfun.core.domain.capInlineQuality(selectedQuality, qualities)
     // 用当前清晰度的真实宽高比判断竖屏视频；读不到就按原来的 16:9 处理。
     val videoAspectRatio = quality?.let { q ->

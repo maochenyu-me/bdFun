@@ -53,7 +53,10 @@ private fun androidx.compose.foundation.layout.BoxScope.videoDetailViewportModif
     val playerBlockHeight = inlineLayout.playerBlockHeight
     val playerTopInset = viewport.playerTopInset
     return if (fullscreen || pictureInPicture) {
-        Modifier.fillMaxSize()
+        // 全屏也要铺黑底：AndroidView 的 PlayerView 从半屏尺寸改成满屏要走一次原生重新布局，
+        // 中间那一帧 Compose 的绘制范围已经满了、画面却还是旧尺寸，会透出下层的详情页
+        // （顶部正是整稿封面），肉眼看到的就是「展开时闪一下封面」。铺黑把这一帧挡住。
+        Modifier.fillMaxSize().background(Color.Black)
     } else if (splitPanes) {
         Modifier.align(Alignment.TopStart)
             .width(paneLayout.playerWidthDp.dp).fillMaxHeight()

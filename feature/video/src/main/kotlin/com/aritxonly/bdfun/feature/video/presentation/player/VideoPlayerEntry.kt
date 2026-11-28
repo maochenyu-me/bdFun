@@ -45,9 +45,11 @@ fun VideoPlayerEntry(
     val playing by observed.playing
     BindPlayerHotDanmaku(playback, danmakuVisible, ui)
     BindPlayerDanmakuClock(playback, playing, danmakuVisible, ui)
-    // 系统栏与 HDR 跟随「意图」：点展开就藏状态栏，不必等窗口转过去。
-    BindPlayerSystemBars(presentation.fullscreenIntent, presentation.immersiveStatusBar, presentation.portraitVideo)
-    BindPlayerHdrWindow(media.quality, presentation.fullscreenIntent)
+    // 系统栏与 HDR 跟「呈现值」：点展开的瞬间窗口还是竖的，这时候先藏状态栏会让整页内容
+    // 上移一截（竖屏里就是明显的一下跳动），然后再转屏，看起来像闪了两下。
+    // 等呈现值翻真时窗口已经到位，状态栏与横屏骨架同时落地，反而更稳。
+    BindPlayerSystemBars(presentation.fullscreen, presentation.immersiveStatusBar, presentation.portraitVideo)
+    BindPlayerHdrWindow(media.quality, presentation.fullscreen)
     VideoPlayerLayout(playback, observed, media, presentation, actions, ui, danmakuVisible, latencyMs, sponsor, modifier,
         ports.render(playback, media, presentation, actions, ui))
 }
